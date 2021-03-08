@@ -12,6 +12,7 @@ Cut and paste the following into a docker-compose.yml
 version: '3.4'
 services:
 
+  # First let's create a postgres database
   db:
     image: postgres:alpine
     environment:
@@ -23,12 +24,15 @@ services:
       timeout: 5s
       retries: 5
 
+  # As an example we'll aadd login/registration to an nginx install
   nginx:
     image: nginx:stable-alpine
 
+  # Configure contor to listen on port 9090 and reverse proxy nginx.
   contor:
     image: contorsystems/contor
     environment:
+        # This secret key is used to encrypt cookies.
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949
         DATABASE_URL: postgresql://postgres:testpassword@db:5432
         FORWARD_URL: nginx
