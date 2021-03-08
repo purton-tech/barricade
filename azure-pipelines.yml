@@ -107,12 +107,12 @@ stages:
               echo "COPY ./$EXE_NAME/$EXE_NAME /rust-executable" >> ./Dockerfile
               echo 'COPY ./auth-assets /asset-pipeline/dist' >> ./Dockerfile
               echo 'CMD ["/rust-executable"]' >> ./Dockerfile
-              docker build -t ianpurton/barn-door .
+              docker build -t contorsystems/contor .
             displayName: 'Build Auth Image'
 
           # Push the containers
           - script: |
               set -e
-              docker login -u ianpurton -p $(DOCKERHUB_ACCESS_TOKEN) 
-              docker push ianpurton/barn-door
+              docker login -u $(USERNAME) -p $(DOCKERHUB_ACCESS_TOKEN) 
+              docker push contorsystems/contor
             displayName: 'Push all the images to the container registry'
