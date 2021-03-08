@@ -1,0 +1,45 @@
+version: '3.4'
+services:
+
+  db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_USER: vscode
+
+  # Run up nginx as out destination website
+  nginx:
+    image: nginx
+
+  # Devconatiner development
+  development:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    
+    volumes:
+      - ..:/vscode:cached
+      - ~/.ssh:/home/host-ssh:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+      - target:/vscode/target # Set target as a volume for performance. 
+      - auth_node_modules:/vscode/node_modules # Set target as a volume for performance. 
+      - auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
+      #- pulumi_node_modules:/pulumi/node_modules # Set target as a volume for performance. 
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+      
+    env_file:
+      - .env
+
+    working_dir: /vscode
+
+    depends_on:
+      - db
+      - nginx
+
+volumes:
+  target:
+  auth_parcel_cache:
+  auth_node_modules:
+    

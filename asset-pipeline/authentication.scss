@@ -1,0 +1,72 @@
+.m_decryption {
+  background-color: var(--geist-background);
+  display: flex;
+  flex-direction: column; 
+  max-width: 400px;
+  margin: 10em auto;
+  padding: 1em;
+  border-radius: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+  box-shadow: var(--shadow-small);
+  
+  
+  h1 {
+    text-align: center;
+    text-transform: uppercase;
+    //color: $color-dark-grey;
+    font-size: 1em;
+  }
+}
+
+.m_authentication {
+
+    background-color: var(--geist-background);
+    display: flex;
+    flex-direction: column; 
+    max-width: 400px;
+    margin: 10em auto;
+    padding: 1em;
+    border-radius: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-shadow: var(--shadow-small);
+  
+    a {
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.75em;
+    }
+  
+    h1 {
+      text-align: center;
+      text-transform: uppercase;
+      //color: $color-dark-grey;
+      font-size: 1em;
+    }
+  
+    > * {
+      margin-bottom: 1em;
+    }
+  
+    > span.error {
+      font-size: 0.75rem;
+      line-height: 1.5;
+      padding-top: 4px;
+      color: #69707D;
+      color: var(--geist-error);
+    }
+  
+    input {
+      font-size: 16px;
+      padding: 0.5em;
+      border-radius: 2px;
+      border-width: 1px;
+      border-style: solid;
+      border-color: rgba(40, 47, 55, 0.1);
+  
+      &.error {
+        border-color: var(--error);
+      }
+    }
+  }

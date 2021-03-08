@@ -1,0 +1,18 @@
+.master {
+  > .body {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    > svg.progress {
+        width: 250px;
+        path {
+            will-change: auto;
+            stroke-width: 20px;
+            stroke-miterlimit: round;
+            transition: stroke-dashoffset 350ms ease-in-out;
+          }
+      } 
+    }
+}

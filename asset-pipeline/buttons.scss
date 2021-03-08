@@ -1,0 +1,100 @@
+.a_button {
+    display: inline-block;
+    padding: 0 1rem;
+	border-radius: 5px;
+	font-weight: 400;
+	font-size: .8rem;
+	cursor: pointer;
+	text-decoration: none;
+	user-select: none;
+	outline: none;
+	justify-content: center;
+	text-transform: uppercase;
+	text-align: center;
+	height: 2rem;
+    line-height: 2rem;
+    width: auto;
+    min-width: 10rem;
+	white-space: nowrap;
+	transition: border 0.2s, background 0.2s, color 0.2s ease-out;
+	position: relative;
+	overflow: hidden;
+	background: #fff;
+	border: 1px solid #eaeaea;
+    color: #666;
+    
+    &:hover {
+        color: #000;
+        background: #fff;
+        border-color: #000;
+	}
+
+	&.mini {
+		height: 1.5rem;
+		line-height: 1.4rem;
+		padding: 0 1rem;
+		width: auto;
+		min-width: 7rem;
+	}
+
+	&.small {
+		height: 2rem;
+		line-height: 2rem;
+		padding: 0 1rem;
+		width: auto;
+		min-width: 10rem;
+	}
+
+	&.big, &.huge {
+		height: 3rem;
+		line-height: 3rem;
+		padding: 0 2rem;
+		width: auto;
+		min-width: 17rem;
+	}
+
+	&.primary {
+		background-color: #000;
+		border: 1px solid #000;
+		color: #fff;
+		
+		&:hover {
+			background: #fff;
+			color: #000;
+			border: 1px solid #000;
+		}
+	}
+
+	&.warning {
+		border-color: var(--warning);
+		background-color: var(--warning);
+		color: #fff;
+		&:hover {
+			color: var(--warning);
+			background: #fff;
+			border-color: var(--warning);
+		}
+	}
+
+	&.danger, &.error {
+		border-color: var(--error);
+		background-color: var(--error);
+		color: #fff;
+		&:hover {
+			color: var(--error);
+			background: #fff;
+			border-color: var(--error);
+		}
+	}
+
+	&.success {
+		border-color: var(--success);
+		background-color: var(--success);
+		color: #fff;
+		&:hover {
+			color: var(--success);
+			background: #fff;
+			border-color: var(--success);
+		}
+	}
+}

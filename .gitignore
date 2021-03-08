@@ -1,0 +1,6 @@
+node_modules
+target
+.env
+.cache
+asset-pipeline/dist
+.vscode
