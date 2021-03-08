@@ -1,4 +1,10 @@
-# Quickly add user registration and logon to your application
+[![Build Status](https://dev.azure.com/ianpurton0711/onchain.io/_apis/build/status/contor-systems.contor?branchName=master)](https://dev.azure.com/ianpurton0711/onchain.io/_build/latest?definitionId=18&branchName=master)
+
+# Quickly add user registration and logon to any application
+
+Contor is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Contor uses your database and requires minimal configuration.
+
+## Quickstart 
 
 Cut and paste the following into a docker-compose.yml
 
