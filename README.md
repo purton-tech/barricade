@@ -24,11 +24,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # As an example we'll aadd login/registration to an nginx install
+  # As an example we'll add login/registration to an nginx install
   nginx:
     image: nginx:stable-alpine
 
-  # Configure contor to listen on port 9090 and reverse proxy nginx.
+  # Configure contor to listen on port 9090 and reverse proxy nginx on port 80.
   contor:
     image: contorsystems/contor
     environment:
