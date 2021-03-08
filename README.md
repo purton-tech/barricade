@@ -27,7 +27,7 @@ services:
     image: nginx:stable-alpine
 
   contor:
-    image: ianpurton/barn-door
+    image: contorsystems/contor
     environment:
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949
         DATABASE_URL: postgresql://postgres:testpassword@db:5432
