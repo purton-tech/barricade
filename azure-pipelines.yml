@@ -68,14 +68,14 @@ stages:
         strip target/x86_64-unknown-linux-musl/release/$EXE_NAME
       displayName: Build Auth Server
     
-    - publish: 'target/x86_64-unknown-linux-musl/release/auth'
+    - publish: 'target/x86_64-unknown-linux-musl/release/contor'
       displayName: 'Publish Artifact: Compiled UI Release Binary'
-      artifact: auth
+      artifact: contor
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     
     - publish: 'asset-pipeline/dist'
       displayName: 'Publish Artifact: Compiled UI Release Binary'
-      artifact: auth-assets
+      artifact: contor-assets
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
 
 # Testing containers
@@ -105,10 +105,10 @@ stages:
               chmod +x ./$EXE_NAME/$EXE_NAME
               echo 'FROM scratch' > ./Dockerfile
               echo "COPY ./$EXE_NAME/$EXE_NAME /rust-executable" >> ./Dockerfile
-              echo 'COPY ./auth-assets /asset-pipeline/dist' >> ./Dockerfile
+              echo 'COPY ./contor-assets /asset-pipeline/dist' >> ./Dockerfile
               echo 'CMD ["/rust-executable"]' >> ./Dockerfile
               docker build -t contorsystems/contor .
-            displayName: 'Build Auth Image'
+            displayName: 'Build Contor Image'
 
           # Push the containers
           - script: |
