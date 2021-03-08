@@ -58,7 +58,7 @@ stages:
 
     - script: |
         set -e
-        EXE_NAME=auth
+        EXE_NAME=contor
         export DATABASE_URL=$(db_url)
         DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl
         rustup target add x86_64-unknown-linux-musl
@@ -99,7 +99,7 @@ stages:
 
           # Build the Auth
           - script: |
-              EXE_NAME=auth
+              EXE_NAME=contor
               set -e
               cd $(Pipeline.Workspace)
               chmod +x ./$EXE_NAME/$EXE_NAME
