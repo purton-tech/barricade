@@ -138,7 +138,7 @@ There's two important things to note from the whoami screenshot.
 
 ## Finally take a look in the database
 
-Run the following command in the psql shell to see yourself in the database.
+Run the following command in the psql shell to see the your new user registration in the database.
 
 ```console
 docker-compose run db psql postgres://postgres:testpassword@db:5432
