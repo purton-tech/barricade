@@ -49,7 +49,7 @@ services:
         FORWARD_PORT: 80
         # Any requests that meet the following regulkar expressions
         # with pass through. i.e. They don't require auth.
-        SKIP_AUTH_FOR: /,/contact/*,/static/*,/images/*
+        SKIP_AUTH_FOR: /api*
         REDIRECT_URL: '/'
     ports:
       - "9091:9090"
