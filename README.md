@@ -1,10 +1,25 @@
 [![Build Status](https://dev.azure.com/ianpurton0711/onchain.io/_apis/build/status/contor-systems.contor?branchName=master)](https://dev.azure.com/ianpurton0711/onchain.io/_build/latest?definitionId=18&branchName=master) ![Docker Pulls](https://img.shields.io/docker/pulls/contorsystems/contor?style=plastic)
 
-# Quickly add user registration and logon to any application
+**Contor** is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Contor uses your database and requires minimal configuration.
 
-Contor is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Contor uses your database and requires minimal configuration.
+## How it looks
 
-## Quickstart 
+<p align="center">
+  <img src="./docs/images/login.png" width="400" />
+  <img src="./docs/images/registration.png" width="400" />
+</p>
+
+## Features 
+
+* Only requires you to add a users table to your application.
+* Small high performance docker container.
+* No code to write just configure with environment variables.
+* Works well as a Kubernetes side car.
+* TODO - Password reset.
+* TODO - U2F
+* TODO - 
+
+## Try it out 
 
 Cut and paste the following into a docker-compose.yml
 
