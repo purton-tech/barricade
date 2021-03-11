@@ -72,7 +72,7 @@ And you should get output on your console like the following.
 
 ## Intercept user requests
 
-If you now head to `http://localhost:9091/api` in your browser you should see the following.
+If you now head to `http://localhost:9091/api` in your browser you should see the following output from Whoami.
 
 <p align="center">
   <img src="./docs/images/api.png" width="100%" />
@@ -84,7 +84,7 @@ We set our environment variable `SKIP_AUTH_FOR` to `/api*` which means we allow 
 ## Access an endpoint that requires authentication.
 
 
-Access `http://localhost:9091` and you'll see contor block your request.
+Access `localhost:9091` and you'll see contor block your request.
 
 <p align="center">
   <img src="./docs/images/login-large.png" width="100%" />
@@ -149,4 +149,4 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
   <img src="./docs/images/psql-output-users.png" width="100%" />
 </p>
 
-This is ow your user table looks after a user registration.
+This is how your user table looks after a user registration.
