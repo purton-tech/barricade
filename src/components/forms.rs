@@ -13,7 +13,7 @@ pub fn filter_errors(name: &str, errors: &ValidationErrors) -> Vec<String> {
     filtered_errors
 }
 
-// Taken from 
+// Taken from
 // https://github.com/utkarshkukreti/markup.rs/blob/master/markup/src/escape.rs
 pub fn escape(str: &str, w: &mut impl std::fmt::Write) -> std::fmt::Result {
     let mut last = 0;

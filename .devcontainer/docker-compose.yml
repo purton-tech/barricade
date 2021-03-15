@@ -7,9 +7,10 @@ services:
       POSTGRES_PASSWORD: testpassword
       POSTGRES_USER: vscode
 
-  # Run up nginx as out destination website
-  nginx:
-    image: nginx
+  # As an example we'll add login/registration to 
+  # https://hub.docker.com/r/containous/whoami
+  whoami:
+    image: containous/whoami
 
   # Devconatiner development
   development:
@@ -35,7 +36,7 @@ services:
 
     depends_on:
       - db
-      - nginx
+      - whoami
 
 volumes:
   target:

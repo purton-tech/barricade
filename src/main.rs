@@ -83,7 +83,7 @@ async fn forward(
         } else {
             forwarded_req
         };
-        
+
         // Add the user id as a header.
         let fwd_req = if let Some(logged_user) = logged_user {
             forwarded_req.header("user", format!("{:?}", logged_user.id))

@@ -1,0 +1,10 @@
+diesel migration list
+diesel migration run
+
+cargo watch -x fmt -x clippy -x run
+cargo watch --poll -x fmt -x clippy -x run
+
+npm run start
+npm install
+
+figlet with comments | sed -e 's/^/#  /'
