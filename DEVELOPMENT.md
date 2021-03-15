@@ -59,6 +59,7 @@ FORWARD_URL=whoami
 FORWARD_PORT=80
 REDIRECT_URL=/
 PORT=9095
+USER_TABLE_NAME=bcrypt_users
 ```
 
 ## Building Contor
@@ -68,7 +69,7 @@ For a full stack web development you need an [asset pipeline](https://www.theodi
 To compile our asset pipeline run 
 
 * `npm install` To install all our front end dependencies
-* `npm run build` To build all our assets. This will sit arounf waiting for any assets to chnage and will re-compile if thats the case. You can leave it running.
+* `npm run build` To build all our assets. This will sit around waiting for any assets to change and will re-compile if thats the case. You can leave it running.
 
 Build and run the [Actix Web](https://github.com/actix/actix-web) server.
 
@@ -82,15 +83,3 @@ You should now be able to access the web application from `localhost:9095' in yo
 <p align="center">
   <img src="./docs/images/login-large.png" width="100%" />
 </p>
-
-## Infrastructure as Code
-
-We use [Pulumi](https://www.pulumi.com/) to manage our infrastructure. This means our production setup is defined by code and managed along with the application.
-
-1. `cd pulumi` 
-1. `az login`
-1. `pulumi up`
-
-## CI/CD Pipeline
-
-TODO
