@@ -24,13 +24,12 @@ services:
       - target:/vscode/target # Set target as a volume for performance. 
       - auth_node_modules:/vscode/node_modules # Set target as a volume for performance. 
       - auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
-      #- pulumi_node_modules:/pulumi/node_modules # Set target as a volume for performance. 
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
-      
-    env_file:
-      - .env
+
+    environment:
+      DATABASE_URL: postgresql://vscode:testpassword@db:5432
 
     working_dir: /vscode
 
