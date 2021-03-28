@@ -36,3 +36,8 @@ serde_json = "1.0" # we store users cookie as json
 
 [build-dependencies]
 sha1 = "0.6"  # Use by build.rs for cache busting.
+
+[dev-dependencies]
+thirtyfour = "0.23.0" # WebDriver Library for UI testing.
+tokio = "0" # Neede by thirtyfour
+actix-rt = "2"
