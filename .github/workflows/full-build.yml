@@ -91,7 +91,3 @@ jobs:
           echo "COPY ./$EXE_NAME ./rust-executable" >> ./Dockerfile &&
           echo 'CMD ["./rust-executable"]' >> ./Dockerfile &&
           cat Dockerfile
-
-      - name: Docker Build 
-        run:
-          docker build -t ${{ secrets.REGISTRY_SERVER }}/contor:${{ github.run_id }} .
