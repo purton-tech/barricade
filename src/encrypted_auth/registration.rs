@@ -70,7 +70,7 @@ pub async fn process_registration(
             identity.remember(json);
 
             Ok(HttpResponse::SeeOther()
-                .header(http::header::LOCATION, config.redirect_url.clone())
+                .append_header((http::header::LOCATION, config.redirect_url.clone()))
                 .finish())
         }
         Err(_) => {

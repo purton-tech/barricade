@@ -52,7 +52,7 @@ pub async fn decrypt(
 
 pub async fn process_decryption(config: web::Data<config::Config>) -> Result<HttpResponse> {
     Ok(HttpResponse::SeeOther()
-        .header(http::header::LOCATION, config.redirect_url.clone())
+        .append_header((http::header::LOCATION, config.redirect_url.clone()))
         .finish())
 }
 
@@ -88,7 +88,7 @@ pub async fn process_login(
         identity.remember(json);
 
         return Ok(HttpResponse::SeeOther()
-            .header(http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL)
+            .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))
             .finish());
     }
 

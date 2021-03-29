@@ -75,7 +75,7 @@ pub async fn process_registration(
                 identity.remember(json);
 
                 return Ok(HttpResponse::SeeOther()
-                    .header(http::header::LOCATION, config.redirect_url.clone())
+                    .append_header((http::header::LOCATION, config.redirect_url.clone()))
                     .finish());
             }
             Err(validation_errors) => {

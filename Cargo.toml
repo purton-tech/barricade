@@ -7,10 +7,16 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "3"
-actix-files = "0.4"
+actix-web = "4.0.0-beta.3"
+actix-files = "0.6.0-beta.3"
 dotenv = "0.15"
-actix-identity = "0.3"
+# For now gvet identity direct friom the repo untiul the update the
+# crate. v0.3.1 was no good, it was using an old actix web.
+actix-identity = { git = "https://github.com/actix/actix-extras/" }
+
+# Actix Web Client - Used for the reverese proxy
+awc = "3.0.0-beta.3"
+
 env_logger = "0.7"
 regex = "1" # For checking if we need to skip auth
 
@@ -24,10 +30,10 @@ validator = { version = "0.12", features = ["derive"] }
 bcrypt = "0.9.0"
 
 # Use this for access to hcaptcha
-reqwest = { version = "0.10", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
 
 # The database
-sqlx = { version = "0.4", features = [ "runtime-tokio-rustls", "postgres" ] }
+sqlx = { version = "0.5", default-features = false,  features = [ "runtime-tokio-rustls", "postgres", "macros" ] }
 serde = "1"
 
 # Use by authentication
@@ -39,5 +45,5 @@ sha1 = "0.6"  # Use by build.rs for cache busting.
 
 [dev-dependencies]
 thirtyfour = "0.23.0" # WebDriver Library for UI testing.
-tokio = "0" # Neede by thirtyfour
+tokio = "1" # Neede by thirtyfour
 actix-rt = "2"

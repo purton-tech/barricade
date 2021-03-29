@@ -3,7 +3,7 @@ use actix_web::{http, HttpResponse};
 
 pub fn redirect_and_snackbar(url: &str, message: &'static str) -> HttpResponse {
     HttpResponse::SeeOther()
-        .header(http::header::LOCATION, url)
+        .append_header((http::header::LOCATION, url))
         .cookie(
             http::Cookie::build("flash_aargh", message)
                 .path("/")

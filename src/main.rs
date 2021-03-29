@@ -12,7 +12,7 @@ mod components;
 mod config;
 mod custom_error;
 mod layouts;
-use actix_web::client::Client;
+use awc::Client;
 use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
 
@@ -79,14 +79,14 @@ async fn forward(
             .request_from(new_url.as_str(), req.head())
             .no_decompress();
         let forwarded_req = if let Some(addr) = req.head().peer_addr {
-            forwarded_req.header("x-forwarded-for", format!("{}", addr.ip()))
+            forwarded_req.append_header(("x-forwarded-for", format!("{}", addr.ip())))
         } else {
             forwarded_req
         };
 
         // Add the user id as a header.
         let fwd_req = if let Some(logged_user) = logged_user {
-            forwarded_req.header("user", format!("{:?}", logged_user.id))
+            forwarded_req.append_header(("user", format!("{:?}", logged_user.id)))
         } else {
             forwarded_req
         };
@@ -98,13 +98,13 @@ async fn forward(
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection#Directives
         for (header_name, header_value) in res.headers().iter().filter(|(h, _)| *h != "connection")
         {
-            client_resp.header(header_name.clone(), header_value.clone());
+            client_resp.append_header((header_name.clone(), header_value.clone()));
         }
 
         Ok(client_resp.body(res.body().await?))
     } else {
         return Ok(HttpResponse::SeeOther()
-            .header(http::header::LOCATION, SIGN_IN_URL)
+            .append_header((http::header::LOCATION, SIGN_IN_URL))
             .finish());
     }
 }
