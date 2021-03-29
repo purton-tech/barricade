@@ -6,7 +6,7 @@ This project uses the [Visual Studio Code Remote - Containers](https://code.visu
 Make sure you have Docker Desktop installed and Visual Studio Code Remote. Make sure you have the Remote Containers extension installed. 
 
 <p align="center">
-  <img src="./docs/images/dev-containers.png" width="100%" />
+  <img src="./.github/assets/dev-containers.png" width="100%" />
 </p>
 
 After you have run `git clone` on this repository open the folder for the project in Visual Studio Code.
@@ -40,13 +40,13 @@ Run `diesel migration list` to see a list of the migrations we have created so f
 To apply the migrations run `diesel migration run`. You should see all the tables being created as below.
 
 <p align="center">
-  <img src="./docs/images/run-migrations.png" width="100%" />
+  <img src="./.github/assets/run-migrations.png" width="100%" />
 </p>
 
 You can log into PSQL and see the tables for yourself by running `psql $DATABASE_URL`
 
 <p align="center">
-  <img src="./docs/images/psql-users.png" width="100%" />
+  <img src="./.github/assets/psql-users.png" width="100%" />
 </p>
 
 ## Setup env dot file
@@ -81,5 +81,5 @@ This will compile the rust code and will re-compile the code when it detects cha
 You should now be able to access the web application from `localhost:9095' in your browser. Hopefully it looks like the screenshot below.
 
 <p align="center">
-  <img src="./docs/images/login-large.png" width="100%" />
+  <img src="./.github/assets/login-large.png" width="100%" />
 </p>

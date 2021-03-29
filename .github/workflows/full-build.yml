@@ -73,7 +73,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Build
-        run: cargo build --release --target x86_64-unknown-linux-musl --locked
+        # Remove locked due to thirtyfour issue above
+        #run: cargo build --release --target x86_64-unknown-linux-musl --locked
+        run: cargo build --release --target x86_64-unknown-linux-musl
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
