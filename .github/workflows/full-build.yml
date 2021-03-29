@@ -1,0 +1,95 @@
+name: Full Clean Build
+
+on:
+  push:
+    branches:
+    - master
+    paths-ignore:
+      - .github/**
+      - .vscode/**
+      - README.md
+      - doc/**
+      - .devcontainer/**
+  pull_request: 
+    paths-ignore:
+      - .github/**
+      - .vscode/**
+      - README.md
+      - doc/**
+      - .devcontainer/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      # Switch off until we figure out how 
+      - name: Chop of dev deps because thirtyfour uses native tls.
+        run: head -n -2 Cargo.toml > Cargo.toml- && mv Cargo.toml- Cargo.toml
+      #- name: Cargo Cache
+      #  uses: actions/cache@v2
+      #  with:
+      #    path: |
+      #      ~/.cargo/registry
+      #      ~/.cargo/git
+      #      target
+      #    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: NPM Cache
+        uses: actions/cache@v2
+        with:
+          path: ui/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Musl Toolchain
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl && rustup target add x86_64-unknown-linux-musl
+        
+      - name: Build the Asset Pipeline
+        run: npm ci --cache .npm && npm run release
+            
+      # Run Migrations using diesel which we have pre-built into a container
+      # We didnt set a healthcheck on postgres. Hopefully it's ready by now.
+      - name: Run Migrations
+        run: docker run -e DATABASE_URL=$DATABASE_URL --rm --network host -v "$(pwd)":/app -w /app ianpurton/rust-diesel diesel setup
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+
+      - name: Build
+        run: cargo build --release --target x86_64-unknown-linux-musl --locked
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+
+      - name: Strip
+        run: strip target/x86_64-unknown-linux-musl/release/contor
+
+      # Build the Image
+      - name: Create Dockerfile
+        run: >
+          EXE_NAME=target/x86_64-unknown-linux-musl/release/contor &&
+          chmod +x ./$EXE_NAME &&
+          echo 'FROM scratch' > ./Dockerfile &&
+          echo "COPY ./$EXE_NAME ./rust-executable" >> ./Dockerfile &&
+          echo 'CMD ["./rust-executable"]' >> ./Dockerfile &&
+          cat Dockerfile
+
+      - name: Docker Build 
+        run:
+          docker build -t ${{ secrets.REGISTRY_SERVER }}/contor:${{ github.run_id }} .
