@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/ianpurton0711/onchain.io/_apis/build/status/contor-systems.contor?branchName=master)](https://dev.azure.com/ianpurton0711/onchain.io/_build/latest?definitionId=18&branchName=master) ![Docker Pulls](https://img.shields.io/docker/pulls/contorsystems/contor?style=plastic)
+![Docker Pulls](https://img.shields.io/docker/pulls/contorsystems/contor?style=plastic)
 
 **Contor** is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Contor uses your database and requires minimal configuration.
 
@@ -67,7 +67,7 @@ docker-compose up
 And you should get output on your console like the following.
 
 <p align="center">
-  <img src="./docs/images/compose-output.png" width="100%" />
+  <img src="./.github/assets/compose-output.png" width="100%" />
 </p>
 
 ## Intercept user requests
@@ -75,7 +75,7 @@ And you should get output on your console like the following.
 If you now head to `http://localhost:9091/api` in your browser you should see the following output from Whoami.
 
 <p align="center">
-  <img src="./docs/images/api.png" width="100%" />
+  <img src="./.github/assets/api.png" width="100%" />
 </p>
 
         
@@ -87,7 +87,7 @@ We set our environment variable `SKIP_AUTH_FOR` to `/api*` which means we allow 
 Access `localhost:9091` and you'll see contor block your request.
 
 <p align="center">
-  <img src="./docs/images/login-large.png" width="100%" />
+  <img src="./.github/assets/login-large.png" width="100%" />
 </p>
 
 ## Add a user table
@@ -111,7 +111,7 @@ CREATE TABLE users (
 ```
 
 <p align="center">
-  <img src="./docs/images/psql-output.png" width="100%" />
+  <img src="./.github/assets/psql-output.png" width="100%" />
 </p>
 
 ## Register a new user
@@ -119,7 +119,7 @@ CREATE TABLE users (
 Go to `localhost:9091/auth/sign_up` in your browser and register.
 
 <p align="center">
-  <img src="./docs/images/registration.png" width="100%" />
+  <img src="./.github/assets/registration.png" width="100%" />
 </p>
 
 After registration you'll be take to the whoami home page as we set `REDIRECT_URL` to `/`.
@@ -128,7 +128,7 @@ You'll then be greated with
 
 
 <p align="center">
-  <img src="./docs/images/post-registration-whoami.png" width="100%" />
+  <img src="./.github/assets/post-registration-whoami.png" width="100%" />
 </p>
 
 There's two important things to note from the whoami screenshot.
@@ -146,7 +146,7 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
 
 
 <p align="center">
-  <img src="./docs/images/psql-output-users.png" width="100%" />
+  <img src="./.github/assets/psql-output-users.png" width="100%" />
 </p>
 
 This is how your user table looks after a user registration.
