@@ -71,7 +71,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Build
-        run: cargo build --release --locaked
+        run: cargo build --release --locked
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 

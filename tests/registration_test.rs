@@ -44,6 +44,7 @@ async fn registration() -> WebDriverResult<()> {
     );
 
     // Let's go and register
+    driver.find_element(By::LinkText("Sign Up")).await?.click().await?;
 
     Ok(())
 }
