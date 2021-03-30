@@ -582,6 +582,7 @@ dependencies = [
  "env_logger",
  "futures",
  "markup",
+ "rand 0.7.3",
  "regex",
  "reqwest",
  "serde",

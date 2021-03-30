@@ -1,5 +1,6 @@
 use std::env;
 use thirtyfour::prelude::*;
+use rand::Rng;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -37,4 +38,10 @@ impl Config {
         }
         WebDriver::new(&self.webdriver_url, &caps).await
     }
+}
+
+pub fn random_email() -> String {
+    
+    let mut rng = rand::thread_rng();
+    format!("{}", rng.gen::<u32>())
 }

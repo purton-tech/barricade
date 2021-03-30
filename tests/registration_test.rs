@@ -15,16 +15,35 @@ async fn registration() -> WebDriverResult<()> {
     // Find element.
     let email_input = driver.find_element(By::Id("email")).await?;
 
-    email_input.send_keys("hello@test.com").await?;
-
     // Click the search button.
     let elem_button = driver
         .find_element(By::Css("button[type='submit']"))
         .await?;
     elem_button.click().await?;
 
+    assert!(
+        driver
+            .page_source()
+            .await?
+            .contains("Invalid email or password"),
+        true
+    );
     
-    assert!(driver.page_source().await?.contains("Invalid email or password"), true);
+    let email = common::random_email();
+    email_input.send_keys(&email).await?;
+    let password_input = driver.find_element(By::Id("password")).await?;
+    password_input.send_keys(&email).await?;
+
+    // We shouldn't find the user
+    assert!(
+        driver
+            .page_source()
+            .await?
+            .contains("Invalid email or password"),
+        true
+    );
+
+    // Let's go and register
 
     Ok(())
 }

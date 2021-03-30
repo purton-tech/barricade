@@ -46,3 +46,4 @@ sha1 = "0.6"  # Use by build.rs for cache busting.
 [dev-dependencies]
 thirtyfour = "0" # WebDriver Library for UI testing.
 tokio = { version = "1", features = ["macros"] }
+rand = "0"

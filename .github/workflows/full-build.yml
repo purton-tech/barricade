@@ -42,7 +42,7 @@ jobs:
       
       # Switch off until we figure out how 
       - name: Chop of dev deps because thirtyfour uses native tls.
-        run: head -n -2 Cargo.toml > Cargo.toml- && mv Cargo.toml- Cargo.toml
+        run: head -n -2 Cargo.toml > Cargo.toml- && cp Cargo.toml- Cargo.toml.dev && mv Cargo.toml- Cargo.toml
       #- name: Cargo Cache
       #  uses: actions/cache@v2
       #  with:
@@ -85,9 +85,9 @@ jobs:
 
       - name: Integraton Testing
         run: |
-          EXE_NAME=target/x86_64-unknown-linux-musl/release/contor
-          EXE_NAME &
+          target/x86_64-unknown-linux-musl/release/contor &
           chromedriver --whitelisted-ips="" &
+          mv Cargo.toml.dev Cargo.toml
           cargo test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
