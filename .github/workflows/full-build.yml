@@ -91,3 +91,10 @@ jobs:
           REDIRECT_URL: /
           PORT: 9095
           USER_TABLE_NAME: bcrypt_users
+      
+      - name: 'Upload Screenshots'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: target/*.png

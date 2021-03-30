@@ -36,6 +36,8 @@ async fn registration() -> WebDriverResult<()> {
     driver.find_element(By::Id("confirm_password")).await?.send_keys(&email).await?;
     driver.find_element(By::Css("button[type='submit']")).await?.click().await?;
 
+    driver.screenshot(Path::new("./target/registration.png")).await?;
+
     assert!(
         driver
             .page_source()
@@ -43,7 +45,9 @@ async fn registration() -> WebDriverResult<()> {
             .contains("User-Agent")
     );
 
-    driver.screenshot(Path::new("./target/registration.png")).await?;
+    let cookie = driver.get_cookie("auth").await;
+
+    assert!(cookie.is_ok(), true);
 
     Ok(())
 }
