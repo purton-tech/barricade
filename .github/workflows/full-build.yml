@@ -60,9 +60,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Musl Toolchain
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl && rustup target add x86_64-unknown-linux-musl
-        
       - name: Build the Asset Pipeline
         run: npm ci --cache .npm && npm run release
             
@@ -74,18 +71,16 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Build
-        # Remove locked due to thirtyfour issue above
-        #run: cargo build --release --target x86_64-unknown-linux-musl --locked
-        run: cargo build --release --target x86_64-unknown-linux-musl
+        run: cargo build --release --locaked
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Strip
-        run: strip target/x86_64-unknown-linux-musl/release/contor
+        run: strip target/release/contor
 
       - name: Integraton Testing
         run: |
-          target/x86_64-unknown-linux-musl/release/contor &
+          target/release/contor &
           chromedriver --whitelisted-ips="" &
           mv Cargo.toml.dev Cargo.toml
           cargo test

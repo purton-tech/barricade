@@ -28,7 +28,7 @@ async fn registration() -> WebDriverResult<()> {
             .contains("Invalid email or password"),
         true
     );
-    
+
     let email = common::random_email();
     email_input.send_keys(&email).await?;
     let password_input = driver.find_element(By::Id("password")).await?;

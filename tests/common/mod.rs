@@ -1,6 +1,6 @@
+use rand::Rng;
 use std::env;
 use thirtyfour::prelude::*;
-use rand::Rng;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -41,7 +41,6 @@ impl Config {
 }
 
 pub fn random_email() -> String {
-    
     let mut rng = rand::thread_rng();
     format!("{}", rng.gen::<u32>())
 }
