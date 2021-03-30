@@ -40,17 +40,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
-      # Switch off until we figure out how 
-      - name: Chop of dev deps because thirtyfour uses native tls.
-        run: head -n -2 Cargo.toml > Cargo.toml- && cp Cargo.toml- Cargo.toml.dev && mv Cargo.toml- Cargo.toml
-      #- name: Cargo Cache
-      #  uses: actions/cache@v2
-      #  with:
-      #    path: |
-      #      ~/.cargo/registry
-      #      ~/.cargo/git
-      #      target
-      #    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cargo Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: NPM Cache
         uses: actions/cache@v2
@@ -82,7 +79,6 @@ jobs:
         run: |
           target/release/contor &
           chromedriver --whitelisted-ips="" &
-          mv Cargo.toml.dev Cargo.toml
           cargo test --release
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432

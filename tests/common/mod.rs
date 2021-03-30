@@ -42,5 +42,5 @@ impl Config {
 
 pub fn random_email() -> String {
     let mut rng = rand::thread_rng();
-    format!("{}", rng.gen::<u32>())
+    format!("{}@test.com", rng.gen::<u32>())
 }
