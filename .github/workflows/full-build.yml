@@ -35,6 +35,8 @@ jobs:
       # A test app
       whoami:
         image: containous/whoami
+        ports:
+          - 80:80
 
     steps:
       - name: Checkout
