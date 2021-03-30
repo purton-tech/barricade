@@ -36,7 +36,7 @@ jobs:
       whoami:
         image: containous/whoami
         ports:
-          - 80:80
+          - 8080:80
 
     steps:
       - name: Checkout
@@ -87,7 +87,7 @@ jobs:
           WEB_DRIVER_URL: http://localhost:9515
           SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
           FORWARD_URL: localhost
-          FORWARD_PORT: 80
+          FORWARD_PORT: 8080
           REDIRECT_URL: /
           PORT: 9095
           USER_TABLE_NAME: bcrypt_users
