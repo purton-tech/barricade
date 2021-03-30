@@ -1,10 +1,10 @@
 use std::env;
-
+use thirtyfour::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct Config {
     pub webdriver_url: String,
-    pub headless: bool
+    pub headless: bool,
 }
 
 impl Config {
@@ -24,7 +24,17 @@ impl Config {
 
         Config {
             webdriver_url,
-            headless
+            headless,
         }
+    }
+
+    pub async fn get_driver(&self) -> WebDriverResult<WebDriver> {
+        let mut caps = DesiredCapabilities::chrome();
+        caps.add_chrome_arg("--no-sandbox")?;
+        caps.add_chrome_arg("--disable-gpu")?;
+        if self.headless {
+            caps.set_headless()?;
+        }
+        WebDriver::new(&self.webdriver_url, &caps).await
     }
 }

@@ -5,36 +5,26 @@ use thirtyfour::prelude::*;
 
 // let's set up the sequence of steps we want the browser to take
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn registration()  -> WebDriverResult<()> {
+async fn registration() -> WebDriverResult<()> {
     dotenv().ok();
 
-    let config = common::Config::new();
+    let driver = common::Config::new().get_driver().await?;
 
-    let mut caps = DesiredCapabilities::chrome();
-    caps.add_chrome_arg("--no-sandbox")?;
-    caps.add_chrome_arg("--disable-gpu")?;
-    if config.headless {
-        caps.set_headless()?;
-    }
-    let driver = WebDriver::new(&config.webdriver_url, &caps).await?;
-
-    // Navigate to https://wikipedia.org.
-    driver.get("https://wikipedia.org").await?;
+    driver.get("http://localhost:9095").await?;
 
     // Find element.
-    let elem_form = driver.find_element(By::Id("search-form")).await?;
+    let email_input = driver.find_element(By::Id("email")).await?;
 
-    // Find element from element.
-    let elem_text = elem_form.find_element(By::Id("searchInput")).await?;
-
-    // Type in the search terms.
-    elem_text.send_keys("selenium").await?;
+    email_input.send_keys("hello@test.com").await?;
 
     // Click the search button.
-    let elem_button = elem_form.find_element(By::Css("button[type='submit']")).await?;
+    let elem_button = driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?;
     elem_button.click().await?;
+
+    
+    assert!(driver.page_source().await?.contains("Invalid email or password"), true);
 
     Ok(())
 }
-
-// chromedriver --whitelisted-ips=""
