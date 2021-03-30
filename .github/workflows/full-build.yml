@@ -71,7 +71,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Build
-        run: cargo build --release --locked
+        run: cargo build --release
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
@@ -83,7 +83,7 @@ jobs:
           target/release/contor &
           chromedriver --whitelisted-ips="" &
           mv Cargo.toml.dev Cargo.toml
-          cargo test
+          cargo test --release
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
           WEB_DRIVER_URL: http://localhost:9515
