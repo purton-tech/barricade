@@ -94,7 +94,7 @@ To run the integration tests
 
 ## Debugging browser tests with the browser on your host machine
 
-If you want to see the tests running you can install chromedriver on your host machine https://chromedriver.chromium.org/downloads
+If you want to see the tests running you can install chromedriver on your host machine https://chromedriver.chromium.org/downloads. You need the version of the driver that matches your chrome version.
 
 From your host machine 
 

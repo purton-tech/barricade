@@ -20,6 +20,8 @@ on:
 
 jobs:
   build:
+    # For this list of included software 
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     runs-on: ubuntu-latest
 
     # Service containers to run with `container-job`
@@ -82,12 +84,12 @@ jobs:
       - name: Strip
         run: strip target/x86_64-unknown-linux-musl/release/contor
 
-      # Build the Image
-      - name: Create Dockerfile
-        run: >
+      - name: Integraton Testing
+        run:  >
           EXE_NAME=target/x86_64-unknown-linux-musl/release/contor &&
-          chmod +x ./$EXE_NAME &&
-          echo 'FROM scratch' > ./Dockerfile &&
-          echo "COPY ./$EXE_NAME ./rust-executable" >> ./Dockerfile &&
-          echo 'CMD ["./rust-executable"]' >> ./Dockerfile &&
-          cat Dockerfile
+          EXE_NAME & &&
+          chromedriver --whitelisted-ips="" & &&
+          cargo test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+          WEB_DRIVER_URL: http://localhost:9515
