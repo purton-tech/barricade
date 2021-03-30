@@ -11,6 +11,17 @@ services:
   # https://hub.docker.com/r/containous/whoami
   whoami:
     image: containous/whoami
+    
+  # Integration testing using a headless chrome browser
+  selenium:
+    image: selenium/standalone-chrome:latest
+    volumes:
+      - "/dev/shm:/dev/shm"
+    ports:
+      - "4444:4444"
+    environment:
+      - NODE_MAX_INSTANCES=4
+      - NODE_MAX_SESSION=4
 
   # Devconatiner development
   development:

@@ -69,7 +69,7 @@ For a full stack web development you need an [asset pipeline](https://www.theodi
 To compile our asset pipeline run 
 
 * `npm install` To install all our front end dependencies
-* `npm run build` To build all our assets. This will sit around waiting for any assets to change and will re-compile if thats the case. You can leave it running.
+* `npm run start` To build all our assets. This will sit around waiting for any assets to change and will re-compile if thats the case. You can leave it running.
 
 Build and run the [Actix Web](https://github.com/actix/actix-web) server.
 
@@ -83,3 +83,31 @@ You should now be able to access the web application from `localhost:9095' in yo
 <p align="center">
   <img src="./.github/assets/login-large.png" width="100%" />
 </p>
+
+## Running the browser tests (Integration Testing)
+
+The Dev container has a selenium standalone headless chrome browser for testing.
+
+To run the integration tests
+
+`cargo test`
+
+## Debugging browser tests with the browser on your host machine
+
+If you want to see the tests running you can install chromedriver on your host machine https://chromedriver.chromium.org/downloads
+
+From your host machine 
+
+```
+chromedriver --whitelisted-ips=""
+```
+
+The tests use an env var called `WEB_DRIVER_URL` to locate selenium (or any webdriver). To point this at the debug server on your host create a `.env` file.
+
+```
+echo 'WEB_DRIVER_URL=http://host.docker.internal:9515' >> .env
+echo 'DISABLE_HEADLESS=true' >> .env
+```
+
+
+Run `cargo test` and chrome should popup and you'll see the browser automated.

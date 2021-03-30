@@ -13,7 +13,9 @@ async fn registration()  -> WebDriverResult<()> {
     let mut caps = DesiredCapabilities::chrome();
     caps.add_chrome_arg("--no-sandbox")?;
     caps.add_chrome_arg("--disable-gpu")?;
-    caps.set_headless()?;
+    if config.headless {
+        caps.set_headless()?;
+    }
     let driver = WebDriver::new(&config.webdriver_url, &caps).await?;
 
     // Navigate to https://wikipedia.org.
