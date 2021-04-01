@@ -29,7 +29,7 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
               http_service:
                 server_uri:
-                  uri: development:9905
+                  uri: development:9905/envoy-external-auth
                   cluster: ext-authz
                   timeout: 0.25s
               include_peer_certificate: true

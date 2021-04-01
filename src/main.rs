@@ -109,6 +109,10 @@ async fn forward(
     }
 }
 
+async fn envoy_external_auth() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().finish())
+}
+
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     dotenv().ok();
@@ -129,6 +133,9 @@ async fn main() -> io::Result<()> {
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
             .data(Client::new())
+            .service(
+                web::resource("/envoy-external-auth").route(web::get().to(envoy_external_auth)),
+            )
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
