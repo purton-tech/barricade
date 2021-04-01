@@ -24,9 +24,31 @@ static_resources:
               - match: { prefix: "/" }
                 route: { cluster: whoami }
           http_filters:
+          - name: envoy.filters.http.ext_authz
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+              http_service:
+                server_uri:
+                  uri: development:9905
+                  cluster: ext-authz
+                  timeout: 0.25s
+              include_peer_certificate: true
           - name: envoy.filters.http.router
 
   clusters:
+  - name: ext-authz
+    connect_timeout: 0.25s
+    type: logical_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: ext-authz
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: development
+                port_value: 9095
   - name: whoami
     connect_timeout: 1.25s
     type: strict_dns
