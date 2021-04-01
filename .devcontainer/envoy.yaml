@@ -32,7 +32,8 @@ static_resources:
                   uri: development:9905/envoy-external-auth
                   cluster: ext-authz
                   timeout: 0.25s
-              include_peer_certificate: true
+                authorization_request:
+                  headers_to_add: [{"key": "CONTOR_ENVOY", "value": "1"}]
           - name: envoy.filters.http.router
 
   clusters:

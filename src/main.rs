@@ -109,7 +109,8 @@ async fn forward(
     }
 }
 
-async fn envoy_external_auth() -> Result<HttpResponse, Error> {
+async fn envoy_external_auth(req: HttpRequest) -> Result<HttpResponse, Error> {
+    dbg!(req);
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -133,9 +134,7 @@ async fn main() -> io::Result<()> {
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
             .data(Client::new())
-            .service(
-                web::resource("/envoy-external-auth").route(web::get().to(envoy_external_auth)),
-            )
+            .service(web::resource("/").route(web::get().to(envoy_external_auth)))
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
