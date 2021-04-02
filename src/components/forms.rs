@@ -2,7 +2,6 @@ use validator::ValidationErrors;
 
 pub fn filter_errors(name: &str, errors: &ValidationErrors) -> Vec<String> {
     let mut filtered_errors: Vec<String> = Default::default();
-    dbg!(name);
     if let Some(errs) = errors.field_errors().get(name) {
         for error in errs.iter() {
             if let Some(err) = &error.message {
