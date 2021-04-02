@@ -56,7 +56,30 @@ impl FromRequest for LoggedUser {
     }
 }
 
-async fn forward(
+async fn authorize(
+    req: HttpRequest,
+    logged_user: Option<LoggedUser>,
+    body: web::Bytes,
+    config: web::Data<config::Config>,
+    client: web::Data<Client>,
+) -> Result<HttpResponse, Error> {
+    // If the contor header is set, then this is an envoy external auth request.
+    if let Some(_header) = req.headers().get("CONTOR") {
+        envoy_external_auth(logged_user).await
+    } else {
+        reverse_proxy(req, logged_user, body, config, client).await
+    }
+}
+
+async fn envoy_external_auth(logged_user: Option<LoggedUser>) -> Result<HttpResponse, Error> {
+    if let Some(_) = logged_user {
+        Ok(HttpResponse::Ok().finish())
+    } else {
+        Ok(HttpResponse::Forbidden().finish())
+    }
+}
+
+async fn reverse_proxy(
     req: HttpRequest,
     logged_user: Option<LoggedUser>,
     body: web::Bytes,
@@ -109,10 +132,6 @@ async fn forward(
     }
 }
 
-async fn envoy_external_auth() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().finish())
-}
-
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     dotenv().ok();
@@ -133,13 +152,10 @@ async fn main() -> io::Result<()> {
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
             .data(Client::new())
-            .service(
-                web::resource("/envoy-external-auth").route(web::get().to(envoy_external_auth)),
-            )
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
-            .default_service(web::route().to(forward))
+            .default_service(web::route().to(authorize))
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&config.secret_key)
                     .name("auth")

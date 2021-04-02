@@ -21,6 +21,8 @@ static_resources:
             - name: local_service
               domains: ["*"]
               routes:
+              - match: { prefix: "/auth" }
+                route: { cluster: ext-authz }
               - match: { prefix: "/" }
                 route: { cluster: whoami }
           http_filters:
@@ -32,6 +34,8 @@ static_resources:
                   uri: development:9905/envoy-external-auth
                   cluster: ext-authz
                   timeout: 0.25s
+                authorization_request:
+                  headers_to_add: [{"key": "CONTOR", "value": "1"}]
               include_peer_certificate: true
           - name: envoy.filters.http.router
 
