@@ -63,8 +63,9 @@ async fn authorize(
     config: web::Data<config::Config>,
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
+    dbg!(&req);
     // If the contor header is set, then this is an envoy external auth request.
-    if let Some(_header) = req.headers().get("CONTOR") {
+    if let Some(_header) = req.headers().get("contor") {
         envoy_external_auth(logged_user).await
     } else {
         reverse_proxy(req, logged_user, body, config, client).await
