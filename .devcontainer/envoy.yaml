@@ -39,8 +39,9 @@ static_resources:
                   cluster: ext-authz
                   timeout: 0.25s
                 authorization_request:
-                  headers_to_add: [{"key": "contor", "value": "1"}]
-              include_peer_certificate: true
+                  allowed_headers:
+                    patterns: 
+                      - exact: "cookie"
           - name: envoy.filters.http.router
 
   clusters:
