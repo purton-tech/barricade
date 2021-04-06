@@ -1,8 +1,8 @@
 use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{
-    dev::Payload, http, middleware, web, App, Error, FromRequest, HttpRequest, HttpResponse,
-    HttpServer,
+    cookie, dev::Payload, http, middleware, web, App, Error, FromRequest, HttpRequest,
+    HttpResponse, HttpServer,
 };
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
@@ -63,6 +63,7 @@ async fn authorize(
     config: web::Data<config::Config>,
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
+    dbg!(&req);
     // If the contor header is set, then this is an envoy external auth request.
     if let Some(_header) = req.headers().get("x-envoy-internal") {
         envoy_external_auth(logged_user).await
@@ -160,7 +161,8 @@ async fn main() -> io::Result<()> {
                 CookieIdentityPolicy::new(&config.secret_key)
                     .name("auth")
                     .path("/")
-                    //.same_site(cookie::SameSite::Strict)
+                    // SameSite Strict not working with envoy
+                    .same_site(cookie::SameSite::Lax)
                     .secure(config.secure_cookie), // If we are using ssl the set the cookie to secure.
             ))
             // enable logger - always register actix-web Logger middleware last
