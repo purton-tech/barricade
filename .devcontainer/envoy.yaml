@@ -21,6 +21,12 @@ static_resources:
             - name: local_service
               domains: ["*"]
               routes:
+              - match: { prefix: "/auth" }
+                route: { cluster: ext-authz }
+                typed_per_filter_config:
+                  envoy.filters.http.ext_authz:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                    disabled: true
               - match: { prefix: "/" }
                 route: { cluster: whoami }
           http_filters:
@@ -29,11 +35,13 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
               http_service:
                 server_uri:
-                  uri: development:9905/envoy-external-auth
+                  uri: development:9905
                   cluster: ext-authz
                   timeout: 0.25s
                 authorization_request:
-                  headers_to_add: [{"key": "CONTOR_ENVOY", "value": "1"}]
+                  allowed_headers:
+                    patterns: 
+                      - exact: "cookie"
           - name: envoy.filters.http.router
 
   clusters:

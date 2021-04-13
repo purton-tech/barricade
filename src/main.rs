@@ -56,7 +56,31 @@ impl FromRequest for LoggedUser {
     }
 }
 
-async fn forward(
+async fn authorize(
+    req: HttpRequest,
+    logged_user: Option<LoggedUser>,
+    body: web::Bytes,
+    config: web::Data<config::Config>,
+    client: web::Data<Client>,
+) -> Result<HttpResponse, Error> {
+    dbg!(&req);
+    // If the contor header is set, then this is an envoy external auth request.
+    if let Some(_header) = req.headers().get("x-envoy-internal") {
+        envoy_external_auth(logged_user).await
+    } else {
+        reverse_proxy(req, logged_user, body, config, client).await
+    }
+}
+
+async fn envoy_external_auth(logged_user: Option<LoggedUser>) -> Result<HttpResponse, Error> {
+    if logged_user.is_some() {
+        Ok(HttpResponse::Ok().finish())
+    } else {
+        Ok(HttpResponse::Forbidden().finish())
+    }
+}
+
+async fn reverse_proxy(
     req: HttpRequest,
     logged_user: Option<LoggedUser>,
     body: web::Bytes,
@@ -109,11 +133,6 @@ async fn forward(
     }
 }
 
-async fn envoy_external_auth(req: HttpRequest) -> Result<HttpResponse, Error> {
-    dbg!(req);
-    Ok(HttpResponse::Ok().finish())
-}
-
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     dotenv().ok();
@@ -134,16 +153,16 @@ async fn main() -> io::Result<()> {
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
             .data(Client::new())
-            .service(web::resource("/").route(web::get().to(envoy_external_auth)))
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
-            .default_service(web::route().to(forward))
+            .default_service(web::route().to(authorize))
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&config.secret_key)
                     .name("auth")
                     .path("/")
-                    .same_site(cookie::SameSite::Strict)
+                    // SameSite Strict not working with envoy
+                    .same_site(cookie::SameSite::Lax)
                     .secure(config.secure_cookie), // If we are using ssl the set the cookie to secure.
             ))
             // enable logger - always register actix-web Logger middleware last
