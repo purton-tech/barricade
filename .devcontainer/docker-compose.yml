@@ -6,6 +6,16 @@ services:
     environment:
       POSTGRES_PASSWORD: testpassword
       POSTGRES_USER: vscode
+      
+  # To test the config
+  # docker run --rm -v %cd%\.devcontainer\envoy.yaml:/etc/envoy/envoy.yaml -p 10003:51051 envoyproxy/envoy-dev:e419892f7272326504e1a7cbd7ebed8b0dc8b491
+  envoy:
+    image: envoyproxy/envoy:v1.17-latest
+    ports:
+      - "10000:51051"
+      - "10001:9902"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
 
   # As an example we'll add login/registration to 
   # https://hub.docker.com/r/containous/whoami
