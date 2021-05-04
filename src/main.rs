@@ -164,7 +164,8 @@ async fn main() -> io::Result<()> {
                     .name("auth")
                     .path("/")
                     // SameSite Strict not working with envoy
-                    .same_site(cookie::SameSite::Lax)
+                    .same_site(cookie::SameSite::Strict)
+                    .http_only(true)
                     .secure(config.secure_cookie), // If we are using ssl the set the cookie to secure.
             ))
             // enable logger - always register actix-web Logger middleware last
