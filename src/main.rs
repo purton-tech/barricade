@@ -73,8 +73,10 @@ async fn authorize(
 }
 
 async fn envoy_external_auth(logged_user: Option<LoggedUser>) -> Result<HttpResponse, Error> {
-    if logged_user.is_some() {
-        Ok(HttpResponse::Ok().finish())
+    if let Some(user) = logged_user {
+        let mut resp = HttpResponse::Ok();
+        resp.append_header(("user", format!("{:?}", user.id)));
+        Ok(resp.finish())
     } else {
         Ok(HttpResponse::Forbidden().finish())
     }

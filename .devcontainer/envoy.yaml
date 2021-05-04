@@ -42,6 +42,10 @@ static_resources:
                   allowed_headers:
                     patterns: 
                       - exact: "cookie"
+                authorization_response:
+                  allowed_upstream_headers_to_append:
+                    patterns: 
+                      - exact: "user"
           - name: envoy.filters.http.router
 
   clusters:
