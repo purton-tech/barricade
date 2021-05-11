@@ -44,6 +44,7 @@ serde_json = "1.0" # we store users cookie as json
 sha1 = "0.6"  # Use by build.rs for cache busting.
 
 [dev-dependencies]
-thirtyfour = "0" # WebDriver Library for UI testing.
+# WebDriver Library for UI testing.
+thirtyfour = { version = "0", features = [ "reqwest-rustls-tls" ] }
 tokio = { version = "1", features = ["macros"] }
 rand = "0"

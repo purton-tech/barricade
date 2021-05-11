@@ -41,6 +41,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Musl Toolchain
+        run: |
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl
+          rustup target add x86_64-unknown-linux-musl
       
       - name: Cargo Cache
         uses: actions/cache@v2
@@ -69,8 +74,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
+      # Musl Build
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target x86_64-unknown-linux-musl --locked
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
