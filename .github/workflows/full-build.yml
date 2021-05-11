@@ -114,5 +114,5 @@ jobs:
 
       - name: Create Docker file
         run: |
-          docker login -u $(USERNAME) -p $(DOCKERHUB_ACCESS_TOKEN) 
+          docker login -u ${{ secrets.USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
           docker push contorsystems/contor
