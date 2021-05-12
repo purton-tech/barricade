@@ -69,6 +69,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
+      # Musl Build
       - name: Build
         run: cargo build --release
         env:
@@ -98,3 +99,22 @@ jobs:
         with:
           name: screenshots
           path: target/*.png
+
+      
+      - name: Create Docker file
+        run: |
+          EXE_NAME=contor
+          set -e
+          chmod +x ./target/release/$EXE_NAME
+          echo 'FROM debian:stretch-slim' > ./Dockerfile
+          echo 'RUN apt-get update && apt-get install -y --no-install-recommends openssl' >> ./Dockerfile
+          echo "COPY ./target/release/$EXE_NAME /rust-executable" >> ./Dockerfile
+          echo 'COPY ./asset-pipeline/dist /asset-pipeline/dist' >> ./Dockerfile
+          echo 'CMD ["/rust-executable"]' >> ./Dockerfile
+          docker build -t contorsystems/contor .
+
+      - name: Deploy to Docker Hub.
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker login -u ${{ secrets.USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          docker push contorsystems/contor
