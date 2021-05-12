@@ -1,8 +1,8 @@
 mod common;
 
 use dotenv::dotenv;
-use thirtyfour::prelude::*;
 use std::path::Path;
+use thirtyfour::prelude::*;
 
 // let's set up the sequence of steps we want the browser to take
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -30,11 +30,31 @@ async fn registration() -> WebDriverResult<()> {
     let email = common::random_email();
 
     // Let's go and register
-    driver.find_element(By::LinkText("SIGN UP")).await?.click().await?;
-    driver.find_element(By::Id("email")).await?.send_keys(&email).await?;
-    driver.find_element(By::Id("password")).await?.send_keys(&email).await?;
-    driver.find_element(By::Id("confirm_password")).await?.send_keys(&email).await?;
-    driver.find_element(By::Css("button[type='submit']")).await?.click().await?;
+    driver
+        .find_element(By::LinkText("SIGN UP"))
+        .await?
+        .click()
+        .await?;
+    driver
+        .find_element(By::Id("email"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Id("password"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Id("confirm_password"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?
+        .click()
+        .await?;
 
     // Doesn't work in CI CD
     //assert!(
@@ -50,7 +70,9 @@ async fn registration() -> WebDriverResult<()> {
 
     driver.get("http://localhost:9095/auth/sign_out").await?;
 
-    driver.screenshot(Path::new("./target/registration.png")).await?;
+    driver
+        .screenshot(Path::new("./target/registration.png"))
+        .await?;
 
     let cookie = driver.get_cookie("auth").await;
 

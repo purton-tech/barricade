@@ -56,7 +56,33 @@ impl FromRequest for LoggedUser {
     }
 }
 
-async fn forward(
+async fn authorize(
+    req: HttpRequest,
+    logged_user: Option<LoggedUser>,
+    body: web::Bytes,
+    config: web::Data<config::Config>,
+    client: web::Data<Client>,
+) -> Result<HttpResponse, Error> {
+    dbg!(&req);
+    // If the contor header is set, then this is an envoy external auth request.
+    if let Some(_header) = req.headers().get("x-envoy-internal") {
+        envoy_external_auth(logged_user).await
+    } else {
+        reverse_proxy(req, logged_user, body, config, client).await
+    }
+}
+
+async fn envoy_external_auth(logged_user: Option<LoggedUser>) -> Result<HttpResponse, Error> {
+    if let Some(user) = logged_user {
+        let mut resp = HttpResponse::Ok();
+        resp.append_header(("user", format!("{:?}", user.id)));
+        Ok(resp.finish())
+    } else {
+        Ok(HttpResponse::Forbidden().finish())
+    }
+}
+
+async fn reverse_proxy(
     req: HttpRequest,
     logged_user: Option<LoggedUser>,
     body: web::Bytes,
@@ -132,12 +158,14 @@ async fn main() -> io::Result<()> {
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
-            .default_service(web::route().to(forward))
+            .default_service(web::route().to(authorize))
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&config.secret_key)
                     .name("auth")
                     .path("/")
+                    // SameSite Strict not working with envoy
                     .same_site(cookie::SameSite::Strict)
+                    .http_only(true)
                     .secure(config.secure_cookie), // If we are using ssl the set the cookie to secure.
             ))
             // enable logger - always register actix-web Logger middleware last
