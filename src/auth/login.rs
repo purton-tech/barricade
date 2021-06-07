@@ -24,6 +24,11 @@ pub struct Login {
     pub h_captcha_response: Option<String>,
 }
 
+#[derive(sqlx::FromRow)]
+struct InsertedSession {
+    session_uuid: String,
+}
+
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = LoginPage {
         form: &Login::default(),
@@ -58,10 +63,20 @@ pub async fn process_login(
                 .map_err(|_| CustomError::Unauthorized)?;
 
             if valid {
-                let logged_user = crate::LoggedUser { id: users[0].id };
-                let json =
-                    serde_json::to_string(&logged_user).map_err(|_| CustomError::Unauthorized)?;
-                identity.remember(json);
+                // Generate a session
+
+                let session = sqlx::query_as::<_, InsertedSession>(
+                    "
+                        INSERT INTO sessions (user_id)
+                        VALUES($1) RETURNING session_id
+                    "
+                )
+                .bind(&form.email.to_lowercase())
+                .bind(users[0].id)
+                .fetch_one(pool.get_ref())
+                .await?;
+
+                identity.remember(session.session_uuid);
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))
