@@ -6,13 +6,13 @@ use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
 use bcrypt::verify;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(sqlx::FromRow)]
-struct User {
+pub struct User {
     id: i32,
     hashed_password: String,
 }
@@ -24,6 +24,11 @@ pub struct Login {
     pub h_captcha_response: Option<String>,
 }
 
+#[derive(sqlx::FromRow)]
+struct InsertedSession {
+    session_uuid: Uuid,
+}
+
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = LoginPage {
         form: &Login::default(),
@@ -32,6 +37,26 @@ pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     };
 
     Ok(layouts::session_layout("Login", &body.to_string()))
+}
+
+pub async fn create_session(
+    pool: web::Data<PgPool>,
+    identity: Identity,
+    user_id: i32,
+) -> Result<(), CustomError> {
+    let session = sqlx::query_as::<_, InsertedSession>(
+        "
+            INSERT INTO sessions (user_id)
+            VALUES($1) RETURNING session_uuid
+        ",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    identity.remember(session.session_uuid.to_string());
+
+    Ok(())
 }
 
 pub async fn process_login(
@@ -58,10 +83,9 @@ pub async fn process_login(
                 .map_err(|_| CustomError::Unauthorized)?;
 
             if valid {
-                let logged_user = crate::LoggedUser { id: users[0].id };
-                let json =
-                    serde_json::to_string(&logged_user).map_err(|_| CustomError::Unauthorized)?;
-                identity.remember(json);
+                // Generate a session
+
+                create_session(pool, identity, users[0].id).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))

@@ -19,13 +19,10 @@ async fn registration() -> WebDriverResult<()> {
         .await?;
     elem_button.click().await?;
 
-    assert!(
-        driver
-            .page_source()
-            .await?
-            .contains("Invalid email or password"),
-        true
-    );
+    assert!(driver
+        .page_source()
+        .await?
+        .contains("Invalid email or password"));
 
     let email = common::random_email();
 
@@ -64,9 +61,9 @@ async fn registration() -> WebDriverResult<()> {
     //        .contains("User-Agent")
     //);
 
-    let cookie = driver.get_cookie("auth").await;
+    let cookie = driver.get_cookie("session").await;
 
-    assert!(cookie.is_ok(), true);
+    assert!(cookie.is_ok());
 
     driver.get("http://localhost:9095/auth/sign_out").await?;
 
@@ -74,9 +71,9 @@ async fn registration() -> WebDriverResult<()> {
         .screenshot(Path::new("./target/registration.png"))
         .await?;
 
-    let cookie = driver.get_cookie("auth").await;
+    let cookie = driver.get_cookie("session").await;
 
-    assert!(cookie.is_err(), true);
+    assert!(cookie.is_err());
 
     Ok(())
 }

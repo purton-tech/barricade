@@ -6,7 +6,7 @@ use actix_web::{
 };
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, PgPool};
 use std::io;
 mod components;
 mod config;
@@ -28,28 +28,53 @@ pub static SIGN_IN_URL: &str = "/auth/sign_in";
 pub static DECRYPT_MASTER_KEY_URL: &str = "/auth/decrypt";
 pub static SIGN_OUT_URL: &str = "/auth/sign_out";
 
-pub async fn logout(id: Identity) -> HttpResponse {
+pub static COOKIE_NAME: &str = "session";
+pub static USER_HEADER_NAME: &str = "x-user-id";
+
+#[derive(sqlx::FromRow, Debug)]
+struct User {
+    user_id: i32,
+}
+
+pub async fn logout(
+    id: Identity,
+    session: Option<Session>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, CustomError> {
+    if let Some(session) = session {
+        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
+            sqlx::query(
+                "
+                DELETE FROM sessions WHERE session_uuid = $1
+                ",
+            )
+            .bind(uuid)
+            .execute(pool.get_ref()) // -> Vec<Person>
+            .await?;
+        }
+    }
     id.forget();
 
-    crate::layouts::redirect_and_snackbar("/", "You succesfully logged out")
+    Ok(crate::layouts::redirect_and_snackbar(
+        "/",
+        "You succesfully logged out",
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LoggedUser {
-    pub id: i32,
+pub struct Session {
+    pub session_uuid: String,
 }
 
-impl FromRequest for LoggedUser {
+impl FromRequest for Session {
     type Config = ();
     type Error = CustomError;
-    type Future = Ready<Result<LoggedUser, CustomError>>;
+    type Future = Ready<Result<Session, CustomError>>;
 
     fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
         if let Ok(identity) = Identity::from_request(req, pl).into_inner() {
-            if let Some(user_json) = identity.identity() {
-                if let Ok(user) = serde_json::from_str(&user_json) {
-                    return ok(user);
-                }
+            if let Some(session_uuid) = identity.identity() {
+                return ok(Session { session_uuid });
             }
         }
         err(CustomError::Unauthorized)
@@ -58,12 +83,18 @@ impl FromRequest for LoggedUser {
 
 async fn authorize(
     req: HttpRequest,
-    logged_user: Option<LoggedUser>,
+    session: Option<Session>,
     body: web::Bytes,
     config: web::Data<config::Config>,
+    pool: web::Data<PgPool>,
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
-    dbg!(&req);
+    // If we have a session cookie, try and convert it to a user.
+    let mut logged_user: Option<User> = None;
+    if let Some(session) = session {
+        logged_user = get_user_by_session_uuid(&session.session_uuid, pool).await;
+    }
+
     // If the contor header is set, then this is an envoy external auth request.
     if let Some(_header) = req.headers().get("x-envoy-internal") {
         envoy_external_auth(logged_user).await
@@ -72,19 +103,38 @@ async fn authorize(
     }
 }
 
-async fn envoy_external_auth(logged_user: Option<LoggedUser>) -> Result<HttpResponse, Error> {
-    if let Some(user) = logged_user {
+async fn envoy_external_auth(logged_user: Option<User>) -> Result<HttpResponse, Error> {
+    if let Some(logged_user) = logged_user {
         let mut resp = HttpResponse::Ok();
-        resp.append_header(("user", format!("{:?}", user.id)));
+        resp.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)));
         Ok(resp.finish())
     } else {
         Ok(HttpResponse::Forbidden().finish())
     }
 }
 
+async fn get_user_by_session_uuid(session_uuid: &str, pool: web::Data<PgPool>) -> Option<User> {
+    if let Ok(uuid) = Uuid::parse_str(session_uuid) {
+        let user = sqlx::query_as::<_, User>(
+            "
+            SELECT user_id FROM sessions WHERE session_uuid = $1
+            ",
+        )
+        .bind(uuid)
+        .fetch_one(pool.get_ref()) // -> Vec<Person>
+        .await;
+
+        if let Ok(user) = user {
+            return Some(user);
+        }
+    }
+
+    None
+}
+
 async fn reverse_proxy(
     req: HttpRequest,
-    logged_user: Option<LoggedUser>,
+    logged_user: Option<User>,
     body: web::Bytes,
     config: web::Data<config::Config>,
     client: web::Data<Client>,
@@ -112,7 +162,7 @@ async fn reverse_proxy(
 
         // Add the user id as a header.
         let fwd_req = if let Some(logged_user) = logged_user {
-            forwarded_req.append_header(("user", format!("{:?}", logged_user.id)))
+            forwarded_req.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)))
         } else {
             forwarded_req
         };
@@ -161,9 +211,8 @@ async fn main() -> io::Result<()> {
             .default_service(web::route().to(authorize))
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&config.secret_key)
-                    .name("auth")
+                    .name(COOKIE_NAME)
                     .path("/")
-                    // SameSite Strict not working with envoy
                     .same_site(cookie::SameSite::Strict)
                     .http_only(true)
                     .secure(config.secure_cookie), // If we are using ssl the set the cookie to secure.
