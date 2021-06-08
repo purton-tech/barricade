@@ -6,7 +6,7 @@ use actix_web::{
 };
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, PgPool};
 use std::io;
 mod components;
 mod config;
@@ -31,15 +31,34 @@ pub static SIGN_OUT_URL: &str = "/auth/sign_out";
 pub static COOKIE_NAME: &str = "session";
 pub static USER_HEADER_NAME: &str = "x-user-id";
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 struct User {
-    id: i32,
+    user_id: i32,
 }
 
-pub async fn logout(id: Identity) -> HttpResponse {
+pub async fn logout(
+    id: Identity,
+    session: Option<Session>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, CustomError> {
+    if let Some(session) = session {
+        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
+            sqlx::query(
+                "
+                DELETE FROM sessions WHERE session_uuid = $1
+                ",
+            )
+            .bind(uuid)
+            .execute(pool.get_ref()) // -> Vec<Person>
+            .await?;
+        }
+    }
     id.forget();
 
-    crate::layouts::redirect_and_snackbar("/", "You succesfully logged out")
+    Ok(crate::layouts::redirect_and_snackbar(
+        "/",
+        "You succesfully logged out",
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -87,7 +106,7 @@ async fn authorize(
 async fn envoy_external_auth(logged_user: Option<User>) -> Result<HttpResponse, Error> {
     if let Some(logged_user) = logged_user {
         let mut resp = HttpResponse::Ok();
-        resp.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.id)));
+        resp.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)));
         Ok(resp.finish())
     } else {
         Ok(HttpResponse::Forbidden().finish())
@@ -95,17 +114,19 @@ async fn envoy_external_auth(logged_user: Option<User>) -> Result<HttpResponse, 
 }
 
 async fn get_user_by_session_uuid(session_uuid: &str, pool: web::Data<PgPool>) -> Option<User> {
-    let user = sqlx::query_as::<_, User>(
-        "
-        SELECT user_id FROM sessions WHERE session_uuid = $1
-        ",
-    )
-    .bind(session_uuid)
-    .fetch_one(pool.get_ref()) // -> Vec<Person>
-    .await;
+    if let Ok(uuid) = Uuid::parse_str(session_uuid) {
+        let user = sqlx::query_as::<_, User>(
+            "
+            SELECT user_id FROM sessions WHERE session_uuid = $1
+            ",
+        )
+        .bind(uuid)
+        .fetch_one(pool.get_ref()) // -> Vec<Person>
+        .await;
 
-    if let Ok(user) = user {
-        return Some(user);
+        if let Ok(user) = user {
+            return Some(user);
+        }
     }
 
     None
@@ -141,7 +162,7 @@ async fn reverse_proxy(
 
         // Add the user id as a header.
         let fwd_req = if let Some(logged_user) = logged_user {
-            forwarded_req.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.id)))
+            forwarded_req.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)))
         } else {
             forwarded_req
         };

@@ -45,7 +45,7 @@ pub async fn decrypt(
             ",
             config.user_table_name
         ))
-        .bind(logged_user.id)
+        .bind(logged_user.user_id)
         .fetch_all(db_pool.get_ref()) // -> Vec<Person>
         .await?;
 

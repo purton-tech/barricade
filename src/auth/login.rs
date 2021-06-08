@@ -6,7 +6,7 @@ use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
 use bcrypt::verify;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
 use validator::{ValidationError, ValidationErrors};
@@ -26,7 +26,7 @@ pub struct Login {
 
 #[derive(sqlx::FromRow)]
 struct InsertedSession {
-    session_uuid: String,
+    session_uuid: Uuid,
 }
 
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -54,7 +54,7 @@ pub async fn create_session(
     .fetch_one(pool.get_ref())
     .await?;
 
-    identity.remember(session.session_uuid);
+    identity.remember(session.session_uuid.to_string());
 
     Ok(())
 }
