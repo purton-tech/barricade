@@ -28,26 +28,39 @@ struct LoginUser {
 
 pub async fn decrypt(
     config: web::Data<config::Config>,
-    logged_user: crate::LoggedUser,
+    session: Option<crate::Session>,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
-    let users = sqlx::query_as::<_, User>(&format!(
-        "
-        SELECT encrypted_private_key, init_vector
-        FROM {} WHERE id = $1
-        ",
-        config.user_table_name
-    ))
-    .bind(logged_user.id)
-    .fetch_all(db_pool.get_ref()) // -> Vec<Person>
-    .await?;
+    // If we have a session cookie, try and convert it to a user.
+    let mut logged_user: Option<crate::User> = None;
+    if let Some(session) = session {
+        logged_user = crate::get_user_by_session_uuid(&session.session_uuid, db_pool.clone()).await;
+    }
 
-    let page = DecryptMasterKeyPage {
-        init_vector: &users[0].init_vector,
-        encrypted_private_key: &users[0].encrypted_private_key,
-    };
+    if let Some(logged_user) = logged_user {
+        let users = sqlx::query_as::<_, User>(&format!(
+            "
+            SELECT encrypted_private_key, init_vector
+            FROM {} WHERE id = $1
+            ",
+            config.user_table_name
+        ))
+        .bind(logged_user.id)
+        .fetch_all(db_pool.get_ref()) // -> Vec<Person>
+        .await?;
 
-    Ok(layouts::session_layout("Master Key", &page.to_string()))
+        let page = DecryptMasterKeyPage {
+            init_vector: &users[0].init_vector,
+            encrypted_private_key: &users[0].encrypted_private_key,
+        };
+
+        return Ok(layouts::session_layout("Master Key", &page.to_string()));
+    }
+
+    // We didn't get the session for some reason.
+    Ok(HttpResponse::SeeOther()
+        .append_header((http::header::LOCATION, crate::SIGN_IN_URL))
+        .finish())
 }
 
 pub async fn process_decryption(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -83,9 +96,7 @@ pub async fn process_login(
     .await?;
 
     if !users.is_empty() {
-        let logged_user = crate::LoggedUser { id: users[0].id };
-        let json = serde_json::to_string(&logged_user).map_err(|_| CustomError::Unauthorized)?;
-        identity.remember(json);
+        crate::auth::login::create_session(db_pool, identity, users[0].id).await?;
 
         return Ok(HttpResponse::SeeOther()
             .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))

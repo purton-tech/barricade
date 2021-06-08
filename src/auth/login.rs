@@ -12,7 +12,7 @@ use std::default::Default;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(sqlx::FromRow)]
-struct User {
+pub struct User {
     id: i32,
     hashed_password: String,
 }
@@ -37,6 +37,26 @@ pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     };
 
     Ok(layouts::session_layout("Login", &body.to_string()))
+}
+
+pub async fn create_session(
+    pool: web::Data<PgPool>,
+    identity: Identity,
+    user_id: i32,
+) -> Result<(), CustomError> {
+    let session = sqlx::query_as::<_, InsertedSession>(
+        "
+            INSERT INTO sessions (user_id)
+            VALUES($1) RETURNING session_uuid
+        ",
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await?;
+
+    identity.remember(session.session_uuid);
+
+    Ok(())
 }
 
 pub async fn process_login(
@@ -65,18 +85,7 @@ pub async fn process_login(
             if valid {
                 // Generate a session
 
-                let session = sqlx::query_as::<_, InsertedSession>(
-                    "
-                        INSERT INTO sessions (user_id)
-                        VALUES($1) RETURNING session_id
-                    "
-                )
-                .bind(&form.email.to_lowercase())
-                .bind(users[0].id)
-                .fetch_one(pool.get_ref())
-                .await?;
-
-                identity.remember(session.session_uuid);
+                create_session(pool, identity, users[0].id).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))

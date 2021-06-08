@@ -67,12 +67,7 @@ pub async fn process_registration(
                 .fetch_one(pool.get_ref())
                 .await?;
 
-                let logged_user = crate::LoggedUser {
-                    id: registered_user.id,
-                };
-                let json =
-                    serde_json::to_string(&logged_user).map_err(|_| CustomError::Unauthorized)?;
-                identity.remember(json);
+                super::login::create_session(pool, identity, registered_user.id).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))

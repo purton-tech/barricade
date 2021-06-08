@@ -1,4 +1,4 @@
-mod login;
+pub mod login;
 mod registration;
 use crate::config;
 use actix_web::web;
