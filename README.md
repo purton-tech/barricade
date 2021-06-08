@@ -98,7 +98,7 @@ We need to add a user table to our database. Run the psql command line from dock
 docker-compose run db psql postgres://postgres:testpassword@db:5432
 ```
 
-Once you have the psql command prompt you can cut and paste the following code to create a users table.
+Once you have the psql command prompt you can cut and paste the following code to create a users and sessions table.
 
 ```sql
 CREATE TABLE users (
@@ -107,6 +107,17 @@ CREATE TABLE users (
     hashed_password VARCHAR NOT NULL, 
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY, 
+    session_uuid UUID NOT NULL DEFAULT gen_random_uuid(), 
+    user_id INT NOT NULL, 
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_user
+        FOREIGN KEY(user_id) 
+        REFERENCES users(id)
 );
 ```
 
@@ -133,8 +144,8 @@ You'll then be greated with
 
 There's two important things to note from the whoami screenshot.
 
-* The Cookie header `auth=` is stored client side and is an encrypted cookie based on `SECRET_KEY`
-* A header called `User` is passed in. This is the primary key of the user in the Users table. Your app can retrieve this header to access the logged in user. This is not stored on the client it's only passed from Contor to your application.
+* The Cookie header `session=` is stored client side and is an encrypted cookie based on `SECRET_KEY`
+* A header called `x-user-id` is passed in. This is the primary key of the user in the Users table. Your app can retrieve this header to access the logged in user. This is not stored on the client it's only passed from Contor to your application.
 
 ## Finally take a look in the database
 
