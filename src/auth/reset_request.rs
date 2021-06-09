@@ -4,7 +4,7 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
 use validator::{ValidationError, ValidationErrors};
@@ -16,9 +16,9 @@ pub struct Reset {
     pub h_captcha_response: Option<String>,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct User {
-    id: i32,
+    reset_password_token: Option<Uuid>,
 }
 
 pub async fn reset_request(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -41,7 +41,12 @@ pub async fn process_request(
     if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
         let users = sqlx::query_as::<_, User>(&format!(
             "
-            SELECT id FROM {} WHERE email = $1
+            UPDATE {} SET 
+                reset_password_token = gen_random_uuid(),
+                reset_password_sent_at = now()
+            WHERE 
+                email = $1 
+            RETURNING reset_password_token
             ",
             config.user_table_name
         ))
@@ -49,11 +54,11 @@ pub async fn process_request(
         .fetch_all(pool.get_ref()) // -> Vec<Person>
         .await?;
 
-        if !users.is_empty() {
-            return Ok(HttpResponse::SeeOther()
-                .append_header((http::header::LOCATION, crate::SIGN_IN_URL))
-                .finish());
-        }
+        dbg!(users);
+
+        return Ok(HttpResponse::SeeOther()
+            .append_header((http::header::LOCATION, crate::SIGN_IN_URL))
+            .finish());
     } else {
         validation_errors.add(
             "email",
