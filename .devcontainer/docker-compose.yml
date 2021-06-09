@@ -61,6 +61,10 @@ services:
 
     environment:
       DATABASE_URL: postgresql://vscode:testpassword@db:5432
+      SMTP_HOST: mailslurper
+      SMTP_PORT: 2500
+      SMTP_USERNAME: thisisnotused
+      SMTP_PASSWORD: thisisnotused
 
     working_dir: /vscode
 

@@ -3,6 +3,8 @@ use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
@@ -54,7 +56,32 @@ pub async fn process_request(
         .fetch_all(pool.get_ref()) // -> Vec<Person>
         .await?;
 
-        dbg!(users);
+        if let Some(smtp_config) = &config.smtp_config {
+            let email = Message::builder()
+                .from("NoBody <nobody@domain.tld>".parse().unwrap())
+                .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+                .to("Hei <hei@domain.tld>".parse().unwrap())
+                .subject("Happy new year")
+                .body(String::from("Be happy!"))
+                .unwrap();
+
+            let creds = Credentials::new(
+                smtp_config.smtp_username.clone(),
+                smtp_config.smtp_password.clone(),
+            );
+
+            let mailer = SmtpTransport::relay(&smtp_config.smtp_host)
+                .unwrap()
+                .port(smtp_config.smtp_port)
+                //.credentials(creds)
+                .build();
+
+            // Send the email
+            match mailer.send(&email) {
+                Ok(_) => println!("Email sent successfully!"),
+                Err(e) => panic!("Could not send email: {:?}", e),
+            }
+        }
 
         return Ok(HttpResponse::SeeOther()
             .append_header((http::header::LOCATION, crate::SIGN_IN_URL))

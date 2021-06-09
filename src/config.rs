@@ -15,6 +15,15 @@ pub struct HCaptchaConfig {
 }
 
 #[derive(Clone, Debug)]
+pub struct SmtpConfig {
+    // Configure SMTP for email.
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct Config {
     pub port: u16,
     // Which functionality
@@ -34,6 +43,9 @@ pub struct Config {
     // in regular expression format, comma seperated.
     pub skip_auth_for: Vec<String>,
     pub hcaptcha_config: Option<HCaptchaConfig>,
+
+    // Configure SMTP for email.
+    pub smtp_config: Option<SmtpConfig>,
 }
 
 impl Config {
@@ -90,6 +102,29 @@ impl Config {
             "users".into()
         };
 
+        let smtp_config = if let Ok(smtp_host) = env::var("SMTP_HOST") {
+            if let Ok(smtp_username) = env::var("SMTP_USERNAME") {
+                if let Ok(smtp_password) = env::var("SMTP_PASSWORD") {
+                    if let Ok(smtp_port) = env::var("SMTP_PORT") {
+                        Some(SmtpConfig {
+                            smtp_host,
+                            smtp_port: smtp_port.parse::<u16>().unwrap(),
+                            smtp_username,
+                            smtp_password,
+                        })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         Config {
             port,
             auth_type,
@@ -101,6 +136,7 @@ impl Config {
             forward_url,
             skip_auth_for,
             hcaptcha_config: None,
+            smtp_config,
         }
     }
 }
