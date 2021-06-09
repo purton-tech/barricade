@@ -16,6 +16,15 @@ services:
       - "10001:9902"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
+  
+  mailslurper:
+    image: derekahn/mailslurper
+    ports:
+      - 2500:2500
+      - 8080:8080
+      - 8085:8085
+    volumes:
+      - ./mail-slurp-config.json:/opt/mailslurper/config.json
 
   # As an example we'll add login/registration to 
   # https://hub.docker.com/r/containous/whoami
