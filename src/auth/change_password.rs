@@ -54,7 +54,9 @@ pub async fn process_change(
                 sqlx::query(&format!(
                     "
                         UPDATE {} 
-                            SET hashed_password = $1 
+                            SET hashed_password = $1,
+                            reset_password_token = NULL,
+                            reset_password_sent_at = NULL
                         WHERE 
                             reset_password_token = $2
                         AND 
