@@ -70,8 +70,7 @@ pub async fn process_request(
                 smtp_config.smtp_password.clone(),
             );
 
-            let mailer = SmtpTransport::relay(&smtp_config.smtp_host)
-                .unwrap()
+            let mailer = SmtpTransport::builder_dangerous(&smtp_config.smtp_host)
                 .port(smtp_config.smtp_port)
                 //.credentials(creds)
                 .build();
