@@ -16,15 +16,6 @@ services:
       - "10001:9902"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
-  
-  mailslurper:
-    image: derekahn/mailslurper
-    ports:
-      - 2500:2500
-      - 8080:8080
-      - 8085:8085
-    volumes:
-      - ./mail-slurp-config.json:/opt/mailslurper/config.json
 
   # As an example we'll add login/registration to 
   # https://hub.docker.com/r/containous/whoami
@@ -61,8 +52,9 @@ services:
 
     environment:
       DATABASE_URL: postgresql://vscode:testpassword@db:5432
-      SMTP_HOST: mailslurper
-      SMTP_PORT: 2500
+      # To capture emails use smtp-sink -c -d "tmp/%M." 2525 1000
+      SMTP_HOST: localhost
+      SMTP_PORT: 2525
       SMTP_USERNAME: thisisnotused
       SMTP_PASSWORD: thisisnotused
 

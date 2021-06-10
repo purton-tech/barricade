@@ -70,13 +70,13 @@ pub async fn process_request(
                 smtp_config.smtp_password.clone(),
             );
 
-            let mailer = SmtpTransport::builder_dangerous(&smtp_config.smtp_host)
+            let sender = SmtpTransport::builder_dangerous(smtp_config.smtp_host.clone())
                 .port(smtp_config.smtp_port)
-                //.credentials(creds)
                 .build();
+            sender.send(&email).unwrap();
 
             // Send the email
-            match mailer.send(&email) {
+            match sender.send(&email) {
                 Ok(_) => println!("Email sent successfully!"),
                 Err(e) => panic!("Could not send email: {:?}", e),
             }
