@@ -144,7 +144,7 @@ markup::define! {
             div {
                 a[href=crate::SIGN_UP_URL] { "Sign Up" }
                 { " | " }
-                a[href=crate::SIGN_UP_URL] { "Reset Password" }
+                a[href=crate::RESET_REQUEST_URL] { "Reset Password" }
             }
         }
 

@@ -39,6 +39,9 @@ serde = "1"
 # Use by authentication
 futures = "0.3"
 
+# For sending emails
+lettre = "0.10.0-rc.3"
+
 [build-dependencies]
 sha1 = "0.6"  # Use by build.rs for cache busting.
 

@@ -4,3 +4,4 @@ target
 .cache
 asset-pipeline/dist
 .vscode
+tmp

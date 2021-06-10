@@ -1,5 +1,7 @@
+mod change_password;
 pub mod login;
 mod registration;
+mod reset_request;
 use crate::config;
 use actix_web::web;
 use reqwest::Url;
@@ -92,4 +94,14 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(web::post().to(login::process_login)),
     );
     cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::get().to(crate::logout)));
+    cfg.service(
+        web::resource(crate::RESET_REQUEST_URL)
+            .route(web::get().to(reset_request::reset_request))
+            .route(web::post().to(reset_request::process_request)),
+    );
+    cfg.service(
+        web::resource(crate::CHANGE_PASSWORD_URL)
+            .route(web::get().to(change_password::change_password))
+            .route(web::post().to(change_password::process_change)),
+    );
 }

@@ -1,3 +1,4 @@
+use lettre::message;
 use std::env;
 use std::net::ToSocketAddrs;
 use url::Url;
@@ -12,6 +13,65 @@ pub enum AuthType {
 pub struct HCaptchaConfig {
     pub hcaptcha_secret_key: String,
     pub hcaptcha_site_key: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct SmtpConfig {
+    // Configure SMTP for email.
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ResetEmailConfig {
+    pub domain: String,
+    pub from_email: message::Mailbox,
+}
+
+impl ResetEmailConfig {
+    pub fn new() -> Option<ResetEmailConfig> {
+        if let Ok(domain) = env::var("RESET_DOMAIN") {
+            if let Ok(from_email) = env::var("RESET_FROM_EMAIL_ADDRESS") {
+                Some(ResetEmailConfig {
+                    domain,
+                    from_email: from_email.parse().unwrap(),
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl SmtpConfig {
+    pub fn new() -> Option<SmtpConfig> {
+        if let Ok(host) = env::var("SMTP_HOST") {
+            if let Ok(username) = env::var("SMTP_USERNAME") {
+                if let Ok(password) = env::var("SMTP_PASSWORD") {
+                    if let Ok(smtp_port) = env::var("SMTP_PORT") {
+                        Some(SmtpConfig {
+                            host,
+                            port: smtp_port.parse::<u16>().unwrap(),
+                            username,
+                            password,
+                        })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -34,6 +94,12 @@ pub struct Config {
     // in regular expression format, comma seperated.
     pub skip_auth_for: Vec<String>,
     pub hcaptcha_config: Option<HCaptchaConfig>,
+
+    // Configure SMTP for email.
+    pub smtp_config: Option<SmtpConfig>,
+
+    // Reset email details
+    pub reset_config: Option<ResetEmailConfig>,
 }
 
 impl Config {
@@ -101,6 +167,8 @@ impl Config {
             forward_url,
             skip_auth_for,
             hcaptcha_config: None,
+            smtp_config: SmtpConfig::new(),
+            reset_config: ResetEmailConfig::new(),
         }
     }
 }
