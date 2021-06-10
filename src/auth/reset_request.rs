@@ -20,7 +20,8 @@ pub struct Reset {
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct User {
-    reset_password_token: Option<Uuid>,
+    email: String,
+    reset_password_token: Uuid,
 }
 
 pub async fn reset_request(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -48,7 +49,7 @@ pub async fn process_request(
                 reset_password_sent_at = now()
             WHERE 
                 email = $1 
-            RETURNING reset_password_token
+            RETURNING email, reset_password_token
             ",
             config.user_table_name
         ))
@@ -57,28 +58,37 @@ pub async fn process_request(
         .await?;
 
         if let Some(smtp_config) = &config.smtp_config {
-            let email = Message::builder()
-                .from("NoBody <nobody@domain.tld>".parse().unwrap())
-                .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-                .to("Hei <hei@domain.tld>".parse().unwrap())
-                .subject("Happy new year")
-                .body(String::from("Be happy!"))
-                .unwrap();
+            if let Some(rest_config) = &config.reset_config {
+                if users.len() == 1 {
+                    let email = Message::builder()
+                        .from(rest_config.from_email.clone())
+                        .to(users[0].email.parse().unwrap())
+                        .subject("Did you request a password reset?")
+                        .body(format!(
+                            "
+                            If you requested a password reset please follow this link {}/auth/change_password/{}
+                            ",
+                            rest_config.domain,
+                            users[0].reset_password_token.to_string()
+                        ).trim().to_string())
+                        .unwrap();
 
-            let creds = Credentials::new(
-                smtp_config.smtp_username.clone(),
-                smtp_config.smtp_password.clone(),
-            );
+                    let creds = Credentials::new(
+                        smtp_config.username.clone(),
+                        smtp_config.password.clone(),
+                    );
 
-            let sender = SmtpTransport::builder_dangerous(smtp_config.smtp_host.clone())
-                .port(smtp_config.smtp_port)
-                .build();
-            sender.send(&email).unwrap();
-
-            // Send the email
-            match sender.send(&email) {
-                Ok(_) => println!("Email sent successfully!"),
-                Err(e) => panic!("Could not send email: {:?}", e),
+                    let sender = SmtpTransport::builder_dangerous(smtp_config.host.clone())
+                        .port(smtp_config.port)
+                        .credentials(creds)
+                        .build();
+                    sender.send(&email).unwrap();
+                    // Send the email
+                    match sender.send(&email) {
+                        Ok(_) => println!("Email sent successfully!"),
+                        Err(e) => panic!("Could not send email: {:?}", e),
+                    }
+                }
             }
         }
 
