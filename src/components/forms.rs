@@ -154,6 +154,9 @@ markup::define! {
     EmailInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
         { Input{ title, name, value, input_type: "email", help_text, errors } }
     }
+    NumberInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
+        { Input{ title, name, value, input_type: "number", help_text, errors } }
+    }
     TextInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
         { Input{ title, name, value, input_type: "text", help_text, errors } }
     }

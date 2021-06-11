@@ -95,6 +95,8 @@ pub struct Config {
     pub skip_auth_for: Vec<String>,
     pub hcaptcha_config: Option<HCaptchaConfig>,
 
+    pub email_otp_enabled: bool,
+
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
 
@@ -137,6 +139,15 @@ impl Config {
             9090
         };
 
+        let email_otp_enabled: bool = if env::var("ENABLE_EMAIL_OTP").is_ok() {
+            env::var("ENABLE_EMAIL_OTP")
+                .unwrap()
+                .parse::<bool>()
+                .unwrap()
+        } else {
+            false
+        };
+
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();
             if t.to_lowercase() == "bip38" {
@@ -167,6 +178,7 @@ impl Config {
             forward_url,
             skip_auth_for,
             hcaptcha_config: None,
+            email_otp_enabled,
             smtp_config: SmtpConfig::new(),
             reset_config: ResetEmailConfig::new(),
         }

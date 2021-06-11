@@ -28,6 +28,7 @@ pub static SIGN_IN_URL: &str = "/auth/sign_in";
 pub static DECRYPT_MASTER_KEY_URL: &str = "/auth/decrypt";
 pub static SIGN_OUT_URL: &str = "/auth/sign_out";
 pub static RESET_REQUEST_URL: &str = "/auth/reset_request";
+pub static EMAIL_OTP_URL: &str = "/auth/email_otp";
 pub static CHANGE_PASSWORD_URL: &str = "/auth/change_password/{reset_token}";
 
 pub static COOKIE_NAME: &str = "session";
@@ -36,6 +37,7 @@ pub static USER_HEADER_NAME: &str = "x-user-id";
 #[derive(sqlx::FromRow, Debug)]
 struct User {
     user_id: i32,
+    otp_code_confirmed: bool,
 }
 
 pub async fn logout(
@@ -97,6 +99,15 @@ async fn authorize(
         logged_user = get_user_by_session_uuid(&session.session_uuid, pool).await;
     }
 
+    // If we have Email Otp make sure the user has entered the code
+    if let Some(logged_user) = &logged_user {
+        if config.email_otp_enabled && logged_user.otp_code_confirmed == false {
+            return Ok(HttpResponse::SeeOther()
+                .append_header((http::header::LOCATION, SIGN_IN_URL))
+                .finish());
+        }
+    }
+
     // If the contor header is set, then this is an envoy external auth request.
     if let Some(_header) = req.headers().get("x-envoy-internal") {
         envoy_external_auth(logged_user).await
@@ -119,7 +130,7 @@ async fn get_user_by_session_uuid(session_uuid: &str, pool: web::Data<PgPool>) -
     if let Ok(uuid) = Uuid::parse_str(session_uuid) {
         let user = sqlx::query_as::<_, User>(
             "
-            SELECT user_id FROM sessions WHERE session_uuid = $1
+            SELECT user_id, otp_code_confirmed FROM sessions WHERE session_uuid = $1
             ",
         )
         .bind(uuid)
