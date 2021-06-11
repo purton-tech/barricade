@@ -68,7 +68,7 @@ services:
       FORWARD_URL: whoami
       FORWARD_PORT: 80
       REDIRECT_URL: /
-      ENABLE_EMAIL_OTP: true
+      ENABLE_EMAIL_OTP: 'true'
 
     working_dir: /vscode
 

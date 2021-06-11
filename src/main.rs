@@ -103,7 +103,7 @@ async fn authorize(
     if let Some(logged_user) = &logged_user {
         if config.email_otp_enabled && logged_user.otp_code_confirmed == false {
             return Ok(HttpResponse::SeeOther()
-                .append_header((http::header::LOCATION, SIGN_IN_URL))
+                .append_header((http::header::LOCATION, EMAIL_OTP_URL))
                 .finish());
         }
     }
