@@ -6,7 +6,7 @@ use actix_web::{http, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::default::Default;
-use validator::{ValidationError, ValidationErrors};
+use validator::ValidationErrors;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Otp {
@@ -21,7 +21,7 @@ pub struct Session {
     otp_code_attempts: i32,
 }
 
-pub async fn email_otp(config: web::Data<config::Config>) -> Result<HttpResponse> {
+pub async fn email_otp() -> Result<HttpResponse> {
     let body = OtpPage {
         form: &Otp::default(),
         errors: &ValidationErrors::default(),
@@ -57,6 +57,10 @@ pub async fn process_otp(
                     .bind(uuid)
                     .execute(pool.get_ref())
                     .await?;
+
+                    return Ok(HttpResponse::SeeOther()
+                        .append_header((http::header::LOCATION, config.redirect_url.clone()))
+                        .finish());
                 } else {
                     sqlx::query(&format!(
                         "
