@@ -49,11 +49,11 @@ pub async fn process_otp(
                 .await?;
 
                 if db_session.otp_code == form.code {
-                    sqlx::query(&format!(
+                    sqlx::query(
                         "
                         UPDATE sessions SET otp_code_confirmed = true WHERE session_uuid = $1
-                        "
-                    ))
+                        ",
+                    )
                     .bind(uuid)
                     .execute(pool.get_ref())
                     .await?;
@@ -62,11 +62,11 @@ pub async fn process_otp(
                         .append_header((http::header::LOCATION, config.redirect_url.clone()))
                         .finish());
                 } else {
-                    sqlx::query(&format!(
+                    sqlx::query(
                         "
                         UPDATE sessions SET otp_code_attempts = otp_code_attempts + 1 WHERE session_uuid = $1
                         "
-                    ))
+                    )
                     .bind(uuid )
                     .execute(pool.get_ref())
                     .await?;

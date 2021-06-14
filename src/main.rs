@@ -11,6 +11,7 @@ use std::io;
 mod components;
 mod config;
 mod custom_error;
+mod email;
 mod layouts;
 use awc::Client;
 use custom_error::CustomError;
@@ -101,7 +102,7 @@ async fn authorize(
 
     // If we have Email Otp make sure the user has entered the code
     if let Some(logged_user) = &logged_user {
-        if config.email_otp_enabled && logged_user.otp_code_confirmed == false {
+        if config.email_otp_enabled && !logged_user.otp_code_confirmed {
             return Ok(HttpResponse::SeeOther()
                 .append_header((http::header::LOCATION, EMAIL_OTP_URL))
                 .finish());

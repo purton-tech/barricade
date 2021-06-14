@@ -20,6 +20,7 @@ pub struct SmtpConfig {
     // Configure SMTP for email.
     pub host: String,
     pub port: u16,
+    pub tls_off: bool,
     pub username: String,
     pub password: String,
 }
@@ -56,6 +57,7 @@ impl SmtpConfig {
                         Some(SmtpConfig {
                             host,
                             port: smtp_port.parse::<u16>().unwrap(),
+                            tls_off: env::var("SMTP_TLS_OFF").is_ok(),
                             username,
                             password,
                         })
