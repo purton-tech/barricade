@@ -23,29 +23,8 @@ pub struct SmtpConfig {
     pub tls_off: bool,
     pub username: String,
     pub password: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct ResetEmailConfig {
     pub domain: String,
     pub from_email: message::Mailbox,
-}
-
-impl ResetEmailConfig {
-    pub fn new() -> Option<ResetEmailConfig> {
-        if let Ok(domain) = env::var("RESET_DOMAIN") {
-            if let Ok(from_email) = env::var("RESET_FROM_EMAIL_ADDRESS") {
-                Some(ResetEmailConfig {
-                    domain,
-                    from_email: from_email.parse().unwrap(),
-                })
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
 }
 
 impl SmtpConfig {
@@ -54,13 +33,23 @@ impl SmtpConfig {
             if let Ok(username) = env::var("SMTP_USERNAME") {
                 if let Ok(password) = env::var("SMTP_PASSWORD") {
                     if let Ok(smtp_port) = env::var("SMTP_PORT") {
-                        Some(SmtpConfig {
-                            host,
-                            port: smtp_port.parse::<u16>().unwrap(),
-                            tls_off: env::var("SMTP_TLS_OFF").is_ok(),
-                            username,
-                            password,
-                        })
+                        if let Ok(domain) = env::var("RESET_DOMAIN") {
+                            if let Ok(from_email) = env::var("RESET_FROM_EMAIL_ADDRESS") {
+                                Some(SmtpConfig {
+                                    host,
+                                    port: smtp_port.parse::<u16>().unwrap(),
+                                    tls_off: env::var("SMTP_TLS_OFF").is_ok(),
+                                    username,
+                                    password,
+                                    domain,
+                                    from_email: from_email.parse().unwrap(),
+                                })
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
@@ -101,9 +90,6 @@ pub struct Config {
 
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
-
-    // Reset email details
-    pub reset_config: Option<ResetEmailConfig>,
 }
 
 impl Config {
@@ -182,7 +168,6 @@ impl Config {
             hcaptcha_config: None,
             email_otp_enabled,
             smtp_config: SmtpConfig::new(),
-            reset_config: ResetEmailConfig::new(),
         }
     }
 }

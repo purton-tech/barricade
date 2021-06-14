@@ -56,10 +56,10 @@ pub async fn process_request(
         .fetch_all(pool.get_ref()) // -> Vec<Person>
         .await?;
 
-        if let Some(rest_config) = &config.reset_config {
+        if let Some(smtp_config) = &config.smtp_config {
             if users.len() == 1 {
                 let email = Message::builder()
-                    .from(rest_config.from_email.clone())
+                    .from(smtp_config.from_email.clone())
                     .to(users[0].email.parse().unwrap())
                     .subject("Did you request a password reset?")
                     .body(
@@ -68,7 +68,7 @@ pub async fn process_request(
                         If you requested a password reset please follow this link 
                         \n{}/auth/change_password/{}
                         ",
-                            rest_config.domain,
+                            smtp_config.domain,
                             users[0].reset_password_token.to_string()
                         )
                         .trim()

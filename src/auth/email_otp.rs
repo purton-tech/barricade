@@ -3,6 +3,7 @@ use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
+use lettre::Message;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::default::Default;
@@ -19,9 +20,58 @@ pub struct Otp {
 pub struct Session {
     otp_code: i32,
     otp_code_attempts: i32,
+    otp_code_sent: bool,
 }
 
-pub async fn email_otp() -> Result<HttpResponse> {
+pub async fn email_otp(
+    config: web::Data<config::Config>,
+    session: Option<crate::Session>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, CustomError> {
+    if let Some(session) = session {
+        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
+            let db_session: Session = sqlx::query_as::<_, Session>(
+                "
+            SELECT otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
+            ",
+            )
+            .bind(uuid)
+            .fetch_one(pool.get_ref()) // -> Vec<Person>
+            .await?;
+
+            if !db_session.otp_code_sent {
+                sqlx::query(
+                    "
+                    UPDATE sessions SET otp_code_sent = true WHERE session_uuid = $1
+                    ",
+                )
+                .bind(uuid)
+                .execute(pool.get_ref())
+                .await?;
+
+                if let Some(smtp_config) = &config.smtp_config {
+                    let email = Message::builder()
+                        .from(smtp_config.from_email.clone())
+                        .to("ian.purton@gmail.com".parse().unwrap())
+                        .subject("Your confirmation code")
+                        .body(
+                            format!(
+                                "
+                            Your confirmation code is {}
+                            ",
+                                db_session.otp_code
+                            )
+                            .trim()
+                            .to_string(),
+                        )
+                        .unwrap();
+
+                    crate::email::send_email(&config, email)
+                }
+            }
+        }
+    }
+
     let body = OtpPage {
         form: &Otp::default(),
         errors: &ValidationErrors::default(),
@@ -41,7 +91,7 @@ pub async fn process_otp(
             if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
                 let db_session: Session = sqlx::query_as::<_, Session>(
                     "
-                    SELECT otp_code, otp_code_attempts FROM sessions WHERE session_uuid = $1
+                    SELECT otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
                     ",
                 )
                 .bind(uuid)
