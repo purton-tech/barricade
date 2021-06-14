@@ -20,31 +20,11 @@ pub struct SmtpConfig {
     // Configure SMTP for email.
     pub host: String,
     pub port: u16,
+    pub tls_off: bool,
     pub username: String,
     pub password: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct ResetEmailConfig {
     pub domain: String,
     pub from_email: message::Mailbox,
-}
-
-impl ResetEmailConfig {
-    pub fn new() -> Option<ResetEmailConfig> {
-        if let Ok(domain) = env::var("RESET_DOMAIN") {
-            if let Ok(from_email) = env::var("RESET_FROM_EMAIL_ADDRESS") {
-                Some(ResetEmailConfig {
-                    domain,
-                    from_email: from_email.parse().unwrap(),
-                })
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
 }
 
 impl SmtpConfig {
@@ -53,12 +33,23 @@ impl SmtpConfig {
             if let Ok(username) = env::var("SMTP_USERNAME") {
                 if let Ok(password) = env::var("SMTP_PASSWORD") {
                     if let Ok(smtp_port) = env::var("SMTP_PORT") {
-                        Some(SmtpConfig {
-                            host,
-                            port: smtp_port.parse::<u16>().unwrap(),
-                            username,
-                            password,
-                        })
+                        if let Ok(domain) = env::var("RESET_DOMAIN") {
+                            if let Ok(from_email) = env::var("RESET_FROM_EMAIL_ADDRESS") {
+                                Some(SmtpConfig {
+                                    host,
+                                    port: smtp_port.parse::<u16>().unwrap(),
+                                    tls_off: env::var("SMTP_TLS_OFF").is_ok(),
+                                    username,
+                                    password,
+                                    domain,
+                                    from_email: from_email.parse().unwrap(),
+                                })
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
@@ -95,11 +86,10 @@ pub struct Config {
     pub skip_auth_for: Vec<String>,
     pub hcaptcha_config: Option<HCaptchaConfig>,
 
+    pub email_otp_enabled: bool,
+
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
-
-    // Reset email details
-    pub reset_config: Option<ResetEmailConfig>,
 }
 
 impl Config {
@@ -137,6 +127,15 @@ impl Config {
             9090
         };
 
+        let email_otp_enabled: bool = if env::var("ENABLE_EMAIL_OTP").is_ok() {
+            env::var("ENABLE_EMAIL_OTP")
+                .unwrap()
+                .parse::<bool>()
+                .unwrap()
+        } else {
+            false
+        };
+
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();
             if t.to_lowercase() == "bip38" {
@@ -167,8 +166,8 @@ impl Config {
             forward_url,
             skip_auth_for,
             hcaptcha_config: None,
+            email_otp_enabled,
             smtp_config: SmtpConfig::new(),
-            reset_config: ResetEmailConfig::new(),
         }
     }
 }

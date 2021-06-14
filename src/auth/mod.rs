@@ -1,4 +1,5 @@
 mod change_password;
+mod email_otp;
 pub mod login;
 mod registration;
 mod reset_request;
@@ -103,5 +104,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         web::resource(crate::CHANGE_PASSWORD_URL)
             .route(web::get().to(change_password::change_password))
             .route(web::post().to(change_password::process_change)),
+    );
+    cfg.service(
+        web::resource(crate::EMAIL_OTP_URL)
+            .route(web::get().to(email_otp::email_otp))
+            .route(web::post().to(email_otp::process_otp)),
     );
 }

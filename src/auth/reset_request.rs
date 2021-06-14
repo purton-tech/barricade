@@ -3,8 +3,7 @@ use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
+use lettre::Message;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
@@ -58,37 +57,26 @@ pub async fn process_request(
         .await?;
 
         if let Some(smtp_config) = &config.smtp_config {
-            if let Some(rest_config) = &config.reset_config {
-                if users.len() == 1 {
-                    let email = Message::builder()
-                        .from(rest_config.from_email.clone())
-                        .to(users[0].email.parse().unwrap())
-                        .subject("Did you request a password reset?")
-                        .body(format!(
+            if users.len() == 1 {
+                let email = Message::builder()
+                    .from(smtp_config.from_email.clone())
+                    .to(users[0].email.parse().unwrap())
+                    .subject("Did you request a password reset?")
+                    .body(
+                        format!(
                             "
-                            If you requested a password reset please follow this link {}/auth/change_password/{}
-                            ",
-                            rest_config.domain,
+                        If you requested a password reset please follow this link 
+                        \n{}/auth/change_password/{}
+                        ",
+                            smtp_config.domain,
                             users[0].reset_password_token.to_string()
-                        ).trim().to_string())
-                        .unwrap();
+                        )
+                        .trim()
+                        .to_string(),
+                    )
+                    .unwrap();
 
-                    let creds = Credentials::new(
-                        smtp_config.username.clone(),
-                        smtp_config.password.clone(),
-                    );
-
-                    let sender = SmtpTransport::builder_dangerous(smtp_config.host.clone())
-                        .port(smtp_config.port)
-                        .credentials(creds)
-                        .build();
-                    sender.send(&email).unwrap();
-                    // Send the email
-                    match sender.send(&email) {
-                        Ok(_) => println!("Email sent successfully!"),
-                        Err(e) => panic!("Could not send email: {:?}", e),
-                    }
-                }
+                crate::email::send_email(&config, email)
             }
         }
 
