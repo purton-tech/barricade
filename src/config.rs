@@ -15,6 +15,23 @@ pub struct HCaptchaConfig {
     pub hcaptcha_site_key: String,
 }
 
+impl HCaptchaConfig {
+    pub fn new() -> Option<HCaptchaConfig> {
+        if let Ok(hcaptcha_site_key) = env::var("HCAPTCHA_SITE_KEY") {
+            if let Ok(hcaptcha_secret_key) = env::var("HCAPTCHA_SECRET_KEY") {
+                Some(HCaptchaConfig {
+                    hcaptcha_secret_key,
+                    hcaptcha_site_key,
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SmtpConfig {
     // Configure SMTP for email.
@@ -165,7 +182,7 @@ impl Config {
             secret_key: hex_to_bytes(&hex).expect("SECRET_KEY could not parse"),
             forward_url,
             skip_auth_for,
-            hcaptcha_config: None,
+            hcaptcha_config: HCaptchaConfig::new(),
             email_otp_enabled,
             smtp_config: SmtpConfig::new(),
         }

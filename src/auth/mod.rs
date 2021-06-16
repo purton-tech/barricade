@@ -47,6 +47,7 @@ pub async fn verify_hcaptcha(
     hcaptcha_config: &Option<config::HCaptchaConfig>,
     response: &Option<String>,
 ) -> bool {
+    dbg!(&hcaptcha_config);
     // If we are jkust testing ignore the hcaptcha.
     // It was causing issues in the browser testing.
     if let Some(hcaptcha) = hcaptcha_config {
