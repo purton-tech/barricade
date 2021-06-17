@@ -124,13 +124,12 @@ pub async fn process_otp(
             .await?;
 
             // If we have more than 1 attempt we need to apply the Hcaptcha
-            if db_session.otp_code_attempts > 0 {
-                if !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
-                {
-                    return Ok(HttpResponse::SeeOther()
-                        .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
-                        .finish());
-                }
+            if db_session.otp_code_attempts > 0
+                && !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
+            {
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                    .finish());
             }
 
             if db_session.otp_code == form.code {

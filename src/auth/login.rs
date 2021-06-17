@@ -1,6 +1,7 @@
 use crate::components::forms;
 use crate::config;
 use crate::custom_error::CustomError;
+use crate::fingerprint;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
@@ -9,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
+use std::sync::Mutex;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(sqlx::FromRow)]
@@ -29,9 +31,17 @@ struct InsertedSession {
     session_uuid: Uuid,
 }
 
-pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
+pub async fn login(
+    req: actix_web::HttpRequest,
+    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
+    config: web::Data<config::Config>,
+) -> Result<HttpResponse> {
+    let mut finger_print = finger_print.lock().unwrap();
+    let hit_rate = finger_print.add_request(req);
+
     let body = LoginPage {
         form: &Login::default(),
+        hcaptcha: hit_rate > config.hit_rate,
         hcaptcha_config: &config.hcaptcha_config,
         errors: &ValidationErrors::default(),
     };
@@ -60,14 +70,25 @@ pub async fn create_session(
 }
 
 pub async fn process_login(
+    req: actix_web::HttpRequest,
     config: web::Data<config::Config>,
     pool: web::Data<PgPool>,
     identity: Identity,
     form: web::Form<Login>,
+    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
 ) -> Result<HttpResponse, CustomError> {
     let mut validation_errors = ValidationErrors::default();
 
-    if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
+    let mut finger_print = finger_print.lock().unwrap();
+    let hit_rate = finger_print.add_request(req);
+
+    let valid = if hit_rate > config.hit_rate {
+        super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
+    } else {
+        true
+    };
+
+    if valid {
         let users = sqlx::query_as::<_, User>(&format!(
             "
             SELECT id, hashed_password FROM {} WHERE email = $1
@@ -119,6 +140,7 @@ pub async fn process_login(
 
     let body = LoginPage {
         form: &login,
+        hcaptcha: hit_rate > config.hit_rate,
         hcaptcha_config: &config.hcaptcha_config,
         errors: &validation_errors,
     };
@@ -128,6 +150,7 @@ pub async fn process_login(
 
 markup::define! {
     LoginPage<'a>(form: &'a  Login,
+    hcaptcha: bool,
     hcaptcha_config: &'a Option<config::HCaptchaConfig>,
     errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
@@ -137,9 +160,13 @@ markup::define! {
             @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
             @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
 
-            @if let Some(hcaptcha) = hcaptcha_config {
-                div."h-captcha"["data-sitekey"=&hcaptcha.hcaptcha_site_key] {}
+
+            @if let Some(hcaptcha_config) = hcaptcha_config {
+                @if *hcaptcha {
+                    div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
+                }
             }
+
             button.a_button.success[type = "submit"] { "Log In" }
             div {
                 a[href=crate::SIGN_UP_URL] { "Sign Up" }
@@ -149,7 +176,9 @@ markup::define! {
         }
 
         @if let Some(_) = hcaptcha_config {
-            script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            @if *hcaptcha {
+                script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            }
         }
     }
 }

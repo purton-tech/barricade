@@ -1,6 +1,7 @@
 use crate::components::forms;
 use crate::config;
 use crate::custom_error::CustomError;
+use crate::fingerprint;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
@@ -9,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::borrow::Cow;
 use std::default::Default;
+use std::sync::Mutex;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Serialize, Validate, Deserialize, Default)]
@@ -23,9 +25,17 @@ pub struct Registration {
     pub h_captcha_response: Option<String>,
 }
 
-pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
+pub async fn registration(
+    config: web::Data<config::Config>,
+    req: actix_web::HttpRequest,
+    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
+) -> Result<HttpResponse> {
+    let mut finger_print = finger_print.lock().unwrap();
+    let hit_rate = finger_print.add_request(req);
+
     let body = RegistrationPage {
         form: &Registration::default(),
+        hcaptcha: hit_rate > config.hit_rate,
         hcaptcha_config: &config.hcaptcha_config,
         errors: &ValidationErrors::default(),
     };
@@ -39,17 +49,28 @@ struct InsertedUser {
 }
 
 pub async fn process_registration(
+    req: actix_web::HttpRequest,
+    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
     pool: web::Data<PgPool>,
     config: web::Data<config::Config>,
     form: web::Form<Registration>,
     identity: Identity,
 ) -> Result<HttpResponse, CustomError> {
+    let mut finger_print = finger_print.lock().unwrap();
+    let hit_rate = finger_print.add_request(req);
+
     let registration = Registration {
         email: form.email.clone(),
         ..Default::default()
     };
 
-    if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
+    let valid = if hit_rate > config.hit_rate {
+        super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
+    } else {
+        true
+    };
+
+    if valid {
         match form.validate() {
             Ok(_) => {
                 let hashed_password =
@@ -76,6 +97,7 @@ pub async fn process_registration(
             Err(validation_errors) => {
                 let body = RegistrationPage {
                     form: &registration,
+                    hcaptcha: hit_rate > config.hit_rate,
                     hcaptcha_config: &config.hcaptcha_config,
                     errors: &validation_errors,
                 };
@@ -99,6 +121,7 @@ pub async fn process_registration(
 
         let body = RegistrationPage {
             form: &registration,
+            hcaptcha: hit_rate > config.hit_rate,
             hcaptcha_config: &config.hcaptcha_config,
             errors: &validation_errors,
         };
@@ -109,6 +132,7 @@ pub async fn process_registration(
 
 markup::define! {
     RegistrationPage<'a>(form: &'a  Registration,
+        hcaptcha: bool,
         hcaptcha_config: &'a Option<config::HCaptchaConfig>,
         errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
@@ -117,8 +141,10 @@ markup::define! {
             @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
             @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, help_text: "", errors }
 
-            @if let Some(hcaptcha) = hcaptcha_config {
-                div."h-captcha"["data-sitekey"=&hcaptcha.hcaptcha_site_key] {}
+            @if let Some(hcaptcha_config) = hcaptcha_config {
+                @if *hcaptcha {
+                    div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
+                }
             }
 
             button.a_button.success[type = "submit"] { "Sign Up" }
@@ -126,7 +152,9 @@ markup::define! {
         }
 
         @if let Some(_) = hcaptcha_config {
-            script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            @if *hcaptcha {
+                script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            }
         }
     }
 }

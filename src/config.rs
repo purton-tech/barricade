@@ -107,6 +107,9 @@ pub struct Config {
 
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
+
+    // How many hits oin a fingerprint before we show the captcha
+    pub hit_rate: u32,
 }
 
 impl Config {
@@ -185,6 +188,7 @@ impl Config {
             hcaptcha_config: HCaptchaConfig::new(),
             email_otp_enabled,
             smtp_config: SmtpConfig::new(),
+            hit_rate: 10,
         }
     }
 }

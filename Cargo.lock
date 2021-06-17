@@ -582,6 +582,7 @@ dependencies = [
  "env_logger",
  "futures",
  "lettre",
+ "lru_time_cache",
  "markup",
  "rand 0.8.3",
  "regex",
@@ -1288,6 +1289,12 @@ checksum = "4fabed175da42fed1fa0746b0ea71f412aa9d35e76e95e59b192c64b9dc2bf8b"
 dependencies = [
  "cfg-if 0.1.10",
 ]
+
+[[package]]
+name = "lru_time_cache"
+version = "0.11.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9106e1d747ffd48e6be5bb2d97fa706ed25b144fbee4d5c02eae110cd8d6badd"
 
 [[package]]
 name = "maplit"
