@@ -18,9 +18,15 @@ pub struct Otp {
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct Session {
+    user_id: i32,
     otp_code: i32,
     otp_code_attempts: i32,
     otp_code_sent: bool,
+}
+
+#[derive(sqlx::FromRow, Debug)]
+pub struct User {
+    email: String,
 }
 
 pub async fn email_otp(
@@ -32,11 +38,11 @@ pub async fn email_otp(
         if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
             let db_session: Session = sqlx::query_as::<_, Session>(
                 "
-            SELECT otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
+            SELECT user_id, otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
             ",
             )
             .bind(uuid)
-            .fetch_one(pool.get_ref()) // -> Vec<Person>
+            .fetch_one(pool.get_ref())
             .await?;
 
             if !db_session.otp_code_sent {
@@ -50,9 +56,19 @@ pub async fn email_otp(
                 .await?;
 
                 if let Some(smtp_config) = &config.smtp_config {
+                    let db_user: User = sqlx::query_as::<_, User>(&format!(
+                        "
+                        SELECT email FROM {} WHERE id = $1
+                        ",
+                        config.user_table_name
+                    ))
+                    .bind(db_session.user_id)
+                    .fetch_one(pool.get_ref())
+                    .await?;
+
                     let email = Message::builder()
                         .from(smtp_config.from_email.clone())
-                        .to("ian.purton@gmail.com".parse().unwrap())
+                        .to(db_user.email.parse().unwrap())
                         .subject("Your confirmation code")
                         .body(
                             format!(
@@ -69,15 +85,25 @@ pub async fn email_otp(
                     crate::email::send_email(&config, email)
                 }
             }
+
+            let body = OtpPage {
+                form: &Otp::default(),
+                hcaptcha: db_session.otp_code_attempts > 0,
+                hcaptcha_config: &config.hcaptcha_config,
+                errors: &ValidationErrors::default(),
+            };
+
+            return Ok(layouts::session_layout(
+                "Confirmation Code",
+                &body.to_string(),
+            ));
         }
     }
 
-    let body = OtpPage {
-        form: &Otp::default(),
-        errors: &ValidationErrors::default(),
-    };
-
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    // We shouldn't be here without a session. Go to sign in.
+    Ok(HttpResponse::SeeOther()
+        .append_header((http::header::LOCATION, crate::SIGN_IN_URL))
+        .finish())
 }
 
 pub async fn process_otp(
@@ -88,43 +114,50 @@ pub async fn process_otp(
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
         if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
-            if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
-                let db_session: Session = sqlx::query_as::<_, Session>(
+            let db_session: Session = sqlx::query_as::<_, Session>(
+                "
+                SELECT user_id, otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
+                ",
+            )
+            .bind(uuid)
+            .fetch_one(pool.get_ref()) // -> Vec<Person>
+            .await?;
+
+            // If we have more than 1 attempt we need to apply the Hcaptcha
+            if db_session.otp_code_attempts > 0
+                && !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
+            {
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                    .finish());
+            }
+
+            if db_session.otp_code == form.code {
+                sqlx::query(
                     "
-                    SELECT otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
+                    UPDATE sessions SET otp_code_confirmed = true WHERE session_uuid = $1
                     ",
                 )
                 .bind(uuid)
-                .fetch_one(pool.get_ref()) // -> Vec<Person>
+                .execute(pool.get_ref())
                 .await?;
 
-                if db_session.otp_code == form.code {
-                    sqlx::query(
-                        "
-                        UPDATE sessions SET otp_code_confirmed = true WHERE session_uuid = $1
-                        ",
-                    )
-                    .bind(uuid)
-                    .execute(pool.get_ref())
-                    .await?;
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, config.redirect_url.clone()))
+                    .finish());
+            } else {
+                sqlx::query(
+                    "
+                    UPDATE sessions SET otp_code_attempts = otp_code_attempts + 1 WHERE session_uuid = $1
+                    "
+                )
+                .bind(uuid )
+                .execute(pool.get_ref())
+                .await?;
 
-                    return Ok(HttpResponse::SeeOther()
-                        .append_header((http::header::LOCATION, config.redirect_url.clone()))
-                        .finish());
-                } else {
-                    sqlx::query(
-                        "
-                        UPDATE sessions SET otp_code_attempts = otp_code_attempts + 1 WHERE session_uuid = $1
-                        "
-                    )
-                    .bind(uuid )
-                    .execute(pool.get_ref())
-                    .await?;
-
-                    return Ok(HttpResponse::SeeOther()
-                        .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
-                        .finish());
-                }
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                    .finish());
             }
         }
     }
@@ -135,15 +168,28 @@ pub async fn process_otp(
 }
 
 markup::define! {
-    OtpPage<'a>(form: &'a  Otp,
+    OtpPage<'a>(form: &'a  Otp, hcaptcha: bool,
+    hcaptcha_config: &'a Option<config::HCaptchaConfig>,
     errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
 
-            h1 { "Password Reset Request" }
+            h1 { "Enter your confirmation code" }
 
             @forms::NumberInput{ title: "Code", name: "code", value: &form.code.to_string(), help_text: "", errors }
 
+            @if let Some(hcaptcha_config) = hcaptcha_config {
+                @if *hcaptcha {
+                    div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
+                }
+            }
+
             button.a_button.success[type = "submit"] { "Submit Code" }
+        }
+
+        @if let Some(_) = hcaptcha_config {
+            @if *hcaptcha {
+                script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            }
         }
     }
 }

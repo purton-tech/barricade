@@ -12,10 +12,12 @@ mod components;
 mod config;
 mod custom_error;
 mod email;
+mod fingerprint;
 mod layouts;
 use awc::Client;
 use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
+use std::sync::Mutex;
 
 pub mod statics {
     include!(concat!(env!("OUT_DIR"), "/statics.rs"));
@@ -214,10 +216,13 @@ async fn main() -> io::Result<()> {
         encrypted_auth::routes
     };
 
+    let finger_print = web::Data::new(Mutex::new(fingerprint::FingerPrint::new()));
+
     HttpServer::new(move || {
         App::new()
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
+            .app_data(finger_print.clone())
             .data(Client::new())
             .service(statics::static_file)
             .configure(auth_routes)

@@ -50,9 +50,9 @@ pub async fn verify_hcaptcha(
     // If we are jkust testing ignore the hcaptcha.
     // It was causing issues in the browser testing.
     if let Some(hcaptcha) = hcaptcha_config {
-        if hcaptcha.hcaptcha_secret_key == "0x0000000000000000000000000000000000000000" {
-            return true;
-        }
+        //if hcaptcha.hcaptcha_secret_key == "0x0000000000000000000000000000000000000000" {
+        //    return true;
+        //}
 
         if let Some(resp) = response {
             let mut url = Url::parse("https://hcaptcha.com/siteverify").unwrap();
