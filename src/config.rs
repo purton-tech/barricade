@@ -110,6 +110,9 @@ pub struct Config {
 
     // How many hits oin a fingerprint before we show the captcha
     pub hit_rate: u32,
+
+    // In proxy mode the maximum size of payload we can receive.
+    pub max_payload_size: usize,
 }
 
 impl Config {
@@ -175,6 +178,15 @@ impl Config {
             "users".into()
         };
 
+        let max_payload_size: usize = if env::var("MAX_PAYLOAD_SIZE").is_ok() {
+            env::var("MAX_PAYLOAD_SIZE")
+                .unwrap()
+                .parse::<usize>()
+                .unwrap()
+        } else {
+            2_000_000 // 2mb approx
+        };
+
         Config {
             port,
             auth_type,
@@ -189,6 +201,7 @@ impl Config {
             email_otp_enabled,
             smtp_config: SmtpConfig::new(),
             hit_rate: 10,
+            max_payload_size,
         }
     }
 }

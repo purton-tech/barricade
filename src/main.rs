@@ -14,7 +14,7 @@ mod custom_error;
 mod email;
 mod fingerprint;
 mod layouts;
-use awc::Client;
+use awc::{Client, ClientBuilder};
 use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
 use std::sync::Mutex;
@@ -193,7 +193,7 @@ async fn reverse_proxy(
             client_resp.append_header((header_name.clone(), header_value.clone()));
         }
 
-        Ok(client_resp.body(res.body().await?))
+        Ok(client_resp.body(res.body().limit(config.max_payload_size).await?))
     } else {
         return Ok(HttpResponse::SeeOther()
             .append_header((http::header::LOCATION, SIGN_IN_URL))
@@ -219,11 +219,12 @@ async fn main() -> io::Result<()> {
     let finger_print = web::Data::new(Mutex::new(fingerprint::FingerPrint::new()));
 
     HttpServer::new(move || {
+        let client = ClientBuilder::new().disable_redirects().finish();
         App::new()
             .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
             .data(config.clone())
             .app_data(finger_print.clone())
-            .data(Client::new())
+            .data(client)
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
