@@ -58,6 +58,9 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      
+      - name: Musl Toolchain
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl && rustup target add x86_64-unknown-linux-musl
 
       - name: Build the Asset Pipeline
         run: npm ci --cache .npm && npm run release
