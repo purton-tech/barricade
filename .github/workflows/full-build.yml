@@ -41,6 +41,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Install 1.51.0
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: 1.51.0
+            override: true
+            components: rustfmt, clippy
       
       - name: Cargo Cache
         uses: actions/cache@v2
@@ -58,6 +65,9 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      
+      - name: Musl Toolchain
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install musl-dev musl-tools musl && rustup target add x86_64-unknown-linux-musl
 
       - name: Build the Asset Pipeline
         run: npm ci --cache .npm && npm run release
@@ -71,18 +81,18 @@ jobs:
 
       # Musl Build
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target x86_64-unknown-linux-musl
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Strip
-        run: strip target/release/contor
+        run: strip target/x86_64-unknown-linux-musl/release/contor
 
       - name: Integraton Testing
         run: |
-          target/release/contor &
+          target/x86_64-unknown-linux-musl/release/contor &
           chromedriver --whitelisted-ips="" &
-          cargo test --release
+          cargo test --release --target x86_64-unknown-linux-musl
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
           WEB_DRIVER_URL: http://localhost:9515
@@ -105,10 +115,9 @@ jobs:
         run: |
           EXE_NAME=contor
           set -e
-          chmod +x ./target/release/$EXE_NAME
-          echo 'FROM debian:stretch-slim' > ./Dockerfile
-          echo 'RUN apt-get update && apt-get install -y --no-install-recommends openssl' >> ./Dockerfile
-          echo "COPY ./target/release/$EXE_NAME /rust-executable" >> ./Dockerfile
+          chmod +x ./target/x86_64-unknown-linux-musl/release/$EXE_NAME
+          echo 'FROM scratch' > ./Dockerfile
+          echo "COPY ./target/x86_64-unknown-linux-musl/release/$EXE_NAME /rust-executable" >> ./Dockerfile
           echo 'COPY ./asset-pipeline/dist /asset-pipeline/dist' >> ./Dockerfile
           echo 'CMD ["/rust-executable"]' >> ./Dockerfile
           docker build -t contorsystems/contor .
