@@ -117,7 +117,7 @@ jobs:
           set -e
           chmod +x ./target/release/$EXE_NAME
           echo 'FROM scratch' > ./Dockerfile
-          echo "COPY ./target/release/$EXE_NAME /rust-executable" >> ./Dockerfile
+          echo "COPY ./target/x86_64-unknown-linux-musl/release/$EXE_NAME /rust-executable" >> ./Dockerfile
           echo 'COPY ./asset-pipeline/dist /asset-pipeline/dist' >> ./Dockerfile
           echo 'CMD ["/rust-executable"]' >> ./Dockerfile
           docker build -t contorsystems/contor .
