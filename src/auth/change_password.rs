@@ -80,7 +80,7 @@ pub async fn process_change(
                 errors: &validation_errors,
             };
 
-            return Ok(layouts::session_layout("Registration", &body.to_string()));
+            Ok(layouts::session_layout("Registration", &body.to_string()))
         }
     }
 }

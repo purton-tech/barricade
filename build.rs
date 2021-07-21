@@ -41,7 +41,7 @@ fn create_route(route: &str, method_name: &str) -> String {
             
             let name = format!("./asset-pipeline/dist/{{}}", path.to_str().unwrap());
             let file = fs::NamedFile::open(name)?;
-            return Ok(file);
+            Ok(file)
         }}
     "#,
         route, method_name
@@ -94,7 +94,7 @@ fn add_hash_to_file_name(file_name: &str, name: &str) -> String {
 
     let hash = Sha1::from(buffer).digest().to_string();
 
-    let mut parts: Vec<&str> = name.split(".").collect();
+    let mut parts: Vec<&str> = name.split('.').collect();
     parts.insert(parts.len() - 1, &hash);
 
     parts.join(".")
