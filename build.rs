@@ -41,7 +41,7 @@ fn create_route(route: &str, method_name: &str) -> String {
             
             let name = format!("./asset-pipeline/dist/{{}}", path.to_str().unwrap());
             let file = fs::NamedFile::open(name)?;
-            return Ok(file);
+            Ok(file)
         }}
     "#,
         route, method_name
@@ -85,10 +85,8 @@ fn parse_folder(folder: &str, dest_folder: &str) -> String {
 }
 
 fn add_hash_to_file_name(file_name: &str, name: &str) -> String {
-    let mut file = std::fs::File::open(&file_name).expect(&format!(
-        "Something went wrong reading the file {:?}",
-        &file_name
-    ));
+    let mut file = dbg!(std::fs::File::open(&file_name))
+        .unwrap_or_else(|_| panic!("Something went wrong reading the file {:?}", &file_name));
 
     let mut buffer = Vec::new();
     // read the whole file
@@ -96,7 +94,7 @@ fn add_hash_to_file_name(file_name: &str, name: &str) -> String {
 
     let hash = Sha1::from(buffer).digest().to_string();
 
-    let mut parts: Vec<&str> = name.split(".").collect();
+    let mut parts: Vec<&str> = name.split('.').collect();
     parts.insert(parts.len() - 1, &hash);
 
     parts.join(".")

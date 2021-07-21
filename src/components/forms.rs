@@ -76,10 +76,10 @@ impl markup::Render for FormInput {
         dbg!(&self.errors);
 
         let input_type = format!("{:?}", self.input_type);
+        let mut val = String::new();
+        escape(&self.value, &mut val)?;
 
         if self.errors.is_some() {
-            let mut val = String::new();
-            escape(&self.value, &mut val)?;
             write!(
                 f,
                 "<input class='error', id='{}' name='{}' type={:?} value='{}'",
@@ -89,8 +89,6 @@ impl markup::Render for FormInput {
                 val
             )?;
         } else {
-            let mut val = String::new();
-            escape(&self.value, &mut val)?;
             write!(
                 f,
                 "<input id='{}' name='{}' type={:?} value='{}'",

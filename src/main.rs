@@ -1,7 +1,7 @@
 use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{
-    cookie, dev::Payload, http, middleware, web, App, Error, FromRequest, HttpRequest,
+    cookie, dev::Payload, error, http, middleware, web, App, Error, FromRequest, HttpRequest,
     HttpResponse, HttpServer,
 };
 use dotenv::dotenv;
@@ -183,7 +183,10 @@ async fn reverse_proxy(
             forwarded_req
         };
 
-        let mut res = fwd_req.send_body(body).await.map_err(Error::from)?;
+        let mut res = fwd_req
+            .send_body(body)
+            .await
+            .map_err(error::ErrorBadRequest)?;
 
         let mut client_resp = HttpResponse::build(res.status());
         // Remove `Connection` as per
