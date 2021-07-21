@@ -1,0 +1,27 @@
+scanner_configs:
+  CargoAudit:
+    elevate_warnings: false
+    exceptions:
+      - advisory_id: RUSTSEC-2021-0064
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2020-0056
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2021-0060
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2020-0048
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2018-0019
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2021-0059
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+  NodeAudit:
+    exceptions:
+      - advisory_id: 1693
+        changed_by: ianpurton
+        notes: Waiting for fix in parcel.
