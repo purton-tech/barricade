@@ -25,5 +25,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Salus Scan
-      id: salus_scan
-      uses: federacy/scan-action@0.1.1
+      run: docker run --rm -t -v $(pwd):/home/repo coinbase/salus
