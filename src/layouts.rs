@@ -1,14 +1,10 @@
 use crate::statics;
-use actix_web::{http, HttpResponse};
+use actix_web::{cookie::Cookie, http, HttpResponse};
 
 pub fn redirect_and_snackbar(url: &str, message: &'static str) -> HttpResponse {
     HttpResponse::SeeOther()
         .append_header((http::header::LOCATION, url))
-        .cookie(
-            http::Cookie::build("flash_aargh", message)
-                .path("/")
-                .finish(),
-        )
+        .cookie(Cookie::build("flash_aargh", message).path("/").finish())
         .finish()
 }
 

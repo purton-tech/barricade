@@ -85,10 +85,8 @@ fn parse_folder(folder: &str, dest_folder: &str) -> String {
 }
 
 fn add_hash_to_file_name(file_name: &str, name: &str) -> String {
-    let mut file = std::fs::File::open(&file_name).expect(&format!(
-        "Something went wrong reading the file {:?}",
-        &file_name
-    ));
+    let mut file = dbg!(std::fs::File::open(&file_name))
+        .unwrap_or_else(|_| panic!("Something went wrong reading the file {:?}", &file_name));
 
     let mut buffer = Vec::new();
     // read the whole file

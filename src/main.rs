@@ -1,7 +1,7 @@
 use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{
-    cookie, dev::Payload, http, middleware, web, App, Error, FromRequest, HttpRequest,
+    error, cookie, dev::Payload, http, middleware, web, App, Error, FromRequest, HttpRequest,
     HttpResponse, HttpServer,
 };
 use dotenv::dotenv;
@@ -183,7 +183,9 @@ async fn reverse_proxy(
             forwarded_req
         };
 
-        let mut res = fwd_req.send_body(body).await.map_err(Error::from)?;
+        let mut res = fwd_req.send_body(body).await.map_err(|e| {
+            error::ErrorBadRequest(e)
+        })?;
 
         let mut client_resp = HttpResponse::build(res.status());
         // Remove `Connection` as per
@@ -221,10 +223,10 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         let client = ClientBuilder::new().disable_redirects().finish();
         App::new()
-            .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
-            .data(config.clone())
-            .app_data(finger_print.clone())
-            .data(client)
+            .app_data(web::Data::new(db_pool.clone())) // pass database pool to application so we can access it inside handlers
+            .app_data(web::Data::new(config.clone()))
+            .app_data(web::Data::new(finger_print.clone()))
+            .app_data(web::Data::new(client))
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
