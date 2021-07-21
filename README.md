@@ -8,7 +8,7 @@
 * Small high performance docker container.
 * No code to write just configure with environment variables.
 * Works well as a Kubernetes side car.
-* TODO - Password reset.
+* Secure Password reset.
 * TODO - U2F
 
 ## Try it out 
@@ -101,10 +101,14 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
 Once you have the psql command prompt you can cut and paste the following code to create a users and sessions table.
 
 ```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY, 
     email VARCHAR NOT NULL UNIQUE, 
     hashed_password VARCHAR NOT NULL, 
+    reset_password_token UUID,
+    reset_password_sent_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
