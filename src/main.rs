@@ -224,10 +224,10 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         let client = ClientBuilder::new().disable_redirects().finish();
         App::new()
-            .app_data(web::Data::new(db_pool.clone())) // pass database pool to application so we can access it inside handlers
-            .app_data(web::Data::new(config.clone()))
-            .app_data(web::Data::new(finger_print.clone()))
-            .app_data(web::Data::new(client))
+            .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
+            .data(config.clone())
+            .app_data(finger_print.clone())
+            .data(client)
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
