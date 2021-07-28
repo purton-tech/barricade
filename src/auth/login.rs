@@ -1,7 +1,6 @@
 use crate::components::forms;
 use crate::config;
 use crate::custom_error::CustomError;
-use crate::fingerprint;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
@@ -32,16 +31,11 @@ struct InsertedSession {
 }
 
 pub async fn login(
-    req: actix_web::HttpRequest,
-    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
     config: web::Data<config::Config>,
 ) -> Result<HttpResponse> {
-    let mut finger_print = finger_print.lock().unwrap();
-    let hit_rate = finger_print.add_request(req);
 
     let body = LoginPage {
         form: &Login::default(),
-        hcaptcha: hit_rate > config.hit_rate,
         hcaptcha_config: &config.hcaptcha_config,
         errors: &ValidationErrors::default(),
     };
@@ -75,18 +69,10 @@ pub async fn process_login(
     pool: web::Data<PgPool>,
     identity: Identity,
     form: web::Form<Login>,
-    finger_print: web::Data<Mutex<fingerprint::FingerPrint>>,
 ) -> Result<HttpResponse, CustomError> {
     let mut validation_errors = ValidationErrors::default();
 
-    let mut finger_print = finger_print.lock().unwrap();
-    let hit_rate = finger_print.add_request(req);
-
-    let valid = if hit_rate > config.hit_rate {
-        super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
-    } else {
-        true
-    };
+    let valid = super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await;
 
     if valid {
         let users = sqlx::query_as::<_, User>(&format!(
@@ -140,7 +126,6 @@ pub async fn process_login(
 
     let body = LoginPage {
         form: &login,
-        hcaptcha: hit_rate > config.hit_rate,
         hcaptcha_config: &config.hcaptcha_config,
         errors: &validation_errors,
     };
@@ -150,7 +135,6 @@ pub async fn process_login(
 
 markup::define! {
     LoginPage<'a>(form: &'a  Login,
-    hcaptcha: bool,
     hcaptcha_config: &'a Option<config::HCaptchaConfig>,
     errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
@@ -162,9 +146,7 @@ markup::define! {
 
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
-                @if *hcaptcha {
-                    div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
-                }
+                div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
             }
 
             button.a_button.success[type = "submit"] { "Log In" }
@@ -176,9 +158,7 @@ markup::define! {
         }
 
         @if let Some(_) = hcaptcha_config {
-            @if *hcaptcha {
-                script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
-            }
+            script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
         }
     }
 }
