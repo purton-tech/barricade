@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
-use std::sync::Mutex;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(sqlx::FromRow)]
@@ -30,10 +29,7 @@ struct InsertedSession {
     session_uuid: Uuid,
 }
 
-pub async fn login(
-    config: web::Data<config::Config>,
-) -> Result<HttpResponse> {
-
+pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = LoginPage {
         form: &Login::default(),
         hcaptcha_config: &config.hcaptcha_config,
@@ -64,7 +60,6 @@ pub async fn create_session(
 }
 
 pub async fn process_login(
-    req: actix_web::HttpRequest,
     config: web::Data<config::Config>,
     pool: web::Data<PgPool>,
     identity: Identity,
@@ -137,19 +132,21 @@ markup::define! {
     LoginPage<'a>(form: &'a  Login,
     hcaptcha_config: &'a Option<config::HCaptchaConfig>,
     errors: &'a ValidationErrors) {
-        form.m_authentication[method = "post"] {
+        form.m_authentication[id="auth-form", method = "post"] {
 
             h1 { "Sign In" }
 
             @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
             @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
 
-
             @if let Some(hcaptcha_config) = hcaptcha_config {
-                div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
+                button.a_button.success."h-captcha"[
+                    "data-sitekey"=&hcaptcha_config.hcaptcha_site_key,
+                    "data-callback"="onSubmit"] { "Log In" }
+            } else {
+                button.a_button.success[type = "submit"] { "Log In" }
             }
 
-            button.a_button.success[type = "submit"] { "Log In" }
             div {
                 a[href=crate::SIGN_UP_URL] { "Sign Up" }
                 { " | " }
@@ -159,6 +156,9 @@ markup::define! {
 
         @if let Some(_) = hcaptcha_config {
             script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            script[type="text/javascript"] {
+                "function onSubmit(token) { document.getElementById('auth-form').submit(); }"
+            }
         }
     }
 }

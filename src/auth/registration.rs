@@ -23,11 +23,7 @@ pub struct Registration {
     pub h_captcha_response: Option<String>,
 }
 
-pub async fn registration(
-    config: web::Data<config::Config>,
-    req: actix_web::HttpRequest,
-) -> Result<HttpResponse> {
-
+pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = RegistrationPage {
         form: &Registration::default(),
         hcaptcha_config: &config.hcaptcha_config,
@@ -43,13 +39,11 @@ struct InsertedUser {
 }
 
 pub async fn process_registration(
-    req: actix_web::HttpRequest,
     pool: web::Data<PgPool>,
     config: web::Data<config::Config>,
     form: web::Form<Registration>,
     identity: Identity,
 ) -> Result<HttpResponse, CustomError> {
-
     let registration = Registration {
         email: form.email.clone(),
         ..Default::default()
@@ -119,22 +113,28 @@ markup::define! {
     RegistrationPage<'a>(form: &'a  Registration,
         hcaptcha_config: &'a Option<config::HCaptchaConfig>,
         errors: &'a ValidationErrors) {
-        form.m_authentication[method = "post"] {
+        form.m_authentication[id="auth-form", method = "post"] {
             h1 { "Register" }
             @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
             @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
             @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, help_text: "", errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
-                div."h-captcha"["data-sitekey"=&hcaptcha_config.hcaptcha_site_key] {}
+                button.a_button.success."h-captcha"[
+                    "data-sitekey"=&hcaptcha_config.hcaptcha_site_key,
+                    "data-callback"="onSubmit"] { "Sign Up" }
+            } else {
+                button.a_button.success[type = "submit"] { "Sign Up" }
             }
 
-            button.a_button.success[type = "submit"] { "Sign Up" }
             a[href=crate::SIGN_IN_URL] { "Sign In Instead" }
         }
 
         @if let Some(_) = hcaptcha_config {
             script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+            script[type="text/javascript"] {
+                "function onSubmit(token) { document.getElementById('auth-form').submit(); }"
+            }
         }
     }
 }
