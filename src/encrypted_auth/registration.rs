@@ -89,11 +89,13 @@ markup::define! {
 
                 label[for="email"] { "Email" }
                 input[name = "email", value = &form.email, "data-target" = "registration.email"] {}
+                span.a_help_text { "You'll use your email address to log in." }
 
-                label[for="password"] { "Password" }
+                label[for="password"] { "Master Password" }
                 input[name="password", type="password", "data-target" = "registration.password"] {}
+                span.a_help_text { "The master password is the password we use to generate your private key. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
 
-                label[for="confirm_password"] { "Confirm Password" }
+                label[for="confirm_password"] { "Re-type Master Password" }
                 input[name="confirm_password", type="password", "data-target" = "registration.confirmPassword"] {}
 
                 button.a_button.success[type = "submit", "data-target" = "registration.button",
