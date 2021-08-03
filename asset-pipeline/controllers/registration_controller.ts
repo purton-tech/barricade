@@ -6,18 +6,20 @@ import { CreateMasterKeyRequest, CreateMasterKeyResult, Jobs } from '../crypto_t
 export default class extends Controller {
 
   static targets = ['button', 'form', 'password', 'confirmPassword', 'email',
-    'emailCopy', 'encryptedPrivateKey', 'publicKey', 'blindIndex', 'initVector']
+    'emailCopy', 'protectedPrivateKey', 'publicKey', 'protectedSymmetricKey', 'masterPasswordHash']
 
   readonly buttonTarget!: HTMLButtonElement
   readonly formTarget!: HTMLFormElement
   readonly passwordTarget!: HTMLInputElement
   readonly emailTarget!: HTMLInputElement
-  readonly emailCopyTarget!: HTMLInputElement
-  readonly blindIndexTarget!: HTMLInputElement
   readonly confirmPasswordTarget!: HTMLInputElement
-  readonly encryptedPrivateKeyTarget!: HTMLInputElement
+
+  // The hidden form
+  readonly emailCopyTarget!: HTMLInputElement
+  readonly masterPasswordHashTarget!: HTMLInputElement
+  readonly protectedSymmetricKeyTarget!: HTMLInputElement
   readonly publicKeyTarget!: HTMLInputElement
-  readonly initVectorTarget!: HTMLInputElement
+  readonly protectedPrivateKeyTarget!: HTMLInputElement
 
   register(event: MouseEvent) {
     event.preventDefault()
@@ -48,12 +50,12 @@ export default class extends Controller {
         const masterKeyResult : CreateMasterKeyResult = data.response
         console.log(data)
         this.emailCopyTarget.value = this.emailTarget.value
-        controller.encryptedPrivateKeyTarget.value = masterKeyResult.protectedPrivateKey
+        controller.protectedPrivateKeyTarget.value = masterKeyResult.protectedPrivateKey
         controller.publicKeyTarget.value = masterKeyResult.publicKey
-        controller.initVectorTarget.value = "NOT USED ANYMORE"
-        controller.blindIndexTarget.value = masterKeyResult.masterPasswordHash
+        controller.protectedSymmetricKeyTarget.value = masterKeyResult.protectedSymmetricKey
+        controller.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
         setPrivateKey(masterKeyResult.protectedPrivateKey)
-        //controller.formTarget.submit()
+        controller.formTarget.submit()
       }
       else if (data.status == 'working-encryption') {
         controller.buttonTarget.innerText = `Stretching Password ${data.percent}%`

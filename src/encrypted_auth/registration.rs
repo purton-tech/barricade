@@ -12,14 +12,14 @@ use validator::Validate;
 pub struct Registration {
     #[validate(email(message = "Email is not valid"))]
     pub email: String,
-    #[validate(length(min = 1, message = "The private key is invalid"))]
-    pub encrypted_private_key: String,
-    #[validate(length(min = 1, message = "The public key is invalid"))]
+    #[validate(length(min = 1, message = "The master_password_hash is invalid"))]
+    pub master_password_hash: String,
+    #[validate(length(min = 1, message = "The protected_symmetric_key invalid"))]
+    pub protected_symmetric_key: String,
+    #[validate(length(min = 1, message = "The protected_private_key is invalid"))]
+    pub protected_private_key: String,
+    #[validate(length(min = 1, message = "The public_key is invalid"))]
     pub public_key: String,
-    #[validate(length(min = 1, message = "The init vector is invalid"))]
-    pub init_vector: String,
-    #[validate(length(min = 1, message = "The blind index is invalid"))]
-    pub blind_index: String,
 }
 
 pub async fn registration() -> Result<HttpResponse> {
@@ -50,17 +50,17 @@ pub async fn process_registration(
             let user = sqlx::query_as::<_, InsertedUser>(
                 &format!(
                     "
-                    INSERT INTO {} (email, encrypted_private_key, public_key, blind_index, init_vector)
+                    INSERT INTO {} (email, master_password_hash, protected_symmetric_key, protected_private_key, public_key)
                     VALUES($1, $2, $3, $4, $5) RETURNING id
                     ",
                     config.user_table_name
                 )
             )
             .bind(&user.email)
-            .bind(&user.encrypted_private_key)
+            .bind(&user.master_password_hash)
+            .bind(&user.protected_symmetric_key)
+            .bind(&user.protected_private_key)
             .bind(&user.public_key)
-            .bind(&user.blind_index)
-            .bind(&user.init_vector)
             .fetch_one(db_pool.get_ref())
             .await?;
 
@@ -104,11 +104,11 @@ markup::define! {
                 a[href=crate::SIGN_IN_URL] { "Sign In Instead" }
             }
             form[method = "post", "data-target" = "registration.form"] {
-                input[name="encrypted_private_key", "data-target" = "registration.encryptedPrivateKey", type="hidden"] {}
-                input[name="public_key", "data-target" = "registration.publicKey", type="hidden"] {}
-                input[name="init_vector", "data-target" = "registration.initVector", type="hidden"] {}
+                input[name="master_password_hash", "data-target" = "registration.masterPasswordHash", type="hidden"] {}
+                input[name="protected_symmetric_key", "data-target" = "registration.protectedSymmetricKey", type="hidden"] {}
+                input[name="protected_private_key", "data-target" = "registration.protectedPrivateKey", type="hidden"] {}
                 input[name="email", "data-target" = "registration.emailCopy", type="hidden"] {}
-                input[name="blind_index", "data-target" = "registration.blindIndex", type="hidden"] {}
+                input[name="public_key", "data-target" = "registration.publicKey", type="hidden"] {}
             }
         }
         script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
