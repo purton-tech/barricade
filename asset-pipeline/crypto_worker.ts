@@ -1,6 +1,6 @@
 import { Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
     DecryptMasterKeyRequest, DecryptMasterKeyResult,
-    ByteData, SymmetricCryptoKey  } from './crypto_types'
+    ByteData, SymmetricCryptoKey, Cipher  } from './crypto_types'
 
 
 const FIELD_STORAGE_FORMAT = "base64"
@@ -66,19 +66,22 @@ ctx.onmessage = async e => {
                 decryptKeyRequest.pbkdf2Iterations, 256);
             const stretchedMasterKey = await stretchKey(masterKey.arr)
 
-            let decryptedSymKey = await aesDecrypt(decryptKeyRequest.protectedSymmetricKey, 
+            const semKeyCipher = Cipher.fromString(decryptKeyRequest.protectedSymmetricKey);
+
+            let decryptedSymKey = await aesDecrypt(semKeyCipher, 
                 stretchedMasterKey.encKey,
                 stretchedMasterKey.macKey);
             const unprotectedSymKey = new SymmetricCryptoKey(decryptedSymKey);
 
-            let decryptedPrivateKey = await aesDecrypt(decryptKeyRequest.protectedPrivateKey, 
+            const privKeyCipher = Cipher.fromString(decryptKeyRequest.protectedPrivateKey)
+
+            let decryptedPrivateKey = await aesDecrypt(privKeyCipher, 
                 unprotectedSymKey.encKey,
                 unprotectedSymKey.macKey);
 
             const decryptResult: DecryptMasterKeyResult = {
                 unprotectedSymmetricKey: unprotectedSymKey,
-                unprotectedPrivateKey: new ByteData(decryptedPrivateKey),
-                publicKey: new ByteData(decryptedPrivateKey)
+                unprotectedPrivateKey: new ByteData(decryptedPrivateKey)
             }
 
             ctx.postMessage({
@@ -102,39 +105,6 @@ const encTypes = {
     Rsa2048_OaepSha256_HmacSha256_B64: 5,
     Rsa2048_OaepSha1_HmacSha256_B64: 6
 };
-
-// Object Classes
-
-class Cipher {
-
-    encType: number
-    iv: ByteData
-    ct: ByteData
-    mac: ByteData
-    string: string
-
-    constructor(encType, iv, ct, mac) {
-        if (!arguments.length) {
-            this.encType = null;
-            this.iv = null;
-            this.ct = null;
-            this.mac = null;
-            this.string = null;
-            return;
-        }
-
-        this.encType = encType;
-        this.iv = iv;
-        this.ct = ct;
-        this.string = encType + '.' + iv.b64 + '|' + ct.b64;
-
-        this.mac = null;
-        if (mac) {
-            this.mac = mac;
-            this.string += ('|' + mac.b64);
-        }
-    }
-}
 
 // Helpers
 
@@ -178,7 +148,7 @@ async function pbkdf2(password, salt, iterations, length) {
     }
 }
 
-async function aesEncrypt(data, encKey, macKey) {
+async function aesEncrypt(data, encKey: ByteData, macKey: ByteData) {
     const keyOptions = {
         name: 'AES-CBC'
     };
@@ -209,7 +179,7 @@ async function aesEncrypt(data, encKey, macKey) {
     }
 }
 
-async function aesDecrypt(cipher, encKey, macKey) {
+async function aesDecrypt(cipher: Cipher, encKey: ByteData, macKey: ByteData) {
     const keyOptions = {
         name: 'AES-CBC'
     };

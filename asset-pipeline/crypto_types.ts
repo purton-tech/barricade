@@ -40,7 +40,6 @@ export interface DecryptMasterKeyRequest {
 export interface DecryptMasterKeyResult {
     unprotectedSymmetricKey: SymmetricCryptoKey
     unprotectedPrivateKey: ByteData
-    publicKey: ByteData
 }
 
 export class ByteData {
@@ -66,6 +65,55 @@ export class ByteData {
             binary += String.fromCharCode(bytes[i]);
         }
         return btoa(binary);
+    }
+    
+    static fromB64(base64: string) : ByteData {
+        var binary_string = atob(base64);
+        var len = binary_string.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return new this(bytes);
+    }
+}
+
+export class Cipher {
+
+    encType: number
+    iv: ByteData
+    ct: ByteData
+    mac: ByteData
+    string: string
+
+    constructor(encType: number, iv: ByteData, ct: ByteData, mac: ByteData) {
+        if (!arguments.length) {
+            this.encType = null;
+            this.iv = null;
+            this.ct = null;
+            this.mac = null;
+            this.string = null;
+            return;
+        }
+
+        this.encType = encType;
+        this.iv = iv;
+        this.ct = ct;
+        this.string = encType + '.' + iv.b64 + '|' + ct.b64;
+
+        this.mac = null;
+        if (mac) {
+            this.mac = mac;
+            this.string += ('|' + mac.b64);
+        }
+    }
+
+    static fromString(string: string) : Cipher {
+        const encType = parseInt(string.split('.')[0])
+        const iv = ByteData.fromB64(string.split('.')[1].split('|')[0])
+        const ct = ByteData.fromB64(string.split('.')[1].split('|')[1])
+        const mac = ByteData.fromB64(string.split('.')[1].split('|')[2])
+        return new this(encType, iv, ct, mac)
     }
 }
 
