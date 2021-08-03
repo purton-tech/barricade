@@ -6,7 +6,6 @@ use url::Url;
 #[derive(Clone, Debug, PartialEq)]
 pub enum AuthType {
     Normal,
-    Bip38,
     Encrypted,
 }
 #[derive(Clone, Debug)]
@@ -161,9 +160,7 @@ impl Config {
 
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();
-            if t.to_lowercase() == "bip38" {
-                AuthType::Bip38
-            } else if t.to_lowercase() == "encrypted" {
+            if t.to_lowercase() == "encrypted" {
                 AuthType::Encrypted
             } else {
                 AuthType::Normal

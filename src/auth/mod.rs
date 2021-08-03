@@ -1,5 +1,5 @@
 mod change_password;
-mod email_otp;
+pub mod email_otp;
 pub mod login;
 mod registration;
 mod reset_request;
