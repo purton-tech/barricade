@@ -5,11 +5,13 @@ import { DecryptMasterKeyRequest, DecryptMasterKeyResult, Jobs } from '../crypto
 
 export default class extends Controller {
 
-    static targets = ['form', 'progress', 'initVector', 'encryptedPrivateKey', 'path']
+    static targets = ['form', 'progress', 'publicKey', 'email', 'protectedPrivateKey', 'protectedSymmetricKey', 'path']
 
     readonly formTarget!: HTMLFormElement
-    readonly initVectorTarget!: HTMLInputElement
-    readonly encryptedPrivateKeyTarget!: HTMLInputElement
+    readonly protectedPrivateKeyTarget!: HTMLInputElement
+    readonly protectedSymmetricKeyTarget!: HTMLInputElement
+    readonly publicKeyTarget!: HTMLInputElement
+    readonly emailTarget!: HTMLInputElement
     readonly pathTarget!: SVGPathElement
 
     connect() {
@@ -25,6 +27,9 @@ export default class extends Controller {
             if (data.status == 'done') {
                 console.log(data)
                 //setPrivateKey(fieldResult.privateKey)
+                localStorage.setItem('unprotected_private_key', fieldResult.unprotectedPrivateKey.b64)
+                localStorage.setItem('unprotected_symmetric_key', fieldResult.unprotectedSymmetricKey.key.b64)
+                localStorage.setItem('public_key', fieldResult.publicKey.b64)
                 removePassword()
                 this.formTarget.submit()
             }
@@ -42,14 +47,17 @@ export default class extends Controller {
 
         const password = getPassword()
 
-        /**const req: DecryptMasterKeyRequest = {
+        const req: DecryptMasterKeyRequest = {
             masterPassword: password,
-            encryptedPrivateKey: this.encryptedPrivateKeyTarget.value
+            protectedPrivateKey: this.protectedPrivateKeyTarget.value,
+            protectedSymmetricKey: this.protectedSymmetricKeyTarget.value,
+            pbkdf2Iterations: 100000,
+            email: this.emailTarget.value
         }
 
         w.postMessage({
             cmd: Jobs[Jobs.DecryptMasterKey],
             request: req,
-        })**/
+        })
     }
 }

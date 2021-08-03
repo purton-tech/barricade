@@ -77,8 +77,8 @@ ctx.onmessage = async e => {
 
             const decryptResult: DecryptMasterKeyResult = {
                 unprotectedSymmetricKey: unprotectedSymKey,
-                unprotectedPrivateKey: decryptedPrivateKey,
-                publicKey: decryptedPrivateKey
+                unprotectedPrivateKey: new ByteData(decryptedPrivateKey),
+                publicKey: new ByteData(decryptedPrivateKey)
             }
 
             ctx.postMessage({

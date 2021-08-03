@@ -39,8 +39,8 @@ export interface DecryptMasterKeyRequest {
 
 export interface DecryptMasterKeyResult {
     unprotectedSymmetricKey: SymmetricCryptoKey
-    unprotectedPrivateKey: ArrayBuffer
-    publicKey: ArrayBuffer
+    unprotectedPrivateKey: ByteData
+    publicKey: ByteData
 }
 
 export class ByteData {
