@@ -1,93 +1,96 @@
-
 export enum Jobs {
-    BlindIndex,
-    FieldEncryption,
-    FieldDecryption,
     CreateMasterKey,
     DecryptMasterKey,
-    PasswordBlindIndex
+    HashMasterPassword
 }
 
-// The types of searching we currently support.
-export enum BlindIndexType {
-    Exact,
-    Lowercase,
-    ThreeLetter
-}
-
-// Used on search pages. Create the bloom filter lookups.
-export interface BlindIndexRequest {
-    type: BlindIndexType,
-    table: string,
-    fieldName: string,
-    value: string,
-    privateKey: string,
-}
-
-export interface BlindIndexResult {
-    type: BlindIndexType,
-    blindIndex: string,
-}
-
-// On form save, encrypt form data and create the blind indexes
-export interface FieldEncryptionRequest {
-    plainText: string,
-    fieldName: string,
-    tableName: string,
-    blindIndexes: Array<BlindIndexType>,
-    privateKey: string,
-}
-
-export interface FieldEncryptionResult {
-    cipherText: string,
-    nonce: string,
-    fieldName: string,
-    blindIndexes: Array<string>
-}
-
-// On view pages. Decrypt the data and show it.
-export interface FieldDecryptionRequest {
-    cipherTextAndNonce: string,
-    fieldName: string,
-    privateKey: string,
-}
-
-export interface FieldDecryptionResult {
-    plainText: string,
-    fieldName: string
-}
-
-// On registration - create a new wrapped private key and verify it.
-export interface CreateMasterKeyRequest {
-    password: string,
+export interface HashMasterPasswordRequest {
+    masterPassword: string
     email: string
+    pbkdf2Iterations: number
+}
+
+export interface HashMasterPasswordResult {
+    masterPasswordHash: string
+}
+
+// On registration - create protected rsa and symmetric keys.
+export interface CreateMasterKeyRequest {
+    masterPassword: string
+    email: string
+    pbkdf2Iterations: number
 }
 
 export interface CreateMasterKeyResult {
-    encryptedPrivateKey: string,
-    privateKey: string
+    masterPasswordHash: string
+    protectedSymmetricKey: string
+    protectedPrivateKey: string
     publicKey: string
-    initVector: string
-    blindIndex: string
 }
 
-// On login - stretch users password and create a blind index
-export interface PasswordBlindIndexRequest {
-    password: string,
-    email: string
-}
-
-export interface PasswordBlindIndexResult {
-    blindIndex: string
-}
-
-// On login. Unwrap the master key.
+// After login. Unwrap the master key.
 export interface DecryptMasterKeyRequest {
-    password: string,
-    initVector: string,
-    encryptedPrivateKey: string
+    masterPassword: string,
+    email: string
+    protectedSymmetricKey: string
+    protectedPrivateKey: string
+    pbkdf2Iterations: number
 }
 
 export interface DecryptMasterKeyResult {
-    privateKey: string
+    unprotectedSymmetricKey: SymmetricCryptoKey
+    unprotectedPrivateKey: ArrayBuffer
+    publicKey: ArrayBuffer
+}
+
+export class ByteData {
+
+    arr: Uint8Array
+    b64: string
+
+    constructor(buf) {
+        if (!arguments.length) {
+            this.arr = null;
+            this.b64 = null;
+            return;
+        }
+
+        this.arr = new Uint8Array(buf);
+        this.b64 = this.toB64(buf);
+    }
+
+    toB64(buf) {
+        let binary = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+}
+
+export class SymmetricCryptoKey {
+
+    key: ByteData
+    encKey: ByteData
+    macKey: ByteData
+
+    constructor(buf) {
+        if (!arguments.length) {
+            this.key = new ByteData(null);
+            this.encKey = new ByteData(null);
+            this.macKey = new ByteData(null);
+            return;
+        }
+
+        this.key = new ByteData(buf);
+
+        // First half
+        const encKey = this.key.arr.slice(0, this.key.arr.length / 2).buffer;
+        this.encKey = new ByteData(encKey);
+
+        // Second half
+        const macKey = this.key.arr.slice(this.key.arr.length / 2).buffer;
+        this.macKey = new ByteData(macKey);
+    }
 }

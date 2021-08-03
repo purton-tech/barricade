@@ -5,7 +5,7 @@ import { Application } from "stimulus"
 
 //import SnackbarController from '../src/components/snackbar_controller'
 //import ApplicationLayoutController from './controllers/application_layout_controller'
-import MasterController from './master_key_decryption_controller'
+import MasterController from './controllers/master_key_decryption_controller'
 import RegistrationController from './controllers/registration_controller'
 import LoginController from './controllers/login_controller'
 //import DecryptController from './controllers/decrypt_controller'

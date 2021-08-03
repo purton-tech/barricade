@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
-import { setPrivateKey, getPassword, removePassword } from './controllers/util'
-import { DecryptMasterKeyRequest, DecryptMasterKeyResult, Jobs } from './crypto_types'
+import { setPrivateKey, getPassword, removePassword } from './util'
+import { DecryptMasterKeyRequest, DecryptMasterKeyResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
@@ -14,7 +14,7 @@ export default class extends Controller {
 
     connect() {
 
-        const w = new Worker('./crypto_worker.ts');
+        const w = new Worker('../crypto_worker.ts');
         const controller = this
         w.onmessage = e => {
 
@@ -24,7 +24,7 @@ export default class extends Controller {
 
             if (data.status == 'done') {
                 console.log(data)
-                setPrivateKey(fieldResult.privateKey)
+                //setPrivateKey(fieldResult.privateKey)
                 removePassword()
                 this.formTarget.submit()
             }
@@ -42,15 +42,14 @@ export default class extends Controller {
 
         const password = getPassword()
 
-        const req: DecryptMasterKeyRequest = {
-            password: password,
-            initVector: this.initVectorTarget.value,
+        /**const req: DecryptMasterKeyRequest = {
+            masterPassword: password,
             encryptedPrivateKey: this.encryptedPrivateKeyTarget.value
         }
 
         w.postMessage({
             cmd: Jobs[Jobs.DecryptMasterKey],
             request: req,
-        })
+        })**/
     }
 }

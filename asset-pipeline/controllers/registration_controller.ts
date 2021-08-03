@@ -48,12 +48,12 @@ export default class extends Controller {
         const masterKeyResult : CreateMasterKeyResult = data.response
         console.log(data)
         this.emailCopyTarget.value = this.emailTarget.value
-        controller.encryptedPrivateKeyTarget.value = masterKeyResult.encryptedPrivateKey
+        controller.encryptedPrivateKeyTarget.value = masterKeyResult.protectedPrivateKey
         controller.publicKeyTarget.value = masterKeyResult.publicKey
-        controller.initVectorTarget.value = masterKeyResult.initVector
-        controller.blindIndexTarget.value = masterKeyResult.blindIndex
-        setPrivateKey(masterKeyResult.privateKey)
-        controller.formTarget.submit()
+        controller.initVectorTarget.value = "NOT USED ANYMORE"
+        controller.blindIndexTarget.value = masterKeyResult.masterPasswordHash
+        setPrivateKey(masterKeyResult.protectedPrivateKey)
+        //controller.formTarget.submit()
       }
       else if (data.status == 'working-encryption') {
         controller.buttonTarget.innerText = `Stretching Password ${data.percent}%`
@@ -70,8 +70,9 @@ export default class extends Controller {
     }
 
     const masterReq: CreateMasterKeyRequest = {
-      password: pass1,
-      email: this.emailTarget.value
+      masterPassword: pass1,
+      email: controller.emailTarget.value,
+      pbkdf2Iterations: 100000
     }
 
     w.postMessage({

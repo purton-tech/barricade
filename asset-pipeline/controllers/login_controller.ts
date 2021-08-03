@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import { setPassword } from './util'
-import { PasswordBlindIndexRequest, PasswordBlindIndexResult, Jobs } from '../crypto_types'
+import { HashMasterPasswordRequest, HashMasterPasswordResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
@@ -29,10 +29,10 @@ export default class extends Controller {
       const data = e.data;
 
       if (data.status == 'done') {
-        const masterKeyResult : PasswordBlindIndexResult = data.response
+        const masterKeyResult : HashMasterPasswordResult = data.response
         console.log(masterKeyResult)
         this.emailCopyTarget.value = this.emailTarget.value
-        this.blindIndexTarget.value = masterKeyResult.blindIndex
+        this.blindIndexTarget.value = masterKeyResult.masterPasswordHash
         setPassword(this.passwordTarget.value)
         controller.formTarget.submit()
       }
@@ -44,11 +44,12 @@ export default class extends Controller {
       }
     }
 
-    const masterReq: PasswordBlindIndexRequest = {
-      password: this.passwordTarget.value,
-      email: this.emailTarget.value
+    const masterReq: HashMasterPasswordRequest = {
+      masterPassword: this.passwordTarget.value,
+      email: this.emailTarget.value,
+      pbkdf2Iterations: 100000
     }
 
-    w.postMessage({ cmd: Jobs[Jobs.PasswordBlindIndex], request: masterReq })
+    w.postMessage({ cmd: Jobs[Jobs.HashMasterPassword], request: masterReq })
   }
 }
