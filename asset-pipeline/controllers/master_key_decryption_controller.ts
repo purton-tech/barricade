@@ -1,20 +1,22 @@
 import { Controller } from 'stimulus'
-import { setPrivateKey, getPassword, removePassword } from './controllers/util'
-import { DecryptMasterKeyRequest, DecryptMasterKeyResult, Jobs } from './crypto_types'
+import { setPrivateKey, getPassword, removePassword } from './util'
+import { DecryptMasterKeyRequest, DecryptMasterKeyResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
 
-    static targets = ['form', 'progress', 'initVector', 'encryptedPrivateKey', 'path']
+    static targets = ['form', 'progress', 'publicKey', 'email', 'protectedPrivateKey', 'protectedSymmetricKey', 'path']
 
     readonly formTarget!: HTMLFormElement
-    readonly initVectorTarget!: HTMLInputElement
-    readonly encryptedPrivateKeyTarget!: HTMLInputElement
+    readonly protectedPrivateKeyTarget!: HTMLInputElement
+    readonly protectedSymmetricKeyTarget!: HTMLInputElement
+    readonly publicKeyTarget!: HTMLInputElement
+    readonly emailTarget!: HTMLInputElement
     readonly pathTarget!: SVGPathElement
 
     connect() {
 
-        const w = new Worker('./crypto_worker.ts');
+        const w = new Worker('../crypto_worker.ts');
         const controller = this
         w.onmessage = e => {
 
@@ -24,8 +26,10 @@ export default class extends Controller {
 
             if (data.status == 'done') {
                 console.log(data)
-                setPrivateKey(fieldResult.privateKey)
-                removePassword()
+                localStorage.setItem('unprotected_private_key', fieldResult.unprotectedPrivateKey.b64)
+                localStorage.setItem('unprotected_symmetric_key', fieldResult.unprotectedSymmetricKey.key.b64)
+                localStorage.setItem('public_key', this.publicKeyTarget.value)
+                //removePassword()
                 this.formTarget.submit()
             }
             else if (data.status == 'working-master-key') {
@@ -43,9 +47,11 @@ export default class extends Controller {
         const password = getPassword()
 
         const req: DecryptMasterKeyRequest = {
-            password: password,
-            initVector: this.initVectorTarget.value,
-            encryptedPrivateKey: this.encryptedPrivateKeyTarget.value
+            masterPassword: password,
+            protectedPrivateKey: this.protectedPrivateKeyTarget.value,
+            protectedSymmetricKey: this.protectedSymmetricKeyTarget.value,
+            pbkdf2Iterations: 100000,
+            email: this.emailTarget.value
         }
 
         w.postMessage({

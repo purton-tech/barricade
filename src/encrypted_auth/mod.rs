@@ -19,5 +19,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(login::decrypt))
             .route(web::post().to(login::process_decryption)),
     );
+    cfg.service(
+        web::resource(crate::EMAIL_OTP_URL)
+            .route(web::get().to(crate::auth::email_otp::email_otp))
+            .route(web::post().to(crate::auth::email_otp::process_otp)),
+    );
     cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::get().to(crate::logout)));
 }

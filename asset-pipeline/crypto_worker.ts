@@ -1,8 +1,7 @@
-import { SodiumPlus, CryptographyKey } from 'sodium-plus'
-import { Jobs, BlindIndexType, BlindIndexRequest,
-    BlindIndexResult, FieldEncryptionRequest, FieldEncryptionResult, FieldDecryptionRequest,
-    FieldDecryptionResult, CreateMasterKeyRequest, CreateMasterKeyResult, PasswordBlindIndexRequest,
-    PasswordBlindIndexResult, DecryptMasterKeyRequest, DecryptMasterKeyResult } from './crypto_types'
+import { Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
+    DecryptMasterKeyRequest, DecryptMasterKeyResult,
+    ByteData, SymmetricCryptoKey, Cipher, HashMasterPasswordRequest,
+    HashMasterPasswordResult  } from './crypto_types'
 
 
 const FIELD_STORAGE_FORMAT = "base64"
@@ -14,136 +13,24 @@ ctx.onmessage = async e => {
 
     const data = e.data
 
-    const sodium = await SodiumPlus.auto();
-
     switch (data.cmd) {
-        case Jobs[Jobs.BlindIndex]: {
+        case Jobs[Jobs.HashMasterPassword]: {
+            const mkr: HashMasterPasswordRequest = data.request
 
-            const blindIndex: BlindIndexRequest = data.request
-    
-            const blind = BlindIndexType[blindIndex.type]
+            const masterPassword = fromUtf8(mkr.masterPassword)
+            const email = fromUtf8(mkr.email)
 
-            switch(blindIndex.type)  {
-                case BlindIndexType.Lowercase: {
-
-                    const lcase = blindIndex.value.toLowerCase()
-
-                    const lcaseBlindIndex = await bloomFromValue(lcase, blindIndex.table, blindIndex.fieldName, 
-                        blindIndex.type, sodium) 
-
-                    const blindIndexResult: BlindIndexResult = {
-                        type: blindIndex.type,
-                        blindIndex: lcaseBlindIndex,
-                    }
-
-                    console.log(lcase + ' >> lowercase ' + blindIndexResult.blindIndex)
-
-                    ctx.postMessage({
-                        cmd: Jobs[Jobs.BlindIndex],
-                        status: 'done',
-                        response: blindIndexResult
-                    })
-
-                    break;
-                }
-                case BlindIndexType.ThreeLetter: {
-
-                    const letter3 = blindIndex.value.toLowerCase().substr(0, 3)
-
-                    const letter3BlindIndex = await bloomFromValue(letter3, blindIndex.table, blindIndex.fieldName, 
-                        blindIndex.type, sodium) 
-
-                    const letter3BlindIndexResult: BlindIndexResult = {
-                        type: blindIndex.type,
-                        blindIndex: letter3BlindIndex,
-                    }
-
-                    console.log(letter3 + ' >> 3 letter ' + letter3BlindIndexResult.blindIndex)
-
-                    ctx.postMessage({
-                        cmd: 'blind-index',
-                        status: 'done',
-                        response: letter3BlindIndexResult
-                    })
-                    
-                    break;
-                }
-                default:
-                    break;
-            }
-
-            break
-        }
-        case Jobs[Jobs.FieldDecryption]: {
-
-            const fieldDecryptRequest: FieldDecryptionRequest = data.request
-
-            let fieldDecryptPlainText = await decrypt(fieldDecryptRequest.privateKey,
-                Buffer.from(fieldDecryptRequest.cipherTextAndNonce.split(':')[1], FIELD_STORAGE_FORMAT),
-                Buffer.from(fieldDecryptRequest.cipherTextAndNonce.split(':')[0], FIELD_STORAGE_FORMAT),
-                sodium)
-
-            const fieldDecryptResponse: FieldDecryptionResult = {
-                plainText: fieldDecryptPlainText,
-                fieldName: fieldDecryptRequest.fieldName,
+            const masterKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256);
+            const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
+            
+            let result: HashMasterPasswordResult = {
+                masterPasswordHash: masterKeyHash.b64
             }
 
             ctx.postMessage({
-                cmd: Jobs[Jobs.FieldDecryption],
+                cmd: Jobs[Jobs.CreateMasterKey],
                 status: 'done',
-                response: fieldDecryptResponse
-            })
-
-            break
-        }
-        case Jobs[Jobs.FieldEncryption]: {
-
-            const fieldRequest: FieldEncryptionRequest = data.request
-
-            let [ciphertextField, encryptNonceField] = await encrypt(fieldRequest.privateKey, 
-                fieldRequest.plainText, sodium)
-
-            let feBlinds : string[] = []
-
-            for(var feBlindIndex of fieldRequest.blindIndexes) {
-    
-                switch(feBlindIndex) {
-                    case BlindIndexType.Lowercase:
-
-                        const lcase = fieldRequest.plainText.toLowerCase()
-
-                        const lcaseBlindIndex = await bloomFromValue(lcase, fieldRequest.tableName, fieldRequest.fieldName, 
-                            feBlindIndex, sodium) 
-    
-                        feBlinds.push(lcaseBlindIndex)
-
-                        break;
-                    case BlindIndexType.ThreeLetter:
-
-                        const letter3 = fieldRequest.plainText.toLowerCase().substr(0, 3)
-
-                        const letter3BlindIndex = await bloomFromValue(letter3, fieldRequest.tableName, fieldRequest.fieldName, 
-                            feBlindIndex, sodium) 
-    
-                        feBlinds.push(letter3BlindIndex)
-                        
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            const fieldResponse: FieldEncryptionResult = {
-                cipherText: ciphertextField.toString(FIELD_STORAGE_FORMAT),
-                nonce: encryptNonceField.toString(FIELD_STORAGE_FORMAT),
-                fieldName: fieldRequest.fieldName,
-                blindIndexes: feBlinds
-            }
-
-            ctx.postMessage({
-                cmd: Jobs[Jobs.FieldEncryption],
-                status: 'done',
-                response: fieldResponse
+                response: result
             })
 
             break
@@ -153,82 +40,70 @@ ctx.onmessage = async e => {
             // Generate a random private key. Stretch the users password and encrypt that key.
             // Produces the encrypted key, the nonce used and a blind index (bloom filter)
 
-            const masterKeyRequest: CreateMasterKeyRequest = data.request
+            const mkr: CreateMasterKeyRequest = data.request
 
-            // Generate a random private key
-            const keyPair = await sodium.crypto_box_keypair();
-            const secretKey = await sodium.crypto_box_secretkey(keyPair);
-            const keyToHideBase64 = secretKey.toString('base64')
-            const publicKey = await sodium.crypto_box_publickey(keyPair);
-            const publicKeyBase64 = publicKey.toString('base64')
-            const nonce = await sodium.randombytes_buf(24);
-            const salt = nonce.slice(0, 16)
-            const nonceBase64 = nonce.toString('base64')
+            const masterPassword = fromUtf8(mkr.masterPassword)
+            const email = fromUtf8(mkr.email)
 
-            const stretchedPwd: Buffer = await stretch(masterKeyRequest.password, salt, sodium, 'encryption')
+            const masterKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256);
+            const stretchedMasterKey = await stretchKey(masterKey.arr)
+            const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
 
-            // Turn our password into a key
-            const key = new CryptographyKey(stretchedPwd)
-            const wrappedMasterKey = await sodium.crypto_secretbox(
-                keyToHideBase64,
-                nonce,
-                key
-            );
+            let symKey = new Uint8Array(512 / 8);
+            self.crypto.getRandomValues(symKey);
+            const symmetricKey = new SymmetricCryptoKey(symKey);
+            const protectedSymKey = await aesEncrypt(symmetricKey.key.arr, 
+                stretchedMasterKey.encKey,
+                stretchedMasterKey.macKey);
 
-            // Verify it.
-            const wrapperMasterKeyBase64 = wrappedMasterKey.toString('base64');
-            const verifyMasterKeyBase64 = await decryptMasterKey(nonceBase64, masterKeyRequest.password, wrapperMasterKeyBase64, sodium)
+            const keyPair = await generateRsaKeyPair();
+            const publicKey = keyPair.publicKey;
+            const privateKey = keyPair.privateKey;
+            const protectedPrivateKey = await aesEncrypt(privateKey.arr, symmetricKey.encKey,
+                symmetricKey.macKey);
 
-            if (verifyMasterKeyBase64 == keyToHideBase64) {
-
-                // Generate key for bloom filter
-                const blind = await stretchWithEmail(masterKeyRequest.email, masterKeyRequest.password, sodium)
-
-                const masterResponse: CreateMasterKeyResult = {
-                    encryptedPrivateKey: wrapperMasterKeyBase64,
-                    privateKey: keyToHideBase64,
-                    publicKey: publicKeyBase64,
-                    initVector: nonceBase64,
-                    blindIndex: blind.slice(0, 8).toString('base64')
-                }
-
-                ctx.postMessage({
-                    cmd: Jobs[Jobs.CreateMasterKey],
-                    status: 'done',
-                    response: masterResponse
-                })
-            }
-
-            break
-        }
-        case Jobs[Jobs.PasswordBlindIndex]: {
-
-            const passwordToIndexRequest: PasswordBlindIndexRequest = data.request
-
-            const stretchedPassword = await stretchWithEmail(passwordToIndexRequest.email, 
-                passwordToIndexRequest.password, sodium)
-
-            const passwordToIndexResult: PasswordBlindIndexResult = {
-                blindIndex: stretchedPassword.slice(0, 8).toString('base64')
+            const masterResponse: CreateMasterKeyResult = {
+                masterPasswordHash: masterKeyHash.b64,
+                protectedSymmetricKey: protectedSymKey.string,
+                protectedPrivateKey: protectedPrivateKey.string,
+                publicKey: publicKey.b64
             }
 
             ctx.postMessage({
-                cmd: Jobs[Jobs.PasswordBlindIndex],
+                cmd: Jobs[Jobs.CreateMasterKey],
                 status: 'done',
-                // The bloom filter key is just the first 8 bytes.
-                response: passwordToIndexResult
+                response: masterResponse
             })
+
             break
         }
         case Jobs[Jobs.DecryptMasterKey]: {
 
             const decryptKeyRequest: DecryptMasterKeyRequest = data.request
 
-            let masterKeyBase64 = await decryptMasterKey(decryptKeyRequest.initVector, 
-                decryptKeyRequest.password, decryptKeyRequest.encryptedPrivateKey, sodium)
+            const masterPassword = fromUtf8(decryptKeyRequest.masterPassword)
+            const email = fromUtf8(decryptKeyRequest.email)
+
+            const masterKey = await pbkdf2(masterPassword, email, 
+                decryptKeyRequest.pbkdf2Iterations, 256);
+            const stretchedMasterKey = await stretchKey(masterKey.arr)
+
+            const semKeyCipher = Cipher.fromString(decryptKeyRequest.protectedSymmetricKey);
+
+            let decryptedSymKey = await aesDecrypt(semKeyCipher, 
+                stretchedMasterKey.encKey,
+                stretchedMasterKey.macKey);
+            const unprotectedSymKey = new SymmetricCryptoKey(decryptedSymKey);
+
+            const privKeyCipher = Cipher.fromString(decryptKeyRequest.protectedPrivateKey)
+
+            let decryptedPrivateKey = await aesDecrypt(privKeyCipher, 
+                unprotectedSymKey.encKey,
+                unprotectedSymKey.macKey);
 
             const decryptResult: DecryptMasterKeyResult = {
-                privateKey: masterKeyBase64
+                unprotectedSymmetricKey: unprotectedSymKey,
+                unprotectedPrivateKey: new ByteData(decryptedPrivateKey)
             }
 
             ctx.postMessage({
@@ -243,85 +118,208 @@ ctx.onmessage = async e => {
     }
 }
 
-async function bloomFromValue(value : string, tableName : string, fieldName : string, 
-    blindType : BlindIndexType, sodium: SodiumPlus) : Promise<string> {
+const encTypes = {
+    AesCbc256_B64: 0,
+    AesCbc128_HmacSha256_B64: 1,
+    AesCbc256_HmacSha256_B64: 2,
+    Rsa2048_OaepSha256_B64: 3,
+    Rsa2048_OaepSha1_B64: 4,
+    Rsa2048_OaepSha256_HmacSha256_B64: 5,
+    Rsa2048_OaepSha1_HmacSha256_B64: 6
+};
 
-    
-    const blind = BlindIndexType[blindType]
-    // TODO derive form private key
-    const salt = await sodium.crypto_generichash(tableName + value, null, 16);
+// Helpers
 
-    let blindBuf: Buffer = await stretch(
-                value, 
-                salt, sodium, fieldName + '-' + blind)
-
-    return blindBuf.slice(0, 8).toString(FIELD_STORAGE_FORMAT)
-}
-
-async function decrypt(privateKey: string, cipherText: Buffer, nonce: Buffer, sodium: SodiumPlus): Promise<string> {
-
-    const decryptionKey: CryptographyKey = new CryptographyKey(Buffer.from(privateKey, "base64"))
-    const plainText = await sodium.crypto_secretbox_open(cipherText, nonce, decryptionKey)
-
-    return plainText.toString()
-}
-
-async function encrypt(privateKey: string, plainText: string, sodium: SodiumPlus): Promise<[Buffer, Buffer]> {
-    const encryptionKey: CryptographyKey = new CryptographyKey(Buffer.from(privateKey, "base64"))
-    const encryptNonce = await sodium.randombytes_buf(24);
-    const ciphertext = await sodium.crypto_secretbox(plainText, encryptNonce, encryptionKey)
-
-    return [ciphertext, encryptNonce]
-}
-
-async function decryptMasterKey(initVector: string, password: string, encrypted_private_key: string, sodium: SodiumPlus): Promise<string> {
-
-    const masterNonce = Buffer.from(initVector, 'base64')
-    const masterSalt = masterNonce.slice(0, 16)
-    const encryptedMasterKey = Buffer.from(encrypted_private_key, 'base64')
-    const strPassword = await stretch(password, masterSalt, sodium, 'master-key')
-    const passKey = new CryptographyKey(strPassword)
-
-    let masterKeyBuffer: Buffer = await sodium.crypto_secretbox_open(
-        encryptedMasterKey,
-        masterNonce,
-        passKey
-    )
-
-    return masterKeyBuffer.toString()
-}
-
-async function stretchWithEmail(email: string, password: string, sodium: SodiumPlus): Promise<Buffer> {
-
-    // Generate key for bloom filter
-    let salt = await sodium.crypto_generichash(email + password, null, 16);
-
-    let stretched: Buffer = await stretch(password, salt, sodium, 'bloom')
-
-    return stretched
-}
-
-async function stretch(valueToStretch: string, salt: Buffer, sodium: SodiumPlus, msg: string): Promise<Buffer> {
-
-    // 1st round
-    let hash = await sodium.crypto_pwhash(
-        32,
-        valueToStretch,
-        salt,
-        sodium.CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE,
-        sodium.CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE
-    )
-
-    // Ten rounds of argon 2.
-    for (var i = 0; i < 10; i++) {
-        hash = await sodium.crypto_pwhash(
-            32,
-            hash.getBuffer().toString('hex'),
-            salt,
-            sodium.CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE,
-            sodium.CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE
-        )
-        ctx.postMessage({ cmd: 'decrypt', status: `working-${msg}`, percent: ((i + 1) * 10) });
+function fromUtf8(str) {
+    const strUtf8 = unescape(encodeURIComponent(str));
+    const bytes = new Uint8Array(strUtf8.length);
+    for (let i = 0; i < strUtf8.length; i++) {
+        bytes[i] = strUtf8.charCodeAt(i);
     }
-    return hash.getBuffer()
+    return bytes.buffer;
+}
+
+// Crypto
+
+async function pbkdf2(password, salt, iterations, length) {
+    const importAlg = {
+        name: 'PBKDF2'
+    };
+
+    const deriveAlg = {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: iterations,
+        hash: { name: 'SHA-256' }
+    };
+
+    const aesOptions = {
+        name: 'AES-CBC',
+        length: length
+    };
+
+    try {
+        const importedKey = await self.crypto.subtle.importKey(
+            'raw', password, importAlg, false, ['deriveKey']);
+        const derivedKey = await self.crypto.subtle.deriveKey(
+            deriveAlg, importedKey, aesOptions, true, ['encrypt']);
+        const exportedKey = await self.crypto.subtle.exportKey('raw', derivedKey);
+        return new ByteData(exportedKey);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+async function aesEncrypt(data, encKey: ByteData, macKey: ByteData) {
+    const keyOptions = {
+        name: 'AES-CBC'
+    };
+
+    const encOptions = {
+        name: 'AES-CBC',
+        iv: new Uint8Array(16)
+    };
+    self.crypto.getRandomValues(encOptions.iv);
+    const ivData = new ByteData(encOptions.iv.buffer);
+
+    try {
+        const importedKey = await self.crypto.subtle.importKey(
+            'raw', encKey.arr.buffer, keyOptions, false, ['encrypt']);
+        const encryptedBuffer = await self.crypto.subtle.encrypt(encOptions, importedKey, data);
+        const ctData = new ByteData(encryptedBuffer);
+        let type = encTypes.AesCbc256_B64;
+        let macData;
+        if (macKey) {
+            const dataForMac = buildDataForMac(ivData.arr, ctData.arr);
+            const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
+            type = encTypes.AesCbc256_HmacSha256_B64;
+            macData = new ByteData(macBuffer);
+        }
+        return new Cipher(type, ivData, ctData, macData);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function aesDecrypt(cipher: Cipher, encKey: ByteData, macKey: ByteData) {
+    const keyOptions = {
+        name: 'AES-CBC'
+    };
+
+    const decOptions = {
+        name: 'AES-CBC',
+        iv: cipher.iv.arr.buffer
+    };
+
+    try {
+        const checkMac = cipher.encType != encTypes.AesCbc256_B64;
+        if (checkMac) {
+            if (!macKey) {
+                throw 'MAC key not provided.';
+            }
+            const dataForMac = buildDataForMac(cipher.iv.arr, cipher.ct.arr);
+            const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
+            const macsMatch = await macsEqual(cipher.mac.arr.buffer, macBuffer, macKey.arr.buffer);
+            if (!macsMatch) {
+                throw 'MAC check failed.';
+            }
+            const importedKey = await self.crypto.subtle.importKey(
+                'raw', encKey.arr.buffer, keyOptions, false, ['decrypt']);
+            return self.crypto.subtle.decrypt(decOptions, importedKey, cipher.ct.arr.buffer);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function computeMac(data, key) {
+    const alg = {
+        name: 'HMAC',
+        hash: { name: 'SHA-256' }
+    };
+    const importedKey = await self.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
+    return self.crypto.subtle.sign(alg, importedKey, data);
+}
+
+async function macsEqual(mac1Data, mac2Data, key) {
+    const alg = {
+        name: 'HMAC',
+        hash: { name: 'SHA-256' }
+    };
+
+    const importedMacKey = await self.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
+    const mac1 = await self.crypto.subtle.sign(alg, importedMacKey, mac1Data);
+    const mac2 = await self.crypto.subtle.sign(alg, importedMacKey, mac2Data);
+
+    if (mac1.byteLength !== mac2.byteLength) {
+        return false;
+    }
+
+    const arr1 = new Uint8Array(mac1);
+    const arr2 = new Uint8Array(mac2);
+
+    for (let i = 0; i < arr2.length; i++) {
+        if (arr1[i] !== arr2[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function buildDataForMac(ivArr, ctArr) {
+    const dataForMac = new Uint8Array(ivArr.length + ctArr.length);
+    dataForMac.set(ivArr, 0);
+    dataForMac.set(ctArr, ivArr.length);
+    return dataForMac;
+}
+
+async function generateRsaKeyPair() {
+    const rsaOptions = {
+        name: 'RSA-OAEP',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
+        hash: { name: 'SHA-1' }
+    };
+
+    try {
+        const keyPair = await self.crypto.subtle.generateKey(rsaOptions, true, ['encrypt', 'decrypt']);
+        const publicKey = new ByteData(await self.crypto.subtle.exportKey('spki', keyPair.publicKey));
+        const privateKey = new ByteData(await self.crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
+        return {
+            publicKey: publicKey,
+            privateKey: privateKey
+        };
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function stretchKey(key) {
+    const newKey = new Uint8Array(64);
+    newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('enc')), 32));
+    newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('mac')), 32), 32);
+    return new SymmetricCryptoKey(newKey.buffer);
+}
+
+// ref: https://tools.ietf.org/html/rfc5869
+async function hkdfExpand(prk, info, size) {
+    const alg = {
+        name: 'HMAC',
+        hash: { name: 'SHA-256' }
+    };
+    const importedKey = await self.crypto.subtle.importKey('raw', prk, alg, false, ['sign']);
+    const hashLen = 32; // sha256
+    const okm = new Uint8Array(size);
+    let previousT = new Uint8Array(0);
+    const n = Math.ceil(size / hashLen);
+    for (let i = 0; i < n; i++) {
+        const t = new Uint8Array(previousT.length + info.length + 1);
+        t.set(previousT);
+        t.set(info, previousT.length);
+        t.set([i + 1], t.length - 1);
+        previousT = new Uint8Array(await self.crypto.subtle.sign(alg, importedKey, t.buffer));
+        okm.set(previousT, i * hashLen);
+    }
+    return okm;
 }

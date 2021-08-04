@@ -142,6 +142,12 @@ pub async fn process_otp(
                 .execute(pool.get_ref())
                 .await?;
 
+                if config.auth_type == crate::config::AuthType::Encrypted {
+                    return Ok(HttpResponse::SeeOther()
+                        .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))
+                        .finish());
+                }
+
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))
                     .finish());

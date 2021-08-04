@@ -16,9 +16,11 @@ pub struct Login {
     pub blind_index: String,
 }
 #[derive(sqlx::FromRow)]
-struct User {
-    encrypted_private_key: String,
-    init_vector: String,
+pub struct User {
+    email: String,
+    protected_symmetric_key: String,
+    protected_private_key: String,
+    public_key: String,
 }
 
 #[derive(sqlx::FromRow)]
@@ -38,9 +40,16 @@ pub async fn decrypt(
     }
 
     if let Some(logged_user) = logged_user {
+        // Make sure they did email otp first.
+        if config.email_otp_enabled && !logged_user.otp_code_confirmed {
+            return Ok(HttpResponse::SeeOther()
+                .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                .finish());
+        }
+
         let users = sqlx::query_as::<_, User>(&format!(
             "
-            SELECT encrypted_private_key, init_vector
+            SELECT email, protected_symmetric_key, protected_private_key, public_key
             FROM {} WHERE id = $1
             ",
             config.user_table_name
@@ -49,10 +58,7 @@ pub async fn decrypt(
         .fetch_all(db_pool.get_ref()) // -> Vec<Person>
         .await?;
 
-        let page = DecryptMasterKeyPage {
-            init_vector: &users[0].init_vector,
-            encrypted_private_key: &users[0].encrypted_private_key,
-        };
+        let page = DecryptMasterKeyPage { user: &users[0] };
 
         return Ok(layouts::session_layout("Master Key", &page.to_string()));
     }
@@ -86,7 +92,7 @@ pub async fn process_login(
 ) -> Result<HttpResponse, CustomError> {
     let users = sqlx::query_as::<_, LoginUser>(&format!(
         "
-        SELECT id FROM {} WHERE email = $1 AND blind_index = $2
+        SELECT id FROM {} WHERE email = $1 AND master_password_hash = $2
         ",
         config.user_table_name
     ))
@@ -97,6 +103,12 @@ pub async fn process_login(
 
     if !users.is_empty() {
         crate::auth::login::create_session(db_pool, identity, users[0].id).await?;
+
+        if config.email_otp_enabled {
+            return Ok(HttpResponse::SeeOther()
+                .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                .finish());
+        }
 
         return Ok(HttpResponse::SeeOther()
             .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))
@@ -128,7 +140,7 @@ pub async fn process_login(
 }
 
 markup::define! {
-    DecryptMasterKeyPage<'a>(encrypted_private_key: &'a str, init_vector: &'a str) {
+    DecryptMasterKeyPage<'a>(user: &'a User) {
         .m_decryption["data-controller" = "master"] {
             h1 { "Decrypting Your Master Key" }
             svg.progress[viewBox="0 0 200 200"] {
@@ -137,8 +149,10 @@ markup::define! {
                     fill="none", "stroke-dasharray"="350", "stroke-dashoffset"="350"] {}
             }
             form[method="post", "data-target" = "master.form"] {
-                input["data-target" = "master.encryptedPrivateKey", type="hidden", value=encrypted_private_key] {}
-                input["data-target" = "master.initVector", type="hidden", value=init_vector] {}
+                input["data-target" = "master.protectedPrivateKey", type="hidden", value=user.protected_private_key.clone()] {}
+                input["data-target" = "master.protectedSymmetricKey", type="hidden", value=user.protected_symmetric_key.clone()] {}
+                input["data-target" = "master.publicKey", type="hidden", value=user.public_key.clone()] {}
+                input["data-target" = "master.email", type="hidden", value=user.email.clone()] {}
             }
         }
     }
