@@ -26,11 +26,10 @@ export default class extends Controller {
 
             if (data.status == 'done') {
                 console.log(data)
-                //setPrivateKey(fieldResult.privateKey)
                 localStorage.setItem('unprotected_private_key', fieldResult.unprotectedPrivateKey.b64)
                 localStorage.setItem('unprotected_symmetric_key', fieldResult.unprotectedSymmetricKey.key.b64)
-                localStorage.setItem('public_key', fieldResult.publicKey.b64)
-                removePassword()
+                localStorage.setItem('public_key', this.publicKeyTarget.value)
+                //removePassword()
                 this.formTarget.submit()
             }
             else if (data.status == 'working-master-key') {

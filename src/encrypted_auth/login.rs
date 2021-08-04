@@ -85,7 +85,7 @@ pub async fn process_login(
 ) -> Result<HttpResponse, CustomError> {
     let users = sqlx::query_as::<_, LoginUser>(&format!(
         "
-        SELECT id FROM {} WHERE email = $1 AND blind_index = $2
+        SELECT id FROM {} WHERE email = $1 AND master_password_hash = $2
         ",
         config.user_table_name
     ))

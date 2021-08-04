@@ -1,6 +1,7 @@
 import { Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
     DecryptMasterKeyRequest, DecryptMasterKeyResult,
-    ByteData, SymmetricCryptoKey, Cipher  } from './crypto_types'
+    ByteData, SymmetricCryptoKey, Cipher, HashMasterPasswordRequest,
+    HashMasterPasswordResult  } from './crypto_types'
 
 
 const FIELD_STORAGE_FORMAT = "base64"
@@ -13,6 +14,27 @@ ctx.onmessage = async e => {
     const data = e.data
 
     switch (data.cmd) {
+        case Jobs[Jobs.HashMasterPassword]: {
+            const mkr: HashMasterPasswordRequest = data.request
+
+            const masterPassword = fromUtf8(mkr.masterPassword)
+            const email = fromUtf8(mkr.email)
+
+            const masterKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256);
+            const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
+            
+            let result: HashMasterPasswordResult = {
+                masterPasswordHash: masterKeyHash.b64
+            }
+
+            ctx.postMessage({
+                cmd: Jobs[Jobs.CreateMasterKey],
+                status: 'done',
+                response: result
+            })
+
+            break
+        }
         case Jobs[Jobs.CreateMasterKey]: {
 
             // Generate a random private key. Stretch the users password and encrypt that key.
@@ -264,27 +286,6 @@ async function generateRsaKeyPair() {
         const keyPair = await self.crypto.subtle.generateKey(rsaOptions, true, ['encrypt', 'decrypt']);
         const publicKey = new ByteData(await self.crypto.subtle.exportKey('spki', keyPair.publicKey));
         const privateKey = new ByteData(await self.crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
-        return {
-            publicKey: publicKey,
-            privateKey: privateKey
-        };
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// Not tested.
-async function importRsaKeyPair(publicKeyData: ByteData, privateKeyData: ByteData) {
-    const rsaOptions = {
-        name: 'RSA-OAEP',
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
-        hash: { name: 'SHA-1' }
-    };
-
-    try {
-        const publicKey = new ByteData(await self.crypto.subtle.importKey('spki', publicKeyData.arr, rsaOptions, true, ['encrypt', 'decrypt']));
-        const privateKey = new ByteData(await self.crypto.subtle.importKey('pkcs8', privateKeyData.arr, rsaOptions, true, ['encrypt', 'decrypt']));
         return {
             publicKey: publicKey,
             privateKey: privateKey

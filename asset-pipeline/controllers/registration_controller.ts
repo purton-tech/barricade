@@ -1,12 +1,13 @@
 import { Controller } from 'stimulus'
-import { setPrivateKey } from './util'
+import { setPassword, setPrivateKey } from './util'
 import { CreateMasterKeyRequest, CreateMasterKeyResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
 
   static targets = ['button', 'form', 'password', 'confirmPassword', 'email',
-    'emailCopy', 'protectedPrivateKey', 'publicKey', 'protectedSymmetricKey', 'masterPasswordHash']
+    'emailCopy', 'protectedPrivateKey', 'publicKey', 'protectedSymmetricKey', 
+    'masterPasswordHash']
 
   readonly buttonTarget!: HTMLButtonElement
   readonly formTarget!: HTMLFormElement
@@ -54,7 +55,7 @@ export default class extends Controller {
         controller.publicKeyTarget.value = masterKeyResult.publicKey
         controller.protectedSymmetricKeyTarget.value = masterKeyResult.protectedSymmetricKey
         controller.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
-        setPrivateKey(masterKeyResult.protectedPrivateKey)
+        setPassword(pass1)
         controller.formTarget.submit()
       }
       else if (data.status == 'working-encryption') {
