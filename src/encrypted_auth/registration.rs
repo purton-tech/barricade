@@ -66,8 +66,14 @@ pub async fn process_registration(
 
             crate::auth::login::create_session(db_pool, identity, user.id).await?;
 
+            if config.email_otp_enabled {
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                    .finish());
+            }
+
             Ok(HttpResponse::SeeOther()
-                .append_header((http::header::LOCATION, config.redirect_url.clone()))
+                .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))
                 .finish())
         }
         Err(_) => {

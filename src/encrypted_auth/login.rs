@@ -40,6 +40,13 @@ pub async fn decrypt(
     }
 
     if let Some(logged_user) = logged_user {
+        // Make sure they did email otp first.
+        if config.email_otp_enabled && !logged_user.otp_code_confirmed {
+            return Ok(HttpResponse::SeeOther()
+                .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                .finish());
+        }
+
         let users = sqlx::query_as::<_, User>(&format!(
             "
             SELECT email, protected_symmetric_key, protected_private_key, public_key
@@ -96,6 +103,12 @@ pub async fn process_login(
 
     if !users.is_empty() {
         crate::auth::login::create_session(db_pool, identity, users[0].id).await?;
+
+        if config.email_otp_enabled {
+            return Ok(HttpResponse::SeeOther()
+                .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                .finish());
+        }
 
         return Ok(HttpResponse::SeeOther()
             .append_header((http::header::LOCATION, crate::DECRYPT_MASTER_KEY_URL))
