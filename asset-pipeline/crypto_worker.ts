@@ -1,10 +1,8 @@
 import { Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
     DecryptMasterKeyRequest, DecryptMasterKeyResult,
-    ByteData, SymmetricCryptoKey, Cipher, HashMasterPasswordRequest,
+    ByteData, Cipher, HashMasterPasswordRequest,
     HashMasterPasswordResult  } from './crypto_types'
-
-
-const FIELD_STORAGE_FORMAT = "base64"
+import { openDB } from 'idb';
 
 // We alias self to ctx and give it our newly created type
 const ctx: Worker = self as any
@@ -20,8 +18,9 @@ ctx.onmessage = async e => {
             const masterPassword = fromUtf8(mkr.masterPassword)
             const email = fromUtf8(mkr.email)
 
-            const masterKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256);
-            const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
+            const masterCryptoKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256)
+            const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
+            const masterKeyHash = new ByteData(await pbkdf2(masterKeyData.arr, masterPassword, 1, 256))
             
             let result: HashMasterPasswordResult = {
                 masterPasswordHash: masterKeyHash.b64
@@ -44,29 +43,44 @@ ctx.onmessage = async e => {
 
             const masterPassword = fromUtf8(mkr.masterPassword)
             const email = fromUtf8(mkr.email)
+            const masterCryptoKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256)
+            const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
+            const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
+            const masterKeyHashData = new ByteData(await self.crypto.subtle.exportKey('raw', masterKeyHash))
 
-            const masterKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256);
-            const stretchedMasterKey = await stretchKey(masterKey.arr)
-            const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
-
-            let symKey = new Uint8Array(512 / 8);
-            self.crypto.getRandomValues(symKey);
-            const symmetricKey = new SymmetricCryptoKey(symKey);
-            const protectedSymKey = await aesEncrypt(symmetricKey.key.arr, 
-                stretchedMasterKey.encKey,
-                stretchedMasterKey.macKey);
+            const symKey = await self.crypto.subtle.generateKey({
+                name: 'AES-GCM',
+                length: 128
+            },
+            true,
+            ['decrypt', 'encrypt'])
+            const symKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', symKey))
+            const protectedSymKey = await aesEncrypt(symKeyData.arr, masterCryptoKey);
 
             const keyPair = await generateRsaKeyPair();
             const publicKey = keyPair.publicKey;
             const privateKey = keyPair.privateKey;
-            const protectedPrivateKey = await aesEncrypt(privateKey.arr, symmetricKey.encKey,
-                symmetricKey.macKey);
+            const protectedPrivateKey = await aesEncrypt(privateKey.arr, masterCryptoKey);
 
             const masterResponse: CreateMasterKeyResult = {
-                masterPasswordHash: masterKeyHash.b64,
+                masterPasswordHash: masterKeyHashData.b64,
                 protectedSymmetricKey: protectedSymKey.string,
                 protectedPrivateKey: protectedPrivateKey.string,
                 publicKey: publicKey.b64
+            }
+
+            // Now store it in the vault
+            try {
+                const keyOptions = {
+                    name: 'AES-GCM'
+                };
+                const key: CryptoKey = await self.crypto.subtle.importKey(
+                    'raw', masterKeyData.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
+                const db = await openIndexedDB()
+                await db.put('keyval', key, 'master_key');
+                db.close()
+            } catch (e) {
+                console.log(e)
             }
 
             ctx.postMessage({
@@ -78,38 +92,65 @@ ctx.onmessage = async e => {
             break
         }
         case Jobs[Jobs.DecryptMasterKey]: {
+            const db = await openIndexedDB()
+            const masterKey = await db.get('keyval', 'master_key') as CryptoKey;
+
+            console.log(masterKey)
 
             const decryptKeyRequest: DecryptMasterKeyRequest = data.request
 
-            const masterPassword = fromUtf8(decryptKeyRequest.masterPassword)
-            const email = fromUtf8(decryptKeyRequest.email)
-
-            const masterKey = await pbkdf2(masterPassword, email, 
-                decryptKeyRequest.pbkdf2Iterations, 256);
-            const stretchedMasterKey = await stretchKey(masterKey.arr)
-
             const semKeyCipher = Cipher.fromString(decryptKeyRequest.protectedSymmetricKey);
 
-            let decryptedSymKey = await aesDecrypt(semKeyCipher, 
-                stretchedMasterKey.encKey,
-                stretchedMasterKey.macKey);
-            const unprotectedSymKey = new SymmetricCryptoKey(decryptedSymKey);
+            console.log(semKeyCipher)
+
+            const decryptedSymmetric = await aesDecrypt(semKeyCipher, masterKey)
+
+            console.log(decryptedSymmetric)
+
+            const keyOptions = {
+                name: 'AES-GCM'
+            };
+            const unprotectedSymKey: CryptoKey = await self.crypto.subtle.importKey(
+                'raw', decryptedSymmetric.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
+
+            console.log(unprotectedSymKey)
 
             const privKeyCipher = Cipher.fromString(decryptKeyRequest.protectedPrivateKey)
 
-            let decryptedPrivateKey = await aesDecrypt(privKeyCipher, 
-                unprotectedSymKey.encKey,
-                unprotectedSymKey.macKey);
+            console.log(privKeyCipher)
 
-            const decryptResult: DecryptMasterKeyResult = {
-                unprotectedSymmetricKey: unprotectedSymKey,
-                unprotectedPrivateKey: new ByteData(decryptedPrivateKey)
+            let decryptedPrivateKey = await aesDecrypt(privKeyCipher, masterKey);
+
+            console.log(decryptedPrivateKey)
+
+            const rsaOptions = {
+                name: 'RSA-OAEP',
+                modulusLength: 2048,
+                publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
+                hash: { name: 'SHA-1' }
+            };
+            // RSA private keys can only decrypt
+            const unprotectedPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
+                'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, false, ['decrypt'])
+
+            const publicKey: CryptoKey = await self.crypto.subtle.importKey(
+                'spki', ByteData.fromB64(decryptKeyRequest.publicKey).arr.buffer, rsaOptions, 
+                true, ['encrypt'])
+
+            try {
+                const db = await openIndexedDB()
+                await db.put('keyval', unprotectedSymKey, 'unprotected_symmetric_key')
+                await db.put('keyval', unprotectedPrivateKey, 'unprotected_private_key')
+                await db.put('keyval', publicKey, 'public_key')
+                db.close()
+            } catch (e) {
+                console.log(e)
             }
 
             ctx.postMessage({
                 cmd: 'master-key',
                 status: 'done',
-                response: decryptResult
+                response: {}
             })
             break
         }
@@ -118,15 +159,13 @@ ctx.onmessage = async e => {
     }
 }
 
-const encTypes = {
-    AesCbc256_B64: 0,
-    AesCbc128_HmacSha256_B64: 1,
-    AesCbc256_HmacSha256_B64: 2,
-    Rsa2048_OaepSha256_B64: 3,
-    Rsa2048_OaepSha1_B64: 4,
-    Rsa2048_OaepSha256_HmacSha256_B64: 5,
-    Rsa2048_OaepSha1_HmacSha256_B64: 6
-};
+async function openIndexedDB() {
+    return await openDB('Vault', 1, {
+        upgrade(db) {
+            db.createObjectStore("keyval");
+        },
+    });
+}
 
 // Helpers
 
@@ -141,7 +180,8 @@ function fromUtf8(str) {
 
 // Crypto
 
-async function pbkdf2(password, salt, iterations, length) {
+async function pbkdf2(password : ArrayBuffer, salt : ArrayBuffer, 
+    iterations: number, length: number) : Promise<CryptoKey> {
     const importAlg = {
         name: 'PBKDF2'
     };
@@ -154,7 +194,7 @@ async function pbkdf2(password, salt, iterations, length) {
     };
 
     const aesOptions = {
-        name: 'AES-CBC',
+        name: 'AES-GCM',
         length: length
     };
 
@@ -162,116 +202,40 @@ async function pbkdf2(password, salt, iterations, length) {
         const importedKey = await self.crypto.subtle.importKey(
             'raw', password, importAlg, false, ['deriveKey']);
         const derivedKey = await self.crypto.subtle.deriveKey(
-            deriveAlg, importedKey, aesOptions, true, ['encrypt']);
-        const exportedKey = await self.crypto.subtle.exportKey('raw', derivedKey);
-        return new ByteData(exportedKey);
+            deriveAlg, importedKey, aesOptions, true, ['encrypt', 'decrypt']);
+        return derivedKey;
     } catch (err) {
         console.log(err);
     }
 }
 
-async function aesEncrypt(data, encKey: ByteData, macKey: ByteData) {
+async function aesEncrypt(data : Uint8Array, key: CryptoKey) : Promise<Cipher> {
     const keyOptions = {
-        name: 'AES-CBC'
+        name: 'AES-GCM'
     };
 
     const encOptions = {
-        name: 'AES-CBC',
+        name: 'AES-GCM',
         iv: new Uint8Array(16)
     };
     self.crypto.getRandomValues(encOptions.iv);
     const ivData = new ByteData(encOptions.iv.buffer);
+    const cipher = new ByteData(await self.crypto.subtle.encrypt(encOptions, key, data))
 
-    try {
-        const importedKey = await self.crypto.subtle.importKey(
-            'raw', encKey.arr.buffer, keyOptions, false, ['encrypt']);
-        const encryptedBuffer = await self.crypto.subtle.encrypt(encOptions, importedKey, data);
-        const ctData = new ByteData(encryptedBuffer);
-        let type = encTypes.AesCbc256_B64;
-        let macData;
-        if (macKey) {
-            const dataForMac = buildDataForMac(ivData.arr, ctData.arr);
-            const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
-            type = encTypes.AesCbc256_HmacSha256_B64;
-            macData = new ByteData(macBuffer);
-        }
-        return new Cipher(type, ivData, ctData, macData);
-    } catch (err) {
-        console.error(err);
-    }
+    return new Cipher(ivData, cipher)
 }
 
-async function aesDecrypt(cipher: Cipher, encKey: ByteData, macKey: ByteData) {
+async function aesDecrypt(cipher: Cipher, key: CryptoKey) { 
     const keyOptions = {
-        name: 'AES-CBC'
+        name: 'AES-GCM'
     };
 
     const decOptions = {
-        name: 'AES-CBC',
+        name: 'AES-GCM',
         iv: cipher.iv.arr.buffer
     };
 
-    try {
-        const checkMac = cipher.encType != encTypes.AesCbc256_B64;
-        if (checkMac) {
-            if (!macKey) {
-                throw 'MAC key not provided.';
-            }
-            const dataForMac = buildDataForMac(cipher.iv.arr, cipher.ct.arr);
-            const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
-            const macsMatch = await macsEqual(cipher.mac.arr.buffer, macBuffer, macKey.arr.buffer);
-            if (!macsMatch) {
-                throw 'MAC check failed.';
-            }
-            const importedKey = await self.crypto.subtle.importKey(
-                'raw', encKey.arr.buffer, keyOptions, false, ['decrypt']);
-            return self.crypto.subtle.decrypt(decOptions, importedKey, cipher.ct.arr.buffer);
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-async function computeMac(data, key) {
-    const alg = {
-        name: 'HMAC',
-        hash: { name: 'SHA-256' }
-    };
-    const importedKey = await self.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
-    return self.crypto.subtle.sign(alg, importedKey, data);
-}
-
-async function macsEqual(mac1Data, mac2Data, key) {
-    const alg = {
-        name: 'HMAC',
-        hash: { name: 'SHA-256' }
-    };
-
-    const importedMacKey = await self.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
-    const mac1 = await self.crypto.subtle.sign(alg, importedMacKey, mac1Data);
-    const mac2 = await self.crypto.subtle.sign(alg, importedMacKey, mac2Data);
-
-    if (mac1.byteLength !== mac2.byteLength) {
-        return false;
-    }
-
-    const arr1 = new Uint8Array(mac1);
-    const arr2 = new Uint8Array(mac2);
-
-    for (let i = 0; i < arr2.length; i++) {
-        if (arr1[i] !== arr2[i]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function buildDataForMac(ivArr, ctArr) {
-    const dataForMac = new Uint8Array(ivArr.length + ctArr.length);
-    dataForMac.set(ivArr, 0);
-    dataForMac.set(ctArr, ivArr.length);
-    return dataForMac;
+    return new ByteData(await self.crypto.subtle.decrypt(decOptions, key, cipher.ct.arr.buffer));
 }
 
 async function generateRsaKeyPair() {
@@ -293,33 +257,4 @@ async function generateRsaKeyPair() {
     } catch (err) {
         console.error(err);
     }
-}
-
-async function stretchKey(key) {
-    const newKey = new Uint8Array(64);
-    newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('enc')), 32));
-    newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('mac')), 32), 32);
-    return new SymmetricCryptoKey(newKey.buffer);
-}
-
-// ref: https://tools.ietf.org/html/rfc5869
-async function hkdfExpand(prk, info, size) {
-    const alg = {
-        name: 'HMAC',
-        hash: { name: 'SHA-256' }
-    };
-    const importedKey = await self.crypto.subtle.importKey('raw', prk, alg, false, ['sign']);
-    const hashLen = 32; // sha256
-    const okm = new Uint8Array(size);
-    let previousT = new Uint8Array(0);
-    const n = Math.ceil(size / hashLen);
-    for (let i = 0; i < n; i++) {
-        const t = new Uint8Array(previousT.length + info.length + 1);
-        t.set(previousT);
-        t.set(info, previousT.length);
-        t.set([i + 1], t.length - 1);
-        previousT = new Uint8Array(await self.crypto.subtle.sign(alg, importedKey, t.buffer));
-        okm.set(previousT, i * hashLen);
-    }
-    return okm;
 }

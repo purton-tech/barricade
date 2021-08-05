@@ -1,5 +1,4 @@
 import { Controller } from 'stimulus'
-import { setPassword, setPrivateKey } from './util'
 import { CreateMasterKeyRequest, CreateMasterKeyResult, Jobs } from '../crypto_types'
 
 
@@ -49,23 +48,13 @@ export default class extends Controller {
       if (data.status == 'done') {
 
         const masterKeyResult : CreateMasterKeyResult = data.response
-        console.log(data)
+        console.log(masterKeyResult)
         this.emailCopyTarget.value = this.emailTarget.value
         controller.protectedPrivateKeyTarget.value = masterKeyResult.protectedPrivateKey
         controller.publicKeyTarget.value = masterKeyResult.publicKey
         controller.protectedSymmetricKeyTarget.value = masterKeyResult.protectedSymmetricKey
         controller.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
-        setPassword(pass1)
         controller.formTarget.submit()
-      }
-      else if (data.status == 'working-encryption') {
-        controller.buttonTarget.innerText = `Stretching Password ${data.percent}%`
-      }
-      else if (data.status == 'working-master-key') {
-        controller.buttonTarget.innerText = `Verifying Encryption ${data.percent}%`
-      }
-      else if (data.status == 'working-bloom') {
-        controller.buttonTarget.innerText = `Generating Blind Index ${data.percent}%`
       }
       else {
         console.log(data)

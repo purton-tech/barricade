@@ -80,14 +80,6 @@
             <pre id="master-key-hash"></pre>
         </section>
         <section>
-            <h2>Stretched Master Key</h2>
-            <pre id="stretched-master-key"></pre>
-            <h3>Encryption Key</h3>
-            <pre id="enc-key"></pre>
-            <h3>MAC Key</h3>
-            <pre id="mac-key"></pre>
-        </section>
-        <section>
             <h2>Generated Symmetric Key</h2>
             <pre id="generated-symmetric-key"></pre>
             <h3>Encryption Key</h3>
@@ -124,55 +116,52 @@
                 const email = fromUtf8(document.getElementById('email').value)
                 const iterations = parseInt(document.getElementById('pbkdf2Iterations').value)
                 const masterPassword = fromUtf8(document.getElementById('masterPassword').value)
-                const masterKey = await pbkdf2(masterPassword, email, iterations, 256);
-
-                document.getElementById('master-key').innerText = masterKey.b64
-
-                const stretchedMasterKey = await stretchKey(masterKey.arr)
-
-                document.getElementById('stretched-master-key').innerText = stretchedMasterKey.key.b64
-                document.getElementById('enc-key').innerText = stretchedMasterKey.encKey.b64
-                document.getElementById('mac-key').innerText = stretchedMasterKey.macKey.b64
+                const masterCryptoKey = await pbkdf2(masterPassword, email, iterations, 256);
+                const masterKeyData = new ByteData(await window.crypto.subtle.exportKey('raw', masterCryptoKey))
+                document.getElementById('master-key').innerText = masterKeyData.b64
                 
-                const masterKeyHash = await pbkdf2(masterKey.arr, masterPassword, 1, 256);
-                document.getElementById('master-key-hash').innerText = masterKeyHash.b64
+                const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256);
+                const masterKeyHashData = new ByteData(await window.crypto.subtle.exportKey('raw', masterKeyHash))
+                document.getElementById('master-key-hash').innerText = masterKeyHashData.b64
+                
+                const symKey = await window.crypto.subtle.generateKey({
+                    name: 'AES-GCM',
+                    length: 128
+                },
+                true,
+                ['decrypt', 'encrypt'])
+                const symKeyData = new ByteData(await window.crypto.subtle.exportKey('raw', symKey))
 
-
-                let symKey = new Uint8Array(512 / 8);
-                window.crypto.getRandomValues(symKey);
-                symKey = new SymmetricCryptoKey(symKey);
 
                 const keyPair = await generateRsaKeyPair();
                 const publicKey = keyPair.publicKey;
                 const privateKey = keyPair.privateKey;
 
-                document.getElementById('generated-symmetric-key').innerText = symKey.key.b64
-                document.getElementById('symmetric-key').innerText = symKey.encKey.b64
-                document.getElementById('symmetric-mac').innerText = symKey.macKey.b64
+                document.getElementById('generated-symmetric-key').innerText = symKeyData.b64
 
-                const protectedSymKey = await aesEncrypt(symKey.key.arr, stretchedMasterKey.encKey,
-                    stretchedMasterKey.macKey);
-                document.getElementById('protected-symmetric').innerText = protectedSymKey.string
+                const protectedSymKey = await aesEncrypt(symKeyData.arr, masterCryptoKey);
+                document.getElementById('protected-symmetric').innerText = protectedSymKey.iv.b64 + ':' + protectedSymKey.cypher.b64
 
                 document.getElementById('rsa-pub-key').innerText = publicKey.b64
                 document.getElementById('rsa-private-key').innerText = privateKey.b64
-                const protectedPrivateKey = await aesEncrypt(privateKey.arr, symKey.encKey,
-                    symKey.macKey);
-                document.getElementById('rsa-protected').innerText = protectedPrivateKey.string
+                const protectedPrivateKey = await aesEncrypt(privateKey.arr, masterKeyHash);
+                document.getElementById('rsa-protected').innerText = protectedPrivateKey.iv.b64 + ':' + protectedPrivateKey.cypher.b64
                 
                 const secret = fromUtf8(document.getElementById('secret').value)
 
-                let unprotectedSymKey = await aesDecrypt(protectedSymKey, stretchedMasterKey.encKey,
-                    stretchedMasterKey.macKey);
-                const rebuiltSymKey = new SymmetricCryptoKey(unprotectedSymKey);
-
-                const protectedSecret = await aesEncrypt(secret, rebuiltSymKey.encKey, rebuiltSymKey.macKey);
-
-                document.getElementById('cypher').innerText = protectedSecret.string
+                let unprotectedSymKey = await aesDecrypt(protectedSymKey, masterCryptoKey);
+                console.log(unprotectedSymKey.b64)
                 
-                const unEncrypt = await aesDecrypt(protectedSecret, rebuiltSymKey.encKey, rebuiltSymKey.macKey);
+                const rebuiltSymKey = await  window.crypto.subtle.importKey('raw', unprotectedSymKey.arr,
+                    { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
+
+                const protectedSecret = await aesEncrypt(secret, rebuiltSymKey);
+
+                document.getElementById('cypher').innerText = protectedSecret.iv.b64 + ":" + protectedSecret.cypher.b64
                 
-                document.getElementById('decrypt').innerText = toUtf8(unEncrypt)
+                const unEncrypt = await aesDecrypt(protectedSecret, rebuiltSymKey);
+                
+                document.getElementById('decrypt').innerText = toUtf8(unEncrypt.arr)
 
                 return false;
             }
@@ -226,27 +215,6 @@
                 }
             }
 
-            class SymmetricCryptoKey {
-                constructor(buf) {
-                    if (!arguments.length) {
-                        this.key = new ByteData();
-                        this.encKey = new ByteData();
-                        this.macKey = new ByteData();
-                        return;
-                    }
-
-                    this.key = new ByteData(buf);
-
-                    // First half
-                    const encKey = this.key.arr.slice(0, this.key.arr.length / 2).buffer;
-                    this.encKey = new ByteData(encKey);
-
-                    // Second half
-                    const macKey = this.key.arr.slice(this.key.arr.length / 2).buffer;
-                    this.macKey = new ByteData(macKey);
-                }
-            }
-
             // Helpers
 
             function fromUtf8(str) {
@@ -292,7 +260,7 @@
                 };
 
                 const aesOptions = {
-                    name: 'AES-CBC',
+                    name: 'AES-GCM',
                     length: length
                 };
 
@@ -300,116 +268,42 @@
                     const importedKey = await window.crypto.subtle.importKey(
                         'raw', password, importAlg, false, ['deriveKey']);
                     const derivedKey = await window.crypto.subtle.deriveKey(
-                        deriveAlg, importedKey, aesOptions, true, ['encrypt']);
-                    const exportedKey = await window.crypto.subtle.exportKey('raw', derivedKey);
-                    return new ByteData(exportedKey);
+                        deriveAlg, importedKey, aesOptions, true, ['encrypt', 'decrypt']);
+                    return derivedKey;
                 } catch (err) {
                     console.log(err);
                 }
             }
 
-            async function aesEncrypt(data, encKey, macKey) {
+            async function aesEncrypt(data, key) {
                 const keyOptions = {
-                    name: 'AES-CBC'
+                    name: 'AES-GCM'
                 };
 
                 const encOptions = {
-                    name: 'AES-CBC',
+                    name: 'AES-GCM',
                     iv: new Uint8Array(16)
                 };
                 window.crypto.getRandomValues(encOptions.iv);
                 const ivData = new ByteData(encOptions.iv.buffer);
 
-                try {
-                    const importedKey = await window.crypto.subtle.importKey(
-                        'raw', encKey.arr.buffer, keyOptions, false, ['encrypt']);
-                    const encryptedBuffer = await window.crypto.subtle.encrypt(encOptions, importedKey, data);
-                    const ctData = new ByteData(encryptedBuffer);
-                    let type = encTypes.AesCbc256_B64;
-                    let macData;
-                    if (macKey) {
-                        const dataForMac = buildDataForMac(ivData.arr, ctData.arr);
-                        const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
-                        type = encTypes.AesCbc256_HmacSha256_B64;
-                        macData = new ByteData(macBuffer);
-                    }
-                    return new Cipher(type, ivData, ctData, macData);
-                } catch (err) {
-                    console.error(err);
+                return {
+                    cypher: new ByteData(await window.crypto.subtle.encrypt(encOptions, key, data)),
+                    iv: ivData
                 }
             }
 
-            async function aesDecrypt(cipher, encKey, macKey) {
+            async function aesDecrypt(cipher, key) {
                 const keyOptions = {
-                    name: 'AES-CBC'
+                    name: 'AES-GCM'
                 };
 
                 const decOptions = {
-                    name: 'AES-CBC',
+                    name: 'AES-GCM',
                     iv: cipher.iv.arr.buffer
                 };
 
-                try {
-                    const checkMac = cipher.encType != encTypes.AesCbc256_B64;
-                    if (checkMac) {
-                        if (!macKey) {
-                            throw 'MAC key not provided.';
-                        }
-                        const dataForMac = buildDataForMac(cipher.iv.arr, cipher.ct.arr);
-                        const macBuffer = await computeMac(dataForMac.buffer, macKey.arr.buffer);
-                        const macsMatch = await macsEqual(cipher.mac.arr.buffer, macBuffer, macKey.arr.buffer);
-                        if (!macsMatch) {
-                            throw 'MAC check failed.';
-                        }
-                        const importedKey = await window.crypto.subtle.importKey(
-                            'raw', encKey.arr.buffer, keyOptions, false, ['decrypt']);
-                        return window.crypto.subtle.decrypt(decOptions, importedKey, cipher.ct.arr.buffer);
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-
-            async function computeMac(data, key) {
-                const alg = {
-                    name: 'HMAC',
-                    hash: { name: 'SHA-256' }
-                };
-                const importedKey = await window.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
-                return window.crypto.subtle.sign(alg, importedKey, data);
-            }
-
-            async function macsEqual(mac1Data, mac2Data, key) {
-                const alg = {
-                    name: 'HMAC',
-                    hash: { name: 'SHA-256' }
-                };
-
-                const importedMacKey = await window.crypto.subtle.importKey('raw', key, alg, false, ['sign']);
-                const mac1 = await window.crypto.subtle.sign(alg, importedMacKey, mac1Data);
-                const mac2 = await window.crypto.subtle.sign(alg, importedMacKey, mac2Data);
-
-                if (mac1.byteLength !== mac2.byteLength) {
-                    return false;
-                }
-
-                const arr1 = new Uint8Array(mac1);
-                const arr2 = new Uint8Array(mac2);
-
-                for (let i = 0; i < arr2.length; i++) {
-                    if (arr1[i] !== arr2[i]) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            function buildDataForMac(ivArr, ctArr) {
-                const dataForMac = new Uint8Array(ivArr.length + ctArr.length);
-                dataForMac.set(ivArr, 0);
-                dataForMac.set(ctArr, ivArr.length);
-                return dataForMac;
+                return new ByteData(await window.crypto.subtle.decrypt(decOptions, key, cipher.cypher.arr.buffer));
             }
 
             async function generateRsaKeyPair() {
@@ -431,35 +325,6 @@
                 } catch (err) {
                     console.error(err);
                 }
-            }
-
-            async function stretchKey(key) {
-                const newKey = new Uint8Array(64);
-                newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('enc')), 32));
-                newKey.set(await hkdfExpand(key, new Uint8Array(fromUtf8('mac')), 32), 32);
-                return new SymmetricCryptoKey(newKey.buffer);
-            }
-
-            // ref: https://tools.ietf.org/html/rfc5869
-            async function hkdfExpand(prk, info, size) {
-                const alg = {
-                    name: 'HMAC',
-                    hash: { name: 'SHA-256' }
-                };
-                const importedKey = await window.crypto.subtle.importKey('raw', prk, alg, false, ['sign']);
-                const hashLen = 32; // sha256
-                const okm = new Uint8Array(size);
-                let previousT = new Uint8Array(0);
-                const n = Math.ceil(size / hashLen);
-                for (let i = 0; i < n; i++) {
-                    const t = new Uint8Array(previousT.length + info.length + 1);
-                    t.set(previousT);
-                    t.set(info, previousT.length);
-                    t.set([i + 1], t.length - 1);
-                    previousT = new Uint8Array(await window.crypto.subtle.sign(alg, importedKey, t.buffer));
-                    okm.set(previousT, i * hashLen);
-                }
-                return okm;
             }
 
         //})();
