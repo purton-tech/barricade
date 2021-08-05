@@ -129,14 +129,15 @@ ctx.onmessage = async e => {
                 publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
                 hash: { name: 'SHA-1' }
             };
-            //const unprotectedPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
-            //    'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, true, ['decrypt', 'encrypt']);
+            // RSA private keys can only decrypt
+            const unprotectedPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
+                'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, false, ['decrypt'])
 
             try {
                 const db = await openIndexedDB()
-                await db.put('keyval', unprotectedSymKey, 'unprotected_symmetric_key');
+                await db.put('keyval', unprotectedSymKey, 'unprotected_symmetric_key')
+                await db.put('keyval', unprotectedPrivateKey, 'unprotected_private_key')
                 db.close()
-                //await db.put('keyval', unprotectedPrivateKey, 'unprotected_private_key');
             } catch (e) {
                 console.log(e)
             }
