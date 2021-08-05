@@ -133,10 +133,15 @@ ctx.onmessage = async e => {
             const unprotectedPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
                 'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, false, ['decrypt'])
 
+            const publicKey: CryptoKey = await self.crypto.subtle.importKey(
+                'spki', ByteData.fromB64(decryptKeyRequest.publicKey).arr.buffer, rsaOptions, 
+                true, ['encrypt'])
+
             try {
                 const db = await openIndexedDB()
                 await db.put('keyval', unprotectedSymKey, 'unprotected_symmetric_key')
                 await db.put('keyval', unprotectedPrivateKey, 'unprotected_private_key')
+                await db.put('keyval', publicKey, 'public_key')
                 db.close()
             } catch (e) {
                 console.log(e)

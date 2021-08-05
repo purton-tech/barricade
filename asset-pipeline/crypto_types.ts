@@ -32,6 +32,7 @@ export interface CreateMasterKeyResult {
 export interface DecryptMasterKeyRequest {
     protectedSymmetricKey: string
     protectedPrivateKey: string
+    publicKey: string
 }
 
 export interface DecryptMasterKeyResult {

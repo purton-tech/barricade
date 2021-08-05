@@ -35,6 +35,7 @@ export default class extends Controller {
         const req: DecryptMasterKeyRequest = {
             protectedPrivateKey: this.protectedPrivateKeyTarget.value,
             protectedSymmetricKey: this.protectedSymmetricKeyTarget.value,
+            publicKey: this.publicKeyTarget.value
         }
 
         w.postMessage({
