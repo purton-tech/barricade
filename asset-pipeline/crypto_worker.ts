@@ -20,10 +20,11 @@ ctx.onmessage = async e => {
 
             const masterCryptoKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256)
             const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
-            const masterKeyHash = new ByteData(await pbkdf2(masterKeyData.arr, masterPassword, 1, 256))
+            const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
+            const masterKeyHashData = new ByteData(await self.crypto.subtle.exportKey('raw', masterKeyHash))
             
             let result: HashMasterPasswordResult = {
-                masterPasswordHash: masterKeyHash.b64
+                masterPasswordHash: masterKeyHashData.b64
             }
 
             ctx.postMessage({

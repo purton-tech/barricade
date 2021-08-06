@@ -13,7 +13,7 @@ use validator::{ValidationError, ValidationErrors};
 #[derive(Serialize, Deserialize, Default)]
 pub struct Login {
     pub email: String,
-    pub blind_index: String,
+    pub master_password_hash: String,
 }
 #[derive(sqlx::FromRow)]
 pub struct User {
@@ -97,7 +97,7 @@ pub async fn process_login(
         config.user_table_name
     ))
     .bind(&form.email.to_lowercase())
-    .bind(&form.blind_index)
+    .bind(&form.master_password_hash)
     .fetch_all(db_pool.get_ref()) // -> Vec<Person>
     .await?;
 
@@ -198,7 +198,7 @@ markup::define! {
             }
             form[method = "post", "data-target" = "login.form"] {
                 input[name="email", "data-target" = "login.emailCopy", type="hidden"] {}
-                input[name="blind_index", "data-target" = "login.blindIndex", type="hidden"] {}
+                input[name="master_password_hash", "data-target" = "login.masterPasswordHash", type="hidden"] {}
             }
         }
     }
