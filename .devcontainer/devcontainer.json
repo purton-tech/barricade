@@ -1,13 +1,13 @@
 {
 	"name": "Contor",
-	"dockerComposeFile": "docker-compose.yml",
+	"dockerComposeFile": [
+		"docker-compose.yml"
+	],
 	"service": "development",
     "workspaceFolder": "/vscode",
-	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
-		"terminal.integrated.shell.linux": "/bin/bash",
 		"lldb.executable": "/usr/bin/lldb",
 		// VS Code don't watch files under ./target
 		"files.watcherExclude": {
@@ -29,7 +29,7 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// Make sure all the volumes belong to vscode user
-	"postCreateCommand": "sudo chown -R vscode . && sudo chmod 777 /var/run/docker.sock",
+	//"postCreateCommand": "sudo chown -R vscode . && sudo chmod 777 /var/run/docker.sock",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
