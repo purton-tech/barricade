@@ -33,8 +33,6 @@ fn create_route(route: &str, method_name: &str) -> String {
             let name = parts.join(".");
             let name = format!("./asset-pipeline/dist/{{}}", name);
 
-            dbg!(&name);
-
             if let Ok(file) = fs::NamedFile::open(name) {{
                 return Ok(file);
             }} 

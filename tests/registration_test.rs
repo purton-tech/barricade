@@ -9,15 +9,22 @@ use thirtyfour::prelude::*;
 async fn registration() -> WebDriverResult<()> {
     dotenv().ok();
 
-    let driver = common::Config::new().get_driver().await?;
+    let config = common::Config::new();
 
-    driver.get("http://localhost:9095").await?;
+    let driver = config.get_driver().await?;
+    let delay = std::time::Duration::new(11, 0);
+    driver.set_implicit_wait_timeout(delay).await?;
+
+    driver.get(&config.host).await?;
 
     // Click the search button.
     let elem_button = driver
         .find_element(By::Css("button[type='submit']"))
         .await?;
     elem_button.click().await?;
+
+    // Look for the class to implicitly wait for the page to load.
+    driver.find_element(By::ClassName("error")).await?;
 
     assert!(driver
         .page_source()
@@ -53,27 +60,60 @@ async fn registration() -> WebDriverResult<()> {
         .click()
         .await?;
 
+    // Wait for page load
+    driver
+        .find_element(By::Css(
+            "pre[style='word-wrap: break-word; white-space: pre-wrap;']",
+        ))
+        .await?;
+
     // Doesn't work in CI CD
-    //assert!(
-    //    driver
-    //        .page_source()
-    //        .await?
-    //        .contains("User-Agent")
-    //);
+    assert!(driver.page_source().await?.contains("User-Agent"));
 
     let cookie = driver.get_cookie("session").await;
 
     assert!(cookie.is_ok());
 
-    driver.get("http://localhost:9095/auth/sign_out").await?;
+    driver
+        .screenshot(Path::new("./target/registered.png"))
+        .await?;
 
     driver
-        .screenshot(Path::new("./target/registration.png"))
+        .get(format!("{}/auth/sign_out", &config.host))
+        .await?;
+
+    driver
+        .find_element(By::Css("button[type='submit']"))
         .await?;
 
     let cookie = driver.get_cookie("session").await;
 
     assert!(cookie.is_err());
+
+    // Lets log back in again.
+
+    driver
+        .find_element(By::Id("email"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Id("password"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?
+        .click()
+        .await?;
+
+    // Wait for page load
+    driver
+        .find_element(By::Css(
+            "pre[style='word-wrap: break-word; white-space: pre-wrap;']",
+        ))
+        .await?;
 
     Ok(())
 }

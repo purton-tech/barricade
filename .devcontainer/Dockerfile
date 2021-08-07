@@ -1,13 +1,46 @@
-FROM ianpurton/rust-devcontainer:latest AS base
+FROM ianpurton/rust-slim-devcontainer:latest AS cargo
 
-FROM base AS development
+# Configure apt and install packages
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends \
+        # CA certificates - used by curl i.e. for rustup
+        #ca-certificates \
+        libpq-dev \
+    #
+    #
+    # Clean up
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -r /var/cache/* /var/lib/apt/lists/*
 
-# I like to have my bash history setup. It helps me remember what commands to run
-COPY ./bash_history /home/vscode/.bash_history
-RUN sudo chown vscode /home/vscode/.bash_history
+RUN cargo install diesel_cli --no-default-features --features postgres && ls -la /home/vscode
 
-RUN echo "alias cw='cargo watch -x fmt -x clippy -x run'"  >> ~/.bashrc \ 
-    && echo "alias dmr='diesel migration run'"  >> ~/.bashrc \
-    && echo "alias dml='diesel migration list'"  >> ~/.bashrc \
-    && echo "alias cwl='FORWARD_PORT=8085 FORWARD_URL=host.docker.internal cargo watch -x fmt -x clippy -x run'"  >> ~/.bashrc \
-    && echo "alias cwp='cargo watch --poll -x fmt -x clippy -x run'"  >> ~/.bashrc
+FROM ianpurton/rust-slim-devcontainer:latest AS development
+
+ARG USERNAME=vscode
+
+COPY --from=cargo /usr/local/cargo/bin/diesel* /usr/local/cargo/bin/
+
+# Configure apt and install packages
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends \
+        # CA certificates - used by curl i.e. for rustup
+        #ca-certificates \
+        libpq-dev \
+        postgresql-client \
+        # required by parcel or you can't npm install 
+        build-essential \
+    #
+    #
+    # Clean up
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -r /var/cache/* /var/lib/apt/lists/*
+
+# Install node.
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+RUN sudo apt-get install -y nodejs
+
+COPY *.bash .
+
+RUN cat *.bash >> ~/.bashrc && sudo rm *.bash

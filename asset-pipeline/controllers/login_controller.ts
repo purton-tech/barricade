@@ -1,18 +1,17 @@
 import { Controller } from 'stimulus'
-import { setPassword } from './util'
 import { HashMasterPasswordRequest, HashMasterPasswordResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
 
-  static targets = ['button', 'form', 'password', 'email', 'emailCopy', 'blindIndex']
+  static targets = ['button', 'form', 'password', 'email', 'emailCopy', 'masterPasswordHash']
 
   readonly buttonTarget!: HTMLButtonElement
   readonly formTarget!: HTMLFormElement
   readonly passwordTarget!: HTMLInputElement
   readonly emailTarget!: HTMLInputElement
   readonly emailCopyTarget!: HTMLInputElement
-  readonly blindIndexTarget!: HTMLInputElement
+  readonly masterPasswordHashTarget!: HTMLInputElement
 
   login(event : MouseEvent) {
     event.preventDefault()
@@ -32,12 +31,8 @@ export default class extends Controller {
         const masterKeyResult : HashMasterPasswordResult = data.response
         console.log(masterKeyResult)
         this.emailCopyTarget.value = this.emailTarget.value
-        this.blindIndexTarget.value = masterKeyResult.masterPasswordHash
-        setPassword(this.passwordTarget.value)
+        this.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
         controller.formTarget.submit()
-      }
-      else if (data.status == 'working-bloom') {
-        controller.buttonTarget.innerText = `Stretching Password ${data.percent}%`
       }
       else {
         console.log(data)
