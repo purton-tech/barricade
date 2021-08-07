@@ -5,6 +5,7 @@ use thirtyfour::prelude::*;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub webdriver_url: String,
+    pub host: String,
     pub headless: bool,
 }
 
@@ -23,8 +24,15 @@ impl Config {
             true
         };
 
+        let host = if env::var("WEB_DRIVER_DESTINATION_HOST").is_ok() {
+            env::var("WEB_DRIVER_DESTINATION_HOST").unwrap()
+        } else {
+            "http://development:9095".into()
+        };
+
         Config {
             webdriver_url,
+            host,
             headless,
         }
     }

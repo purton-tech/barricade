@@ -110,6 +110,29 @@ jobs:
           name: screenshots
           path: target/*.png
 
+      - name: Integraton Testing (Encrypted)
+        run: |
+          target/x86_64-unknown-linux-musl/release/contor &
+          chromedriver --whitelisted-ips="" &
+          cargo test --release --target x86_64-unknown-linux-musl
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+          WEB_DRIVER_URL: http://localhost:9515
+          SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
+          FORWARD_URL: localhost
+          FORWARD_PORT: 8080
+          REDIRECT_URL: /
+          AUTH_TYPE: encrypted
+          PORT: 9095
+          USER_TABLE_NAME: keypair_users
+      
+      - name: 'Upload Screenshots'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: encrypted-screenshots
+          path: target/*.png
+
       
       - name: Create Docker file
         run: |
