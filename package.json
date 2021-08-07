@@ -20,7 +20,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "easy-web-crypto": "^1.3.1",
+    "buffer": "^6.0.3",
     "idb": "^6.1.2"
   }
 }
