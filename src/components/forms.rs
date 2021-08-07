@@ -73,8 +73,6 @@ impl markup::Render for FormInput {
     fn write_to(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         write!(f, "<label for='{}'>{}</label>", self.name, self.label)?;
 
-        dbg!(&self.errors);
-
         let input_type = format!("{:?}", self.input_type);
         let mut val = String::new();
         escape(&self.value, &mut val)?;
