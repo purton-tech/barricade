@@ -1,7 +1,9 @@
-import { Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
+import {
+    Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
     DecryptMasterKeyRequest, DecryptMasterKeyResult,
     ByteData, Cipher, HashMasterPasswordRequest,
-    HashMasterPasswordResult  } from './crypto_types'
+    HashMasterPasswordResult
+} from './crypto_types'
 import { openDB } from 'idb';
 
 // We alias self to ctx and give it our newly created type
@@ -15,17 +17,15 @@ ctx.onmessage = async e => {
         case Jobs[Jobs.HashMasterPassword]: {
             const mkr: HashMasterPasswordRequest = data.request
 
-            const masterPassword = fromUtf8(mkr.masterPassword)
-            const email = fromUtf8(mkr.email)
+            const [masterCryptoKey, masterKeyData, masterKeyHash, masterKeyHashData] = 
+                await generateMasterKey(mkr.email, mkr.masterPassword, mkr.pbkdf2Iterations)
 
-            const masterCryptoKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256)
-            const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
-            const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
-            const masterKeyHashData = new ByteData(await self.crypto.subtle.exportKey('raw', masterKeyHash))
-            
             let result: HashMasterPasswordResult = {
                 masterPasswordHash: masterKeyHashData.b64
             }
+
+            // Now store it in the vault
+            await storeMasterKey(masterKeyData)
 
             ctx.postMessage({
                 cmd: Jobs[Jobs.CreateMasterKey],
@@ -42,19 +42,15 @@ ctx.onmessage = async e => {
 
             const mkr: CreateMasterKeyRequest = data.request
 
-            const masterPassword = fromUtf8(mkr.masterPassword)
-            const email = fromUtf8(mkr.email)
-            const masterCryptoKey = await pbkdf2(masterPassword, email, mkr.pbkdf2Iterations, 256)
-            const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
-            const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
-            const masterKeyHashData = new ByteData(await self.crypto.subtle.exportKey('raw', masterKeyHash))
+            const [masterCryptoKey, masterKeyData, masterKeyHash, masterKeyHashData] = 
+                await generateMasterKey(mkr.email, mkr.masterPassword, mkr.pbkdf2Iterations)
 
             const symKey = await self.crypto.subtle.generateKey({
                 name: 'AES-GCM',
                 length: 128
             },
-            true,
-            ['decrypt', 'encrypt'])
+                true,
+                ['decrypt', 'encrypt'])
             const symKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', symKey))
             const protectedSymKey = await aesEncrypt(symKeyData.arr, masterCryptoKey);
 
@@ -71,18 +67,7 @@ ctx.onmessage = async e => {
             }
 
             // Now store it in the vault
-            try {
-                const keyOptions = {
-                    name: 'AES-GCM'
-                };
-                const key: CryptoKey = await self.crypto.subtle.importKey(
-                    'raw', masterKeyData.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
-                const db = await openIndexedDB()
-                await db.put('keyval', key, 'master_key');
-                db.close()
-            } catch (e) {
-                console.log(e)
-            }
+            await storeMasterKey(masterKeyData)
 
             ctx.postMessage({
                 cmd: Jobs[Jobs.CreateMasterKey],
@@ -135,7 +120,7 @@ ctx.onmessage = async e => {
                 'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, false, ['decrypt'])
 
             const publicKey: CryptoKey = await self.crypto.subtle.importKey(
-                'spki', ByteData.fromB64(decryptKeyRequest.publicKey).arr.buffer, rsaOptions, 
+                'spki', ByteData.fromB64(decryptKeyRequest.publicKey).arr.buffer, rsaOptions,
                 true, ['encrypt'])
 
             try {
@@ -160,6 +145,38 @@ ctx.onmessage = async e => {
     }
 }
 
+async function storeMasterKey(masterKey: ByteData) {
+
+    // Now store it in the vault
+    try {
+        const keyOptions = {
+            name: 'AES-GCM'
+        };
+        const key: CryptoKey = await self.crypto.subtle.importKey(
+            'raw', masterKey.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
+        const db = await openIndexedDB()
+        await db.put('keyval', key, 'master_key');
+        db.close()
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+async function generateMasterKey(username: string, password: string, iterations: number):
+    Promise<[CryptoKey, ByteData, CryptoKey, ByteData]> {
+
+
+    const masterPassword = fromUtf8(password)
+    const email = fromUtf8(username)
+
+    const masterCryptoKey = await pbkdf2(masterPassword, email, iterations, 256)
+    const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
+    const masterKeyHash = await pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
+    const masterKeyHashData = new ByteData(await self.crypto.subtle.exportKey('raw', masterKeyHash))
+
+    return [masterCryptoKey, masterKeyData, masterKeyHash, masterKeyHashData]
+}
+
 async function openIndexedDB() {
     return await openDB('Vault', 1, {
         upgrade(db) {
@@ -181,8 +198,8 @@ function fromUtf8(str) {
 
 // Crypto
 
-async function pbkdf2(password : ArrayBuffer, salt : ArrayBuffer, 
-    iterations: number, length: number) : Promise<CryptoKey> {
+async function pbkdf2(password: ArrayBuffer, salt: ArrayBuffer,
+    iterations: number, length: number): Promise<CryptoKey> {
     const importAlg = {
         name: 'PBKDF2'
     };
@@ -210,7 +227,7 @@ async function pbkdf2(password : ArrayBuffer, salt : ArrayBuffer,
     }
 }
 
-async function aesEncrypt(data : Uint8Array, key: CryptoKey) : Promise<Cipher> {
+async function aesEncrypt(data: Uint8Array, key: CryptoKey): Promise<Cipher> {
     const keyOptions = {
         name: 'AES-GCM'
     };
@@ -226,7 +243,7 @@ async function aesEncrypt(data : Uint8Array, key: CryptoKey) : Promise<Cipher> {
     return new Cipher(ivData, cipher)
 }
 
-async function aesDecrypt(cipher: Cipher, key: CryptoKey) { 
+async function aesDecrypt(cipher: Cipher, key: CryptoKey) {
     const keyOptions = {
         name: 'AES-GCM'
     };
