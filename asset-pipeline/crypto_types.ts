@@ -1,41 +1,39 @@
 export enum Jobs {
-    CreateMasterKey,
-    DecryptMasterKey,
-    HashMasterPassword
+    InitialiseVaultWithNewKeys,
+    ImportProtectedKeysIntoVault,
+    UnlockVaultWithMasterPassword
 }
 
-export interface HashMasterPasswordRequest {
+// Used in the login process to get a secure auth token based on
+// The email and password.
+export interface UnlockVaultWithMasterPasswordRequest {
     masterPassword: string
     email: string
-    pbkdf2Iterations: number
-}
-
-export interface HashMasterPasswordResult {
-    masterPasswordHash: string
 }
 
 // On registration - create protected rsa and symmetric keys.
-export interface CreateMasterKeyRequest {
+export interface InitialiseVaultWithNewKeysRequest {
     masterPassword: string
     email: string
     pbkdf2Iterations: number
 }
 
-export interface CreateMasterKeyResult {
+export interface InitialiseVaultWithNewKeysResult {
     masterPasswordHash: string
     protectedSymmetricKey: string
-    protectedPrivateKey: string
-    publicKey: string
+    protectedECDSAPrivateKey: string
+    publicECDSAKey: string
+    protectedECDHPrivateKey: string
+    publicECDHKey: string
 }
 
-// After login. Unwrap the master key.
-export interface DecryptMasterKeyRequest {
+// After login. Import all our protected keys into the vault.
+export interface ImportProtectedKeysIntoVaultRequest {
     protectedSymmetricKey: string
-    protectedPrivateKey: string
-    publicKey: string
-}
-
-export interface DecryptMasterKeyResult {
+    protectedECDSAPrivateKey: string
+    publicECDSAKey: string
+    protectedECDHPrivateKey: string
+    publicECDHKey: string
 }
 
 export class ByteData {

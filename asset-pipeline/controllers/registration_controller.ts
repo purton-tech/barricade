@@ -1,11 +1,17 @@
 import { Controller } from 'stimulus'
-import { CreateMasterKeyRequest, CreateMasterKeyResult, Jobs } from '../crypto_types'
+import { InitialiseVaultWithNewKeysRequest, InitialiseVaultWithNewKeysResult, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
 
-  static targets = ['button', 'form', 'password', 'confirmPassword', 'email',
-    'emailCopy', 'protectedPrivateKey', 'publicKey', 'protectedSymmetricKey', 
+  static targets = ['button', 
+    'form', 'password', 'confirmPassword', 'email',
+    'emailCopy', 
+    'protectedECDSAPrivateKey', 
+    'publicECDSAKey', 
+    'protectedECDHPrivateKey', 
+    'publicECDHKey', 
+    'protectedSymmetricKey', 
     'masterPasswordHash']
 
   readonly buttonTarget!: HTMLButtonElement
@@ -18,8 +24,10 @@ export default class extends Controller {
   readonly emailCopyTarget!: HTMLInputElement
   readonly masterPasswordHashTarget!: HTMLInputElement
   readonly protectedSymmetricKeyTarget!: HTMLInputElement
-  readonly publicKeyTarget!: HTMLInputElement
-  readonly protectedPrivateKeyTarget!: HTMLInputElement
+  readonly publicECDHKeyTarget!: HTMLInputElement
+  readonly protectedECDHPrivateKeyTarget!: HTMLInputElement
+  readonly publicECDSAKeyTarget!: HTMLInputElement
+  readonly protectedECDSAPrivateKeyTarget!: HTMLInputElement
 
   register(event: MouseEvent) {
     event.preventDefault()
@@ -47,11 +55,13 @@ export default class extends Controller {
       const data = e.data;
       if (data.status == 'done') {
 
-        const masterKeyResult : CreateMasterKeyResult = data.response
+        const masterKeyResult : InitialiseVaultWithNewKeysResult = data.response
         console.log(masterKeyResult)
         this.emailCopyTarget.value = this.emailTarget.value
-        controller.protectedPrivateKeyTarget.value = masterKeyResult.protectedPrivateKey
-        controller.publicKeyTarget.value = masterKeyResult.publicKey
+        controller.protectedECDSAPrivateKeyTarget.value = masterKeyResult.protectedECDHPrivateKey
+        controller.publicECDSAKeyTarget.value = masterKeyResult.publicECDHKey
+        controller.protectedECDHPrivateKeyTarget.value = masterKeyResult.protectedECDSAPrivateKey
+        controller.publicECDHKeyTarget.value = masterKeyResult.publicECDSAKey
         controller.protectedSymmetricKeyTarget.value = masterKeyResult.protectedSymmetricKey
         controller.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
         controller.formTarget.submit()
@@ -61,14 +71,14 @@ export default class extends Controller {
       }
     }
 
-    const masterReq: CreateMasterKeyRequest = {
+    const masterReq: InitialiseVaultWithNewKeysRequest = {
       masterPassword: pass1,
       email: controller.emailTarget.value,
       pbkdf2Iterations: 100000
     }
 
     w.postMessage({
-      cmd: Jobs[Jobs.CreateMasterKey],
+      cmd: Jobs[Jobs.InitialiseVaultWithNewKeys],
       request: masterReq
     })
   }

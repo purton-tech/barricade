@@ -1,5 +1,5 @@
 import { Controller } from 'stimulus'
-import { HashMasterPasswordRequest, HashMasterPasswordResult, Jobs } from '../crypto_types'
+import { UnlockVaultWithMasterPasswordRequest, Jobs } from '../crypto_types'
 
 
 export default class extends Controller {
@@ -28,10 +28,10 @@ export default class extends Controller {
       const data = e.data;
 
       if (data.status == 'done') {
-        const masterKeyResult : HashMasterPasswordResult = data.response
-        console.log(masterKeyResult)
+        // When we unlock the vault we get an auth token
+        console.log(data.response)
         this.emailCopyTarget.value = this.emailTarget.value
-        this.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
+        this.masterPasswordHashTarget.value = data.response
         controller.formTarget.submit()
       }
       else {
@@ -39,12 +39,11 @@ export default class extends Controller {
       }
     }
 
-    const masterReq: HashMasterPasswordRequest = {
+    const masterReq: UnlockVaultWithMasterPasswordRequest = {
       masterPassword: this.passwordTarget.value,
-      email: this.emailTarget.value,
-      pbkdf2Iterations: 100000
+      email: this.emailTarget.value
     }
 
-    w.postMessage({ cmd: Jobs[Jobs.HashMasterPassword], request: masterReq })
+    w.postMessage({ cmd: Jobs[Jobs.UnlockVaultWithMasterPassword], request: masterReq })
   }
 }

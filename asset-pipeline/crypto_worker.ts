@@ -1,140 +1,148 @@
 import {
-    Jobs, CreateMasterKeyRequest, CreateMasterKeyResult,
-    DecryptMasterKeyRequest, DecryptMasterKeyResult,
-    ByteData, Cipher, HashMasterPasswordRequest,
-    HashMasterPasswordResult
+    Jobs, InitialiseVaultWithNewKeysRequest, InitialiseVaultWithNewKeysResult,
+    ImportProtectedKeysIntoVaultRequest,
+    ByteData, Cipher
 } from './crypto_types'
 import { openDB } from 'idb';
 
 // We alias self to ctx and give it our newly created type
 const ctx: Worker = self as any
 
+const PBKDF2_ITERATIONS = 100_000
+
+const ECDSA_OPTIONS = {
+    name: "ECDSA",
+    namedCurve: "P-384"
+};
+
+const ECDH_OPTIONS = {
+    name: "ECDH",
+    namedCurve: "P-384"
+};
+
+const AES_OPTIONS = {
+    name: "AES-GCM",
+    length: 256
+};
+
 ctx.onmessage = async e => {
 
     const data = e.data
 
     switch (data.cmd) {
-        case Jobs[Jobs.HashMasterPassword]: {
-            const mkr: HashMasterPasswordRequest = data.request
+        case Jobs[Jobs.UnlockVaultWithMasterPassword]: {
+            const mkr: InitialiseVaultWithNewKeysRequest = data.request
 
             const [masterCryptoKey, masterKeyData, masterKeyHash, masterKeyHashData] = 
-                await generateMasterKey(mkr.email, mkr.masterPassword, mkr.pbkdf2Iterations)
-
-            let result: HashMasterPasswordResult = {
-                masterPasswordHash: masterKeyHashData.b64
-            }
+                await generateMasterKey(mkr.email, mkr.masterPassword, PBKDF2_ITERATIONS)
 
             // Now store it in the vault
             await storeMasterKey(masterKeyData)
 
+            // Post the auth token back to the caller
             ctx.postMessage({
-                cmd: Jobs[Jobs.CreateMasterKey],
                 status: 'done',
-                response: result
+                response: masterKeyHashData.b64
             })
 
             break
         }
-        case Jobs[Jobs.CreateMasterKey]: {
+        case Jobs[Jobs.InitialiseVaultWithNewKeys]: {
 
             // Generate a random private key. Stretch the users password and encrypt that key.
             // Produces the encrypted key, the nonce used and a blind index (bloom filter)
 
-            const mkr: CreateMasterKeyRequest = data.request
+            const mkr: InitialiseVaultWithNewKeysRequest = data.request
 
             const [masterCryptoKey, masterKeyData, masterKeyHash, masterKeyHashData] = 
                 await generateMasterKey(mkr.email, mkr.masterPassword, mkr.pbkdf2Iterations)
 
-            const symKey = await self.crypto.subtle.generateKey({
-                name: 'AES-GCM',
-                length: 128
-            },
+            const symKey = await self.crypto.subtle.generateKey(
+                AES_OPTIONS,
                 true,
                 ['decrypt', 'encrypt'])
             const symKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', symKey))
             const protectedSymKey = await aesEncrypt(symKeyData.arr, masterCryptoKey);
 
-            const keyPair = await generateRsaKeyPair();
-            const publicKey = keyPair.publicKey;
-            const privateKey = keyPair.privateKey;
-            const protectedPrivateKey = await aesEncrypt(privateKey.arr, masterCryptoKey);
+            // ECDSA
+            const keyPair = await generateECDSAKeyPair();
+            const publicECDSAKey = keyPair.publicKey;
+            const protectedECDSAPrivateKey = await aesEncrypt(keyPair.privateKey.arr, masterCryptoKey);
 
-            const masterResponse: CreateMasterKeyResult = {
+            // ECDH
+            const keyPairDH = await generateECDHKeyPair();
+            const publicECDHKey = keyPairDH.publicKey;
+            const protectedECDHPrivateKey = await aesEncrypt(keyPairDH.privateKey.arr, masterCryptoKey);
+
+            const masterResponse: InitialiseVaultWithNewKeysResult = {
                 masterPasswordHash: masterKeyHashData.b64,
                 protectedSymmetricKey: protectedSymKey.string,
-                protectedPrivateKey: protectedPrivateKey.string,
-                publicKey: publicKey.b64
+                protectedECDSAPrivateKey: protectedECDSAPrivateKey.string,
+                publicECDSAKey: publicECDSAKey.b64,
+                protectedECDHPrivateKey: protectedECDHPrivateKey.string,
+                publicECDHKey: publicECDHKey.b64
             }
 
             // Now store it in the vault
             await storeMasterKey(masterKeyData)
 
             ctx.postMessage({
-                cmd: Jobs[Jobs.CreateMasterKey],
                 status: 'done',
                 response: masterResponse
             })
 
             break
         }
-        case Jobs[Jobs.DecryptMasterKey]: {
+        case Jobs[Jobs.ImportProtectedKeysIntoVault]: {
             const db = await openIndexedDB()
             const masterKey = await db.get('keyval', 'master_key') as CryptoKey;
 
-            console.log(masterKey)
-
-            const decryptKeyRequest: DecryptMasterKeyRequest = data.request
+            const decryptKeyRequest: ImportProtectedKeysIntoVaultRequest = data.request
 
             const semKeyCipher = Cipher.fromString(decryptKeyRequest.protectedSymmetricKey);
 
-            console.log(semKeyCipher)
-
             const decryptedSymmetric = await aesDecrypt(semKeyCipher, masterKey)
 
-            console.log(decryptedSymmetric)
-
-            const keyOptions = {
-                name: 'AES-GCM'
-            };
             const unprotectedSymKey: CryptoKey = await self.crypto.subtle.importKey(
-                'raw', decryptedSymmetric.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
+                'raw', decryptedSymmetric.arr.buffer, AES_OPTIONS, false, ['decrypt', 'encrypt']);
 
-            console.log(unprotectedSymKey)
+            // ECDSA
+            const privKeyCipher = Cipher.fromString(decryptKeyRequest.protectedECDSAPrivateKey)
+            let decryptedECDSAPrivateKey = await aesDecrypt(privKeyCipher, masterKey);
+            const unprotectedECDSAPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
+                'pkcs8', decryptedECDSAPrivateKey.arr.buffer, ECDSA_OPTIONS, false, ['sign'])
+            const publicECDSAKey: CryptoKey = await self.crypto.subtle.importKey(
+                'spki', ByteData.fromB64(decryptKeyRequest.publicECDSAKey).arr.buffer, 
+                ECDSA_OPTIONS,
+                true, ['verify'])
 
-            const privKeyCipher = Cipher.fromString(decryptKeyRequest.protectedPrivateKey)
-
-            console.log(privKeyCipher)
-
-            let decryptedPrivateKey = await aesDecrypt(privKeyCipher, masterKey);
-
-            console.log(decryptedPrivateKey)
-
-            const rsaOptions = {
-                name: 'RSA-OAEP',
-                modulusLength: 2048,
-                publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
-                hash: { name: 'SHA-1' }
-            };
-            // RSA private keys can only decrypt
-            const unprotectedPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
-                'pkcs8', decryptedPrivateKey.arr.buffer, rsaOptions, false, ['decrypt'])
-
-            const publicKey: CryptoKey = await self.crypto.subtle.importKey(
-                'spki', ByteData.fromB64(decryptKeyRequest.publicKey).arr.buffer, rsaOptions,
-                true, ['encrypt'])
+            // ECDH
+            const privKeyCipherDH = Cipher.fromString(decryptKeyRequest.protectedECDHPrivateKey)
+            let decryptedECDHPrivateKey = await aesDecrypt(privKeyCipherDH, masterKey);
+            console.log('about to import')
+            const unprotectedECDHPrivateKey: CryptoKey = await self.crypto.subtle.importKey(
+                'pkcs8', decryptedECDHPrivateKey.arr.buffer, ECDH_OPTIONS, false, 
+                ['deriveKey', 'deriveBits'])
+            console.log('about to import public')
+            const publicECDHKey: CryptoKey = await self.crypto.subtle.importKey(
+                'spki', ByteData.fromB64(decryptKeyRequest.publicECDSAKey).arr.buffer, 
+                ECDH_OPTIONS,
+                true, [])
+            console.log('it worked')
 
             try {
                 const db = await openIndexedDB()
                 await db.put('keyval', unprotectedSymKey, 'unprotected_symmetric_key')
-                await db.put('keyval', unprotectedPrivateKey, 'unprotected_private_key')
-                await db.put('keyval', publicKey, 'public_key')
+                await db.put('keyval', unprotectedECDSAPrivateKey, 'unprotected_ecdsa_private_key')
+                await db.put('keyval', publicECDSAKey, 'ecdsa_public_key')
+                await db.put('keyval', unprotectedECDHPrivateKey, 'unprotected_ecdh_private_key')
+                await db.put('keyval', publicECDHKey, 'ecdh_public_key')
                 db.close()
             } catch (e) {
                 console.log(e)
             }
 
             ctx.postMessage({
-                cmd: 'master-key',
                 status: 'done',
                 response: {}
             })
@@ -149,11 +157,8 @@ async function storeMasterKey(masterKey: ByteData) {
 
     // Now store it in the vault
     try {
-        const keyOptions = {
-            name: 'AES-GCM'
-        };
         const key: CryptoKey = await self.crypto.subtle.importKey(
-            'raw', masterKey.arr.buffer, keyOptions, false, ['decrypt', 'encrypt']);
+            'raw', masterKey.arr.buffer, AES_OPTIONS, false, ['decrypt', 'encrypt']);
         const db = await openIndexedDB()
         await db.put('keyval', key, 'master_key');
         db.close()
@@ -211,16 +216,11 @@ async function pbkdf2(password: ArrayBuffer, salt: ArrayBuffer,
         hash: { name: 'SHA-256' }
     };
 
-    const aesOptions = {
-        name: 'AES-GCM',
-        length: length
-    };
-
     try {
         const importedKey = await self.crypto.subtle.importKey(
             'raw', password, importAlg, false, ['deriveKey']);
         const derivedKey = await self.crypto.subtle.deriveKey(
-            deriveAlg, importedKey, aesOptions, true, ['encrypt', 'decrypt']);
+            deriveAlg, importedKey, AES_OPTIONS, true, ['encrypt', 'decrypt']);
         return derivedKey;
     } catch (err) {
         console.log(err);
@@ -228,9 +228,6 @@ async function pbkdf2(password: ArrayBuffer, salt: ArrayBuffer,
 }
 
 async function aesEncrypt(data: Uint8Array, key: CryptoKey): Promise<Cipher> {
-    const keyOptions = {
-        name: 'AES-GCM'
-    };
 
     const encOptions = {
         name: 'AES-GCM',
@@ -244,9 +241,6 @@ async function aesEncrypt(data: Uint8Array, key: CryptoKey): Promise<Cipher> {
 }
 
 async function aesDecrypt(cipher: Cipher, key: CryptoKey) {
-    const keyOptions = {
-        name: 'AES-GCM'
-    };
 
     const decOptions = {
         name: 'AES-GCM',
@@ -256,16 +250,25 @@ async function aesDecrypt(cipher: Cipher, key: CryptoKey) {
     return new ByteData(await self.crypto.subtle.decrypt(decOptions, key, cipher.ct.arr.buffer));
 }
 
-async function generateRsaKeyPair() {
-    const rsaOptions = {
-        name: 'RSA-OAEP',
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
-        hash: { name: 'SHA-1' }
-    };
+async function generateECDSAKeyPair() {
 
     try {
-        const keyPair = await self.crypto.subtle.generateKey(rsaOptions, true, ['encrypt', 'decrypt']);
+        const keyPair = await self.crypto.subtle.generateKey(ECDSA_OPTIONS, true, ['sign', 'verify']);
+        const publicKey = new ByteData(await self.crypto.subtle.exportKey('spki', keyPair.publicKey));
+        const privateKey = new ByteData(await self.crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
+        return {
+            publicKey: publicKey,
+            privateKey: privateKey
+        };
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function generateECDHKeyPair() {
+
+    try {
+        const keyPair = await self.crypto.subtle.generateKey(ECDH_OPTIONS, true, ['deriveKey', 'deriveBits']);
         const publicKey = new ByteData(await self.crypto.subtle.exportKey('spki', keyPair.publicKey));
         const privateKey = new ByteData(await self.crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
         return {

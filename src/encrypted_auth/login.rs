@@ -19,8 +19,10 @@ pub struct Login {
 pub struct User {
     email: String,
     protected_symmetric_key: String,
-    protected_private_key: String,
-    public_key: String,
+    protected_ecdsa_private_key: String,
+    ecdsa_public_key: String,
+    protected_ecdh_private_key: String,
+    ecdh_public_key: String,
 }
 
 #[derive(sqlx::FromRow)]
@@ -49,7 +51,12 @@ pub async fn decrypt(
 
         let users = sqlx::query_as::<_, User>(&format!(
             "
-            SELECT email, protected_symmetric_key, protected_private_key, public_key
+            SELECT email, 
+                protected_symmetric_key, 
+                protected_ecdsa_private_key, 
+                ecdsa_public_key, 
+                protected_ecdh_private_key, 
+                ecdh_public_key
             FROM {} WHERE id = $1
             ",
             config.user_table_name
@@ -149,9 +156,18 @@ markup::define! {
                     fill="none", "stroke-dasharray"="350", "stroke-dashoffset"="350"] {}
             }
             form[method="post", "data-target" = "master.form"] {
-                input["data-target" = "master.protectedPrivateKey", type="hidden", value=user.protected_private_key.clone()] {}
-                input["data-target" = "master.protectedSymmetricKey", type="hidden", value=user.protected_symmetric_key.clone()] {}
-                input["data-target" = "master.publicKey", type="hidden", value=user.public_key.clone()] {}
+                input["data-target" = "master.protectedECDHPrivateKey", type="hidden",
+                    value=user.protected_ecdh_private_key.clone()] {}
+                input["data-target" = "master.protectedSymmetricKey", type="hidden",
+                    value=user.protected_symmetric_key.clone()] {}
+                input["data-target" = "master.publicECDHKey", type="hidden",
+                    value=user.ecdh_public_key.clone()] {}
+                input["data-target" = "master.protectedECDHPrivateKey", type="hidden",
+                    value=user.protected_ecdh_private_key.clone()] {}
+                input["data-target" = "master.publicECDSAKey", type="hidden",
+                    value=user.ecdsa_public_key.clone()] {}
+                input["data-target" = "master.protectedECDSAPrivateKey", type="hidden",
+                    value=user.protected_ecdsa_private_key.clone()] {}
                 input["data-target" = "master.email", type="hidden", value=user.email.clone()] {}
             }
         }
