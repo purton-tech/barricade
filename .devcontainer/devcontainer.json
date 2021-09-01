@@ -19,6 +19,7 @@
 	"remoteEnv": {
 		"EMAIL": "${localEnv:GITHUB_NOREPLY_EMAIL}",
 		"NAME": "${localEnv:NAME}",
+		"HOST_PROJECT_PATH": "${localWorkspaceFolder}"
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.

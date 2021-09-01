@@ -13,7 +13,11 @@ alias cwe='USER_TABLE_NAME=keypair_users cargo watch --no-gitignore -i *.scss -i
 alias cwb='cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x fmt -x clippy -x run'
 
 # Permissions
-alias p='sudo chown -R vscode . && sudo chmod 777 /var/run/docker.sock'
+alias p='sudo chmod 777 /var/run/docker.sock'
+
+
+# SAST
+alias salus='docker run --rm -t -v $HOST_PROJECT_PATH:/home/repo coinbase/salus'
 
 # Database migrations
 alias mr='diesel migration run'
