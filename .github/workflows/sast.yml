@@ -21,7 +21,6 @@ on:
 jobs:
   salus_scan_job:
     runs-on: ubuntu-latest
-    continue-on-error: true
     name: Salus Security Scan Example
     steps:
     - uses: actions/checkout@v1
