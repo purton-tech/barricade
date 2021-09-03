@@ -52,7 +52,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - target:/vscode/target # Set target as a volume for performance. 
       - auth_node_modules:/vscode/node_modules # Set target as a volume for performance. 
-      - auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
+      # Is the bellow g8iving me issues on windows?
+      #- auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity

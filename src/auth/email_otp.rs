@@ -179,9 +179,12 @@ markup::define! {
     errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
 
-            h1 { "Enter your confirmation code" }
+            h1 { "Email Confirmation" }
 
-            @forms::NumberInput{ title: "Code", name: "code", value: &form.code.to_string(), help_text: "", errors }
+            @forms::TextInput{ title: "Enter your confirmation code", name: "code",
+                value:"",
+                help_text: "Enter the confirmation code we sent to your email address",
+                errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
                 @if *hcaptcha {

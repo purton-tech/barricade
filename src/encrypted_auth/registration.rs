@@ -16,10 +16,18 @@ pub struct Registration {
     pub master_password_hash: String,
     #[validate(length(min = 1, message = "The protected_symmetric_key invalid"))]
     pub protected_symmetric_key: String,
-    #[validate(length(min = 1, message = "The protected_private_key is invalid"))]
-    pub protected_private_key: String,
-    #[validate(length(min = 1, message = "The public_key is invalid"))]
-    pub public_key: String,
+
+    // ECDSA
+    #[validate(length(min = 1, message = "The protected_ecdsa_private_key is invalid"))]
+    pub protected_ecdsa_private_key: String,
+    #[validate(length(min = 1, message = "The ecdsa_public_key is invalid"))]
+    pub ecdsa_public_key: String,
+
+    // ECDH
+    #[validate(length(min = 1, message = "The protected_ecdh_private_key is invalid"))]
+    pub protected_ecdh_private_key: String,
+    #[validate(length(min = 1, message = "The ecdh_public_key is invalid"))]
+    pub ecdh_public_key: String,
 }
 
 pub async fn registration() -> Result<HttpResponse> {
@@ -47,20 +55,27 @@ pub async fn process_registration(
 
     match user.validate() {
         Ok(_) => {
-            let user = sqlx::query_as::<_, InsertedUser>(
-                &format!(
-                    "
-                    INSERT INTO {} (email, master_password_hash, protected_symmetric_key, protected_private_key, public_key)
-                    VALUES($1, $2, $3, $4, $5) RETURNING id
+            let user = sqlx::query_as::<_, InsertedUser>(&format!(
+                "
+                    INSERT INTO {} 
+                        (email, 
+                        master_password_hash, 
+                        protected_symmetric_key, 
+                        protected_ecdh_private_key, 
+                        ecdh_public_key,
+                        protected_ecdsa_private_key, 
+                        ecdsa_public_key)
+                    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
                     ",
-                    config.user_table_name
-                )
-            )
+                config.user_table_name
+            ))
             .bind(&user.email)
             .bind(&user.master_password_hash)
             .bind(&user.protected_symmetric_key)
-            .bind(&user.protected_private_key)
-            .bind(&user.public_key)
+            .bind(&user.protected_ecdh_private_key)
+            .bind(&user.ecdh_public_key)
+            .bind(&user.protected_ecdsa_private_key)
+            .bind(&user.ecdsa_public_key)
             .fetch_one(db_pool.get_ref())
             .await?;
 
@@ -111,10 +126,24 @@ markup::define! {
             }
             form[method = "post", "data-target" = "registration.form"] {
                 input[name="master_password_hash", "data-target" = "registration.masterPasswordHash", type="hidden"] {}
-                input[name="protected_symmetric_key", "data-target" = "registration.protectedSymmetricKey", type="hidden"] {}
-                input[name="protected_private_key", "data-target" = "registration.protectedPrivateKey", type="hidden"] {}
                 input[name="email", "data-target" = "registration.emailCopy", type="hidden"] {}
-                input[name="public_key", "data-target" = "registration.publicKey", type="hidden"] {}
+                input[name="protected_symmetric_key", "data-target" = "registration.protectedSymmetricKey", type="hidden"] {}
+
+                // ECDH
+                input[name="protected_ecdh_private_key",
+                    "data-target" = "registration.protectedECDHPrivateKey",
+                    type="hidden"] {}
+                input[name="ecdh_public_key",
+                    "data-target" = "registration.publicECDHKey",
+                    type="hidden"] {}
+
+                // ECDSA
+                input[name="protected_ecdsa_private_key",
+                    "data-target" = "registration.protectedECDSAPrivateKey",
+                    type="hidden"] {}
+                input[name="ecdsa_public_key",
+                    "data-target" = "registration.publicECDSAKey",
+                    type="hidden"] {}
             }
         }
         script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
