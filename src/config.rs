@@ -2,6 +2,8 @@ use lettre::message;
 use std::env;
 use std::net::ToSocketAddrs;
 use url::Url;
+use aes_gcm::Aes256Gcm; // Or `Aes128Gcm`
+use aes_gcm::aead::{Aead, NewAead, generic_array::GenericArray};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum AuthType {
@@ -209,6 +211,18 @@ impl Config {
             hit_rate: 10,
             max_payload_size,
         }
+    }
+
+    pub fn encrypt(&self, plain_text: &str) -> Result<String, crate::CustomError> {
+        let key = GenericArray::from_slice(&self.secret_key);
+        let cipher = Aes256Gcm::new(key);
+        
+        let nonce = GenericArray::from_slice(b"unique nonce"); // 96-bits; unique per message
+
+        let ciphertext = cipher.encrypt(nonce, plain_text.as_bytes())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+
+        Ok(base64::encode(ciphertext))
     }
 }
 

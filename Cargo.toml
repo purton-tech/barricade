@@ -50,6 +50,10 @@ lru_time_cache = "0.11.11"
 # NFKC password normalisation.
 unicode-normalization = "0"
 
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0"
+base64= "0"
+
 [build-dependencies]
 sha1 = "0.6"  # Use by build.rs for cache busting.
 
