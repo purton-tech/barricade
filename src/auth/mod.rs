@@ -5,9 +5,15 @@ mod registration;
 mod reset_request;
 use crate::config;
 use actix_web::web;
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use reqwest::Url;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashSet;
+use unicode_normalization::UnicodeNormalization;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Code {
@@ -104,4 +110,51 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(email_otp::email_otp))
             .route(web::post().to(email_otp::process_otp)),
     );
+}
+
+pub async fn password_hash(
+    password: &str,
+    config: &config::Config,
+) -> Result<String, crate::CustomError> {
+    let normalised_password = password.nfkc().collect::<String>();
+
+    let hashed_password = if config.use_bcrypt_instead_of_argon {
+        hash(&normalised_password, DEFAULT_COST).map_err(|_| crate::CustomError::Unauthorized)?
+    } else {
+        let salt = SaltString::generate(&mut OsRng);
+
+        // Argon2 with default params (Argon2id v19)
+        let argon2 = Argon2::default();
+        let vec_bytes = normalised_password.clone().into_bytes();
+
+        // Hash password to PHC string ($argon2id$v=19$...)
+        argon2
+            .hash_password(&vec_bytes, &salt)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?
+            .to_string()
+    };
+
+    Ok(hashed_password)
+}
+
+pub async fn verify_hash(
+    password: &str,
+    hashed_password: &str,
+    config: &config::Config,
+) -> Result<bool, crate::CustomError> {
+    let normalised_password = password.nfkc().collect::<String>();
+
+    let is_valid = if config.use_bcrypt_instead_of_argon {
+        verify(&normalised_password, hashed_password)
+            .map_err(|_| crate::CustomError::Unauthorized)?
+    } else {
+        // Argon2 with default params (Argon2id v19)
+        let argon2 = Argon2::default();
+        let parsed_hash = PasswordHash::new(hashed_password)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        let vec_bytes = normalised_password.into_bytes();
+        argon2.verify_password(&vec_bytes, &parsed_hash).is_ok()
+    };
+
+    Ok(is_valid)
 }
