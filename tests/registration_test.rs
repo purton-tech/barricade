@@ -17,7 +17,7 @@ async fn registration() -> WebDriverResult<()> {
 
     driver.get(&config.host).await?;
 
-    // Click the search button.
+    // Click the logoin button with nothing in.
     let elem_button = driver
         .find_element(By::Css("button[type='submit']"))
         .await?;

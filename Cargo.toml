@@ -43,6 +43,9 @@ lettre = { version = "0.10.0-rc.3", default-features = false,  features = ["rust
 # Finger printing
 lru_time_cache = "0.11.11"
 
+# NFKC password normalisation.
+unicode-normalization = "0"
+
 [build-dependencies]
 sha1 = "0.6"  # Use by build.rs for cache busting.
 

@@ -75,8 +75,8 @@ services:
       REDIRECT_URL: /
       ENABLE_EMAIL_OTP: 'true'
       ## Hcaptcha for throttleing - These are test keys
-      HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001'
-      HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000'
+      #HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001'
+      #HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000'
 
     working_dir: /vscode
 
