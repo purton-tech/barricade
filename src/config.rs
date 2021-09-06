@@ -104,6 +104,8 @@ pub struct Config {
 
     pub email_otp_enabled: bool,
 
+    pub use_bcrypt_instead_of_argon: bool,
+
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
 
@@ -158,6 +160,12 @@ impl Config {
             false
         };
 
+        let use_bcrypt_instead_of_argon: bool = if env::var("use_bcrypt_instead_of_argon").is_ok() {
+            true
+        } else {
+            false
+        };
+
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();
             if t.to_lowercase() == "encrypted" {
@@ -196,6 +204,7 @@ impl Config {
             skip_auth_for,
             hcaptcha_config: HCaptchaConfig::new(),
             email_otp_enabled,
+            use_bcrypt_instead_of_argon,
             smtp_config: SmtpConfig::new(),
             hit_rate: 10,
             max_payload_size,

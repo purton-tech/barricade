@@ -4,12 +4,10 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
-use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::borrow::Cow;
 use std::default::Default;
-use unicode_normalization::UnicodeNormalization;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Serialize, Validate, Deserialize, Default)]
@@ -55,10 +53,7 @@ pub async fn process_registration(
     if valid {
         match form.validate() {
             Ok(_) => {
-                // Passwords must be normalised
-                let normalised_password = &form.password.nfkc().collect::<String>();
-                let hashed_password = hash(&normalised_password, DEFAULT_COST)
-                    .map_err(|_| CustomError::Unauthorized)?;
+                let hashed_password = super::password_hash(&form.password, &config).await?;
 
                 let registered_user = sqlx::query_as::<_, InsertedUser>(&format!(
                     "

@@ -25,7 +25,11 @@ url = "2.0"
 markup = "0.11"
 validator = { version = "0.12", features = ["derive"] }
 
+# Bcrypt for legacy apps, argon for new apps.
 bcrypt = "0.9.0"
+argon2 = "0"
+# required by argon.
+rand_core = { version = "0.6", features = ["std"] }
 
 # Use this for access to hcaptcha
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }

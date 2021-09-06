@@ -4,7 +4,6 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
-use bcrypt::verify;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
@@ -84,8 +83,9 @@ pub async fn process_login(
         if !users.is_empty() {
             // Passwords must be normalised
             let normalised_password = &form.password.nfkc().collect::<String>();
-            let valid = verify(&normalised_password, &users[0].hashed_password)
-                .map_err(|_| CustomError::Unauthorized)?;
+            let valid =
+                super::verify_hash(&normalised_password, &users[0].hashed_password, &config)
+                    .await?;
 
             if valid {
                 // Generate a session
