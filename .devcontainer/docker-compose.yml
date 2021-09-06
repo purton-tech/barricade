@@ -24,14 +24,14 @@ services:
     
   # Integration testing using a headless chrome browser
   selenium:
-    image: selenium/standalone-chrome:latest
-    volumes:
-      - "/dev/shm:/dev/shm"
+    #image: selenium/standalone-chrome:4.0.0-rc-1-20210902
+    image: selenium/standalone-chrome-debug:3.141.59
+    shm_size: 2gb
     ports:
-      - "4444:4444"
-    environment:
-      - NODE_MAX_INSTANCES=4
-      - NODE_MAX_SESSION=4
+      # NoVNC only in 4.0
+      #- "7900:7900"
+      # VNC
+      - "5900:5900"
 
   # MailHog is an email testing tool for developers.
   smtp:

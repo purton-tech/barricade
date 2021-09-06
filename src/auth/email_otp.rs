@@ -87,7 +87,6 @@ pub async fn email_otp(
             }
 
             let body = OtpPage {
-                form: &Otp::default(),
                 hcaptcha: db_session.otp_code_attempts > 0,
                 hcaptcha_config: &config.hcaptcha_config,
                 errors: &ValidationErrors::default(),
@@ -116,7 +115,12 @@ pub async fn process_otp(
         if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
             let db_session: Session = sqlx::query_as::<_, Session>(
                 "
-                SELECT user_id, otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
+                SELECT 
+                    user_id, 
+                    otp_code,
+                    otp_code_attempts, 
+                    otp_code_sent 
+                FROM sessions WHERE session_uuid = $1
                 ",
             )
             .bind(uuid)
@@ -135,7 +139,10 @@ pub async fn process_otp(
             if db_session.otp_code == form.code {
                 sqlx::query(
                     "
-                    UPDATE sessions SET otp_code_confirmed = true WHERE session_uuid = $1
+                    UPDATE sessions 
+                    SET otp_code_confirmed = true 
+                    AND otp_code_attempts = 0
+                    WHERE session_uuid = $1
                     ",
                 )
                 .bind(uuid)
@@ -161,6 +168,8 @@ pub async fn process_otp(
                 .execute(pool.get_ref())
                 .await?;
 
+                dbg!("Failed to find {}", form.code);
+
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
                     .finish());
@@ -174,7 +183,7 @@ pub async fn process_otp(
 }
 
 markup::define! {
-    OtpPage<'a>(form: &'a  Otp, hcaptcha: bool,
+    OtpPage<'a>(hcaptcha: bool,
     hcaptcha_config: &'a Option<config::HCaptchaConfig>,
     errors: &'a ValidationErrors) {
         form.m_authentication[method = "post"] {
