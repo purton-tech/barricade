@@ -9,8 +9,8 @@ alias gcb='git checkout -b'
 alias gitsetup='git config --global user.name $NAME && git config --global user.email $EMAIL && mkdir -p ~/.ssh && cp -u /home/host-ssh/id_rsa ~/.ssh && chmod 600 ~/.ssh/id_rsa && ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub'
 
 # Cargo watch
-alias cwe='USER_TABLE_NAME=keypair_users cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x fmt -x clippy -x run'
-alias cwb='cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x fmt -x clippy -x run'
+alias cwe='USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x fmt -x clippy -x run'
+alias cwb='USER_TABLE_NAME=bcrypt_users AUTH_TYPE=normal cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x fmt -x clippy -x run'
 
 # Permissions
 alias p='sudo chmod 777 /var/run/docker.sock'

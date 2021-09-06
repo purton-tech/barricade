@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
 use std::default::Default;
+use unicode_normalization::UnicodeNormalization;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(sqlx::FromRow)]
@@ -81,7 +82,9 @@ pub async fn process_login(
         .await?;
 
         if !users.is_empty() {
-            let valid = verify(&form.password, &users[0].hashed_password)
+            // Passwords must be normalised
+            let normalised_password = &form.password.nfkc().collect::<String>();
+            let valid = verify(&normalised_password, &users[0].hashed_password)
                 .map_err(|_| CustomError::Unauthorized)?;
 
             if valid {

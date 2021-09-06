@@ -34,8 +34,8 @@ export default class extends Controller {
     document.querySelectorAll('span.error').forEach(e => e.remove());
     this.passwordTarget.classList.remove('error')
 
-    const pass1 = this.passwordTarget.value;
-    const pass2 = this.confirmPasswordTarget.value;
+    const pass1 = this.passwordTarget.value.normalize('NFC');
+    const pass2 = this.confirmPasswordTarget.value.normalize('NFC');
 
     if (pass1 != pass2) {
       this.passwordTarget.classList.add('error')

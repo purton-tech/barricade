@@ -40,7 +40,7 @@ export default class extends Controller {
     }
 
     const masterReq: UnlockVaultWithMasterPasswordRequest = {
-      masterPassword: this.passwordTarget.value,
+      masterPassword: this.passwordTarget.value.normalize('NFKC'),
       email: this.emailTarget.value
     }
 

@@ -101,6 +101,7 @@ jobs:
           FORWARD_URL: localhost
           FORWARD_PORT: 8080
           REDIRECT_URL: /
+          ENABLE_EMAIL_OTP: 'true'
           PORT: 9095
           USER_TABLE_NAME: bcrypt_users
       
@@ -124,6 +125,7 @@ jobs:
           FORWARD_URL: localhost
           FORWARD_PORT: 8080
           REDIRECT_URL: /
+          ENABLE_EMAIL_OTP: 'true'
           AUTH_TYPE: encrypted
           PORT: 9095
           USER_TABLE_NAME: keypair_users

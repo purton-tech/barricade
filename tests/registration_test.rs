@@ -9,7 +9,7 @@ use thirtyfour::prelude::*;
 async fn registration() -> WebDriverResult<()> {
     dotenv().ok();
 
-    let config = common::Config::new();
+    let config = common::Config::new().await;
 
     let driver = config.get_driver().await?;
     let delay = std::time::Duration::new(11, 0);
@@ -17,7 +17,7 @@ async fn registration() -> WebDriverResult<()> {
 
     driver.get(&config.host).await?;
 
-    // Click the search button.
+    // Click the logoin button with nothing in.
     let elem_button = driver
         .find_element(By::Css("button[type='submit']"))
         .await?;
@@ -60,6 +60,25 @@ async fn registration() -> WebDriverResult<()> {
         .click()
         .await?;
 
+    // OTP Code
+    // Wait for page to load as code might not be in database yet.
+    driver.find_element(By::Id("code")).await?;
+
+    let code = common::get_otp_code_from_database(&config)
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+
+    driver
+        .find_element(By::Id("code"))
+        .await?
+        .send_keys(format!("{}", code))
+        .await?;
+    driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?
+        .click()
+        .await?;
+
     // Wait for page load
     driver
         .find_element(By::Css(
@@ -80,10 +99,6 @@ async fn registration() -> WebDriverResult<()> {
 
     driver
         .get(format!("{}/auth/sign_out", &config.host))
-        .await?;
-
-    driver
-        .find_element(By::Css("button[type='submit']"))
         .await?;
 
     let cookie = driver.get_cookie("session").await;
@@ -108,12 +123,34 @@ async fn registration() -> WebDriverResult<()> {
         .click()
         .await?;
 
+    // OTP Code
+    // Wait for page to load as code might not be in database yet.
+    driver.find_element(By::Id("code")).await?;
+
+    let code = common::get_otp_code_from_database(&config)
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+
+    driver
+        .find_element(By::Id("code"))
+        .await?
+        .send_keys(format!("{}", code))
+        .await?;
+    driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?
+        .click()
+        .await?;
+
     // Wait for page load
     driver
         .find_element(By::Css(
             "pre[style='word-wrap: break-word; white-space: pre-wrap;']",
         ))
         .await?;
+
+    // Always explicitly close the browser. There are no async destructors.
+    driver.quit().await?;
 
     Ok(())
 }

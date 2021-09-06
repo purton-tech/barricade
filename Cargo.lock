@@ -570,6 +570,7 @@ dependencies = [
  "sqlx",
  "thirtyfour",
  "tokio",
+ "unicode-normalization",
  "url",
  "validator",
 ]

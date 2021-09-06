@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::borrow::Cow;
 use std::default::Default;
+use unicode_normalization::UnicodeNormalization;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Serialize, Validate, Deserialize, Default)]
@@ -54,8 +55,10 @@ pub async fn process_registration(
     if valid {
         match form.validate() {
             Ok(_) => {
-                let hashed_password =
-                    hash(&form.password, DEFAULT_COST).map_err(|_| CustomError::Unauthorized)?;
+                // Passwords must be normalised
+                let normalised_password = &form.password.nfkc().collect::<String>();
+                let hashed_password = hash(&normalised_password, DEFAULT_COST)
+                    .map_err(|_| CustomError::Unauthorized)?;
 
                 let registered_user = sqlx::query_as::<_, InsertedUser>(&format!(
                     "
