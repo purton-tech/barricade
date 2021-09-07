@@ -1,12 +1,16 @@
+use aes_gcm::aead::{generic_array::GenericArray, Aead, NewAead, Payload};
+use aes_gcm::AeadInPlace;
+use aes_gcm::Aes256Gcm;
 use rand::Rng;
 use sqlx::PgPool;
 use std::env;
-use thirtyfour::prelude::*;
+use thirtyfour::prelude::*; // Or `Aes128Gcm`
 
 #[derive(Clone, Debug)]
 pub struct Config {
     pub webdriver_url: String,
     pub host: String,
+    pub secret_key: Vec<u8>,
     // The database
     pub db_pool: PgPool,
     pub headless: bool,
@@ -36,8 +40,10 @@ impl Config {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL not set");
         let db_pool = PgPool::connect(&database_url).await.unwrap();
 
+        let hex = env::var("SECRET_KEY").expect("SECRET_KEY not set");
         Config {
             webdriver_url,
+            secret_key: hex_to_bytes(&hex).expect("SECRET_KEY could not parse"),
             host,
             db_pool,
             headless,
@@ -58,13 +64,45 @@ impl Config {
     }
 }
 
-pub async fn get_otp_code_from_database(config: &Config) -> Result<i32, sqlx::Error> {
-    let row: (i32,) =
-        sqlx::query_as("SELECT otp_code FROM sessions ORDER BY created_at DESC LIMIT 1")
-            .fetch_one(&config.db_pool)
-            .await?;
+pub(crate) const NONCE_LEN: usize = 12;
 
-    Ok(row.0)
+pub fn decrypt(cipher: &str, aad: &str, secret_key: &[u8]) -> String {
+    let data = base64::decode(cipher).unwrap();
+
+    let (nonce, cipher) = data.split_at(NONCE_LEN);
+    dbg!(&nonce);
+    let payload = Payload {
+        msg: cipher,
+        aad: aad.as_bytes(),
+    };
+
+    let aead = Aes256Gcm::new(GenericArray::from_slice(secret_key));
+    let decrypted = aead
+        .decrypt(GenericArray::from_slice(nonce), payload)
+        .unwrap();
+
+    let decrypted = String::from_utf8(decrypted).unwrap();
+
+    decrypted
+}
+
+pub async fn get_otp_code_from_database(config: &Config) -> Result<String, sqlx::Error> {
+    let row: (String, i32) = sqlx::query_as(
+        "SELECT otp_code_encrypted, user_id FROM sessions ORDER BY created_at DESC LIMIT 1",
+    )
+    .fetch_one(&config.db_pool)
+    .await?;
+
+    let decrypted_otp = decrypt(&row.0, &format!("{}", row.1), &config.secret_key);
+
+    Ok(decrypted_otp)
+}
+
+pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16))
+        .collect()
 }
 
 pub fn random_email() -> String {

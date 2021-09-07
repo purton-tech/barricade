@@ -12,6 +12,9 @@ actix-files = "0.6.0-beta.6"
 dotenv = "0.15"
 actix-identity = "0.4.0-beta.2"
 
+# Used for generating OTP codes.
+rand = "0"
+
 # Actix Web Client - Used for the reverese proxy
 awc = "3.0.0-beta.3"
 
@@ -44,11 +47,12 @@ futures = "0.3"
 # For sending emails
 lettre = { version = "0.10.0-rc.3", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
 
-# Finger printing
-lru_time_cache = "0.11.11"
-
 # NFKC password normalisation.
 unicode-normalization = "0"
+
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0"
+base64= "0"
 
 [build-dependencies]
 sha1 = "0.6"  # Use by build.rs for cache busting.
@@ -57,4 +61,3 @@ sha1 = "0.6"  # Use by build.rs for cache busting.
 # WebDriver Library for UI testing.
 thirtyfour = { version = "0", default-features = false, features = [ "reqwest-rustls-tls", "tokio-runtime" ] }
 tokio = { version = "1", features = ["macros"] }
-rand = "0"

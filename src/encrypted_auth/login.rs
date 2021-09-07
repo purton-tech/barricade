@@ -109,7 +109,7 @@ pub async fn process_login(
     .await?;
 
     if !users.is_empty() {
-        crate::auth::login::create_session(db_pool, identity, users[0].id).await?;
+        crate::auth::login::create_session(&config, db_pool, identity, users[0].id).await?;
 
         if config.email_otp_enabled {
             return Ok(HttpResponse::SeeOther()

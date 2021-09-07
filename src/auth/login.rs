@@ -4,6 +4,7 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::borrow::Cow;
@@ -40,17 +41,25 @@ pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
 }
 
 pub async fn create_session(
+    config: &config::Config,
     pool: web::Data<PgPool>,
     identity: Identity,
     user_id: i32,
 ) -> Result<(), CustomError> {
+    // We generate and OTP code and encrypt it.
+    // Encryption helps secure against an attacker who has read only access to the database
+    let mut rng = rand::thread_rng();
+    let otp_code: u32 = rng.gen_range(10000..99999);
+    let otp_encrypted = config.encrypt(&format!("{}", otp_code), &format!("{}", user_id))?;
+
     let session = sqlx::query_as::<_, InsertedSession>(
         "
-            INSERT INTO sessions (user_id)
-            VALUES($1) RETURNING session_uuid
+            INSERT INTO sessions (user_id, otp_code_encrypted)
+            VALUES($1, $2) RETURNING session_uuid
         ",
     )
     .bind(user_id)
+    .bind(otp_encrypted)
     .fetch_one(pool.get_ref())
     .await?;
 
@@ -90,7 +99,7 @@ pub async fn process_login(
             if valid {
                 // Generate a session
 
-                create_session(pool, identity, users[0].id).await?;
+                create_session(&config, pool, identity, users[0].id).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))
