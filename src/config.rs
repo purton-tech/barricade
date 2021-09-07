@@ -281,7 +281,6 @@ impl Config {
 
 pub(crate) const NONCE_LEN: usize = 12;
 pub(crate) const TAG_LEN: usize = 16;
-pub(crate) const KEY_LEN: usize = 32;
 
 pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
     (0..hex.len())
