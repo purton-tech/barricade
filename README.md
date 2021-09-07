@@ -4,12 +4,26 @@
 
 ## Features 
 
-* Only requires you to add a users table to your application.
-* Small high performance docker container.
-* No code to write just configure with environment variables.
+* A "No Code" solution. Zero integration.
+* You can replace your existing auth solution and you get to remove code from your app. 
+* Data in your region in your database and under your control.
+* Small high performance Docker container built with Rust.
+* Configure with environment variables.
 * Works well as a Kubernetes side car.
-* Secure Password reset.
-* TODO - U2F
+* Works with envoy proxy as an auth module.
+* Encrypted Mode - Generates ECDH and ECDSA keys client side. Uses a similar technique to Bitwarden but upgraded.
+* Generates secure HTTP only cookies encrypted with GCM and additional data.
+* Can replace rails devise or other popular open source auth libraries.
+* TODO - WebAuthn for 2FA
+* TODO - Allow user to see sessions and logout devices.
+
+## Contor defends against the following attacks
+
+* Account enumeration 
+* Password stuffing
+* Password Brute forcing
+* Session Hijacking
+* Data breach password brute forcing.
 
 ## Try it out 
 
@@ -117,7 +131,7 @@ CREATE TABLE sessions (
     id SERIAL PRIMARY KEY, 
     session_uuid UUID NOT NULL DEFAULT gen_random_uuid(), 
     user_id INT NOT NULL, 
-    otp_code INTEGER NOT NULL DEFAULT (random() * 100000 + 1)::int;
+    otp_code_encrypted VARCHAR NOT NULL;
     otp_code_attempts INTEGER NOT NULL DEFAULT 0;
     otp_code_confirmed BOOLEAN NOT NULL DEFAULT false;
     otp_code_sent BOOLEAN NOT NULL DEFAULT false;
@@ -164,8 +178,14 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
 ```
 
 
-<p align="center">
-  <img src="./.github/assets/psql-output-users.png" width="100%" />
-</p>
+```console
+psql=# select * from users;
+ id |        email         |                                         hashed_password                                          |         created_at         |         updated_at         | reset_password_token | reset_pa
+ssword_sent_at 
+----+----------------------+--------------------------------------------------------------------------------------------------+----------------------------+----------------------------+----------------------+---------
+---------------
+  6 | some_user@gmail.com  | $argon2id$v=19$m=4096,t=3,p=1$kf7KkCPIIfbl1dgasa58yQ$WFNVT05c2ptBtBAZQI1CIGaEqbR9m3505WiZ+/oflk0 | 2021-09-07 11:03:35.663096 | 2021-09-07 11:03:35.663096 |                      | 
+(1 row)
+```
 
 This is how your user table looks after a user registration.
