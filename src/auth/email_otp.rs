@@ -11,7 +11,7 @@ use validator::ValidationErrors;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Otp {
-    pub code: i32,
+    pub code: String,
     #[serde(rename = "h-captcha-response")]
     pub h_captcha_response: Option<String>,
 }
@@ -19,7 +19,7 @@ pub struct Otp {
 #[derive(sqlx::FromRow, Debug)]
 pub struct Session {
     user_id: i32,
-    otp_code: i32,
+    otp_code_encrypted: String,
     otp_code_attempts: i32,
     otp_code_sent: bool,
 }
@@ -38,8 +38,14 @@ pub async fn email_otp(
         if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
             let db_session: Session = sqlx::query_as::<_, Session>(
                 "
-            SELECT user_id, otp_code, otp_code_attempts, otp_code_sent FROM sessions WHERE session_uuid = $1
-            ",
+                SELECT 
+                    user_id, 
+                    otp_code_encrypted, 
+                    otp_code_attempts, 
+                    otp_code_sent 
+                FROM sessions 
+                WHERE session_uuid = $1
+                ",
             )
             .bind(uuid)
             .fetch_one(pool.get_ref())
@@ -66,6 +72,11 @@ pub async fn email_otp(
                     .fetch_one(pool.get_ref())
                     .await?;
 
+                    let otp_code = config.decrypt(
+                        &db_session.otp_code_encrypted,
+                        &format!("{}", db_session.user_id),
+                    )?;
+
                     let email = Message::builder()
                         .from(smtp_config.from_email.clone())
                         .to(db_user.email.parse().unwrap())
@@ -75,7 +86,7 @@ pub async fn email_otp(
                                 "
                             Your confirmation code is {}
                             ",
-                                db_session.otp_code
+                                otp_code
                             )
                             .trim()
                             .to_string(),
@@ -117,7 +128,7 @@ pub async fn process_otp(
                 "
                 SELECT 
                     user_id, 
-                    otp_code,
+                    otp_code_encrypted,
                     otp_code_attempts, 
                     otp_code_sent 
                 FROM sessions WHERE session_uuid = $1
@@ -136,7 +147,12 @@ pub async fn process_otp(
                     .finish());
             }
 
-            if db_session.otp_code == form.code {
+            let otp_code = config.decrypt(
+                &db_session.otp_code_encrypted,
+                &format!("{}", db_session.user_id),
+            )?;
+
+            if otp_code == form.code {
                 sqlx::query(
                     "
                     UPDATE sessions 
@@ -161,14 +177,17 @@ pub async fn process_otp(
             } else {
                 sqlx::query(
                     "
-                    UPDATE sessions SET otp_code_attempts = otp_code_attempts + 1 WHERE session_uuid = $1
-                    "
+                    UPDATE 
+                        sessions 
+                    SET 
+                        otp_code_attempts = otp_code_attempts + 1 
+                    WHERE 
+                        session_uuid = $1
+                    ",
                 )
-                .bind(uuid )
+                .bind(uuid)
                 .execute(pool.get_ref())
                 .await?;
-
-                dbg!("Failed to find {}", form.code);
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))

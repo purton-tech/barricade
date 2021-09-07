@@ -79,7 +79,7 @@ pub async fn process_registration(
             .fetch_one(db_pool.get_ref())
             .await?;
 
-            crate::auth::login::create_session(db_pool, identity, user.id).await?;
+            crate::auth::login::create_session(&config, db_pool, identity, user.id).await?;
 
             if config.email_otp_enabled {
                 return Ok(HttpResponse::SeeOther()

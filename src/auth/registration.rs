@@ -67,7 +67,7 @@ pub async fn process_registration(
                 .fetch_one(pool.get_ref())
                 .await?;
 
-                super::login::create_session(pool, identity, registered_user.id).await?;
+                super::login::create_session(&config, pool, identity, registered_user.id).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))
