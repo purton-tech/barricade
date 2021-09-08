@@ -36,9 +36,9 @@ pub async fn decrypt(
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
     // If we have a session cookie, try and convert it to a user.
-    let mut logged_user: Option<crate::User> = None;
+    let mut logged_user: Option<crate::UserSession> = None;
     if let Some(session) = session {
-        logged_user = crate::get_user_by_session_uuid(&session.session_uuid, db_pool.clone()).await;
+        logged_user = crate::get_user_by_session(&session, db_pool.get_ref()).await;
     }
 
     if let Some(logged_user) = logged_user {

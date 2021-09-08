@@ -6,7 +6,8 @@ use actix_identity::Identity;
 use actix_web::{http, web, HttpResponse, Result};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
+use sha2::{Digest, Sha256};
+use sqlx::PgPool;
 use std::borrow::Cow;
 use std::default::Default;
 use unicode_normalization::UnicodeNormalization;
@@ -27,7 +28,7 @@ pub struct Login {
 
 #[derive(sqlx::FromRow)]
 struct InsertedSession {
-    session_uuid: Uuid,
+    id: i32,
 }
 
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -52,18 +53,26 @@ pub async fn create_session(
     let otp_code: u32 = rng.gen_range(10000..99999);
     let otp_encrypted = config.encrypt(&format!("{}", otp_code), &format!("{}", user_id))?;
 
+    // Create a random session verifier
+    let random_bytes = rand::thread_rng().gen::<[u8; 32]>();
+    let mut hasher = Sha256::new();
+    // Hash it to avoid exposing it in the database.
+    hasher.update(random_bytes);
+    let hex_hashed_session_verifier = hex::encode(hasher.finalize());
+
     let session = sqlx::query_as::<_, InsertedSession>(
         "
-            INSERT INTO sessions (user_id, otp_code_encrypted)
-            VALUES($1, $2) RETURNING session_uuid
+            INSERT INTO sessions (user_id, session_verifier, otp_code_encrypted)
+            VALUES($1, $2, $3) RETURNING id
         ",
     )
     .bind(user_id)
+    .bind(hex_hashed_session_verifier)
     .bind(otp_encrypted)
     .fetch_one(pool.get_ref())
     .await?;
 
-    identity.remember(session.session_uuid.to_string());
+    identity.remember(session.id.to_string() + ":" + &hex::encode(random_bytes));
 
     Ok(())
 }

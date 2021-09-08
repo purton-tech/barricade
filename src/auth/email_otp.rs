@@ -5,7 +5,7 @@ use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
 use lettre::Message;
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
+use sqlx::PgPool;
 use std::default::Default;
 use validator::ValidationErrors;
 
@@ -35,29 +35,14 @@ pub async fn email_otp(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
-        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
-            let db_session: Session = sqlx::query_as::<_, Session>(
-                "
-                SELECT 
-                    user_id, 
-                    otp_code_encrypted, 
-                    otp_code_attempts, 
-                    otp_code_sent 
-                FROM sessions 
-                WHERE session_uuid = $1
-                ",
-            )
-            .bind(uuid)
-            .fetch_one(pool.get_ref())
-            .await?;
-
-            if !db_session.otp_code_sent {
+        if let Some(user_session) = crate::get_user_by_session(&session, pool.get_ref()).await {
+            if !user_session.otp_code_sent {
                 sqlx::query(
                     "
-                    UPDATE sessions SET otp_code_sent = true WHERE session_uuid = $1
+                    UPDATE sessions SET otp_code_sent = true WHERE id = $1
                     ",
                 )
-                .bind(uuid)
+                .bind(user_session.id)
                 .execute(pool.get_ref())
                 .await?;
 
@@ -68,13 +53,13 @@ pub async fn email_otp(
                         ",
                         config.user_table_name
                     ))
-                    .bind(db_session.user_id)
+                    .bind(user_session.user_id)
                     .fetch_one(pool.get_ref())
                     .await?;
 
                     let otp_code = config.decrypt(
-                        &db_session.otp_code_encrypted,
-                        &format!("{}", db_session.user_id),
+                        &user_session.otp_code_encrypted,
+                        &format!("{}", user_session.user_id),
                     )?;
 
                     let email = Message::builder()
@@ -98,7 +83,7 @@ pub async fn email_otp(
             }
 
             let body = OtpPage {
-                hcaptcha: db_session.otp_code_attempts > 0,
+                hcaptcha: user_session.otp_code_attempts > 0,
                 hcaptcha_config: &config.hcaptcha_config,
                 errors: &ValidationErrors::default(),
             };
@@ -123,23 +108,9 @@ pub async fn process_otp(
     form: web::Form<Otp>,
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
-        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
-            let db_session: Session = sqlx::query_as::<_, Session>(
-                "
-                SELECT 
-                    user_id, 
-                    otp_code_encrypted,
-                    otp_code_attempts, 
-                    otp_code_sent 
-                FROM sessions WHERE session_uuid = $1
-                ",
-            )
-            .bind(uuid)
-            .fetch_one(pool.get_ref()) // -> Vec<Person>
-            .await?;
-
+        if let Some(user_session) = crate::get_user_by_session(&session, pool.get_ref()).await {
             // If we have more than 1 attempt we need to apply the Hcaptcha
-            if db_session.otp_code_attempts > 0
+            if user_session.otp_code_attempts > 0
                 && !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
             {
                 return Ok(HttpResponse::SeeOther()
@@ -148,8 +119,8 @@ pub async fn process_otp(
             }
 
             let otp_code = config.decrypt(
-                &db_session.otp_code_encrypted,
-                &format!("{}", db_session.user_id),
+                &user_session.otp_code_encrypted,
+                &format!("{}", user_session.user_id),
             )?;
 
             if otp_code == form.code {
@@ -158,10 +129,10 @@ pub async fn process_otp(
                     UPDATE sessions 
                     SET otp_code_confirmed = true 
                     AND otp_code_attempts = 0
-                    WHERE session_uuid = $1
+                    WHERE id = $1
                     ",
                 )
-                .bind(uuid)
+                .bind(user_session.id)
                 .execute(pool.get_ref())
                 .await?;
 
@@ -182,10 +153,10 @@ pub async fn process_otp(
                     SET 
                         otp_code_attempts = otp_code_attempts + 1 
                     WHERE 
-                        session_uuid = $1
+                        id = $1
                     ",
                 )
-                .bind(uuid)
+                .bind(user_session.id)
                 .execute(pool.get_ref())
                 .await?;
 

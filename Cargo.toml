@@ -12,8 +12,11 @@ actix-files = "0.6.0-beta.6"
 dotenv = "0.15"
 actix-identity = "0.4.0-beta.2"
 
-# Used for generating OTP codes.
+# Used for generating OTP codes and sessions.
 rand = "0"
+# Sha256 and hex for hashing the session verifier. (Both from SQLx)
+sha2 = "0"
+hex = "0"
 
 # Actix Web Client - Used for the reverese proxy
 awc = "3.0.0-beta.3"
