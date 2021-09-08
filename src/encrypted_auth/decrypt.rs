@@ -66,6 +66,8 @@ pub async fn decrypt(
                 )
                 .await?;
 
+                dbg!(unwrapped_protected_ecdh_private_key);
+
                 let unwrapped_protected_ecdsa_private_key = &crate::encryption::kdf_and_unwrap(
                     &users[0].protected_ecdsa_private_key,
                     &master_password_hash,
@@ -111,8 +113,6 @@ markup::define! {
                     fill="none", "stroke-dasharray"="350", "stroke-dashoffset"="350"] {}
             }
             form[method="post", "data-target" = "master.form"] {
-                input["data-target" = "master.protectedECDHPrivateKey", type="hidden",
-                    value=user.protected_ecdh_private_key.clone()] {}
                 input["data-target" = "master.protectedSymmetricKey", type="hidden",
                     value=unwrapped_protected_symmetric_key] {}
                 input["data-target" = "master.publicECDHKey", type="hidden",
