@@ -175,12 +175,20 @@ async fn get_user_by_session(session: &Session, pool: &PgPool) -> Option<UserSes
     .await;
 
     if let Ok(user) = user {
-        if session.session_verifier == user.session_verifier {
+        if constant_time_compare(&session.session_verifier, &user.session_verifier) {
             return Some(user);
         }
     }
 
     None
+}
+
+// Constant time string compare.
+pub fn constant_time_compare(a: &str, b: &str) -> bool {
+    a.bytes()
+        .zip(b.bytes())
+        .fold(0, |acc, (a, b)| acc | (a ^ b))
+        == 0
 }
 
 async fn reverse_proxy(
