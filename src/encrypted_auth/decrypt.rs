@@ -49,9 +49,6 @@ pub async fn decrypt(
                 .fetch_all(db_pool.get_ref()) // -> Vec<Person>
                 .await?;
 
-                let master_password_hash = "password123";
-                //crate::encryption::password_hash(&master_password_hash, false).await?;
-
                 let unwrapped_protected_symmetric_key = &crate::encryption::kdf_and_unwrap(
                     &users[0].protected_symmetric_key,
                     &master_password_hash,
