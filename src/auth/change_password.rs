@@ -3,7 +3,6 @@ use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
-use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, PgPool};
 use std::default::Default;
@@ -45,8 +44,7 @@ pub async fn process_change(
 
     match form.validate() {
         Ok(_) => {
-            let hashed_password =
-                hash(&form.password, DEFAULT_COST).map_err(|_| CustomError::Unauthorized)?;
+            let hashed_password = super::password_hash(&form.password, &config).await?;
 
             if let Ok(uuid) = Uuid::parse_str(&info.reset_token) {
                 dbg!(&uuid);
