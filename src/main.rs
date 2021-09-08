@@ -6,7 +6,7 @@ use actix_web::{
 };
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
+use sqlx::PgPool;
 use std::io;
 mod components;
 mod config;
@@ -16,6 +16,7 @@ mod layouts;
 use awc::{Client, ClientBuilder};
 use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
+use sha2::{Digest, Sha256};
 
 pub mod statics {
     include!(concat!(env!("OUT_DIR"), "/statics.rs"));
@@ -36,9 +37,14 @@ pub static COOKIE_NAME: &str = "session";
 pub static USER_HEADER_NAME: &str = "x-user-id";
 
 #[derive(sqlx::FromRow, Debug)]
-struct User {
+struct UserSession {
+    id: i32,
     user_id: i32,
+    session_verifier: String,
     otp_code_confirmed: bool,
+    otp_code_encrypted: String,
+    otp_code_attempts: i32,
+    otp_code_sent: bool,
 }
 
 pub async fn logout(
@@ -47,16 +53,14 @@ pub async fn logout(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
-        if let Ok(uuid) = Uuid::parse_str(&session.session_uuid) {
-            sqlx::query(
-                "
-                DELETE FROM sessions WHERE session_uuid = $1
-                ",
-            )
-            .bind(uuid)
-            .execute(pool.get_ref()) // -> Vec<Person>
-            .await?;
-        }
+        sqlx::query(
+            "
+            DELETE FROM sessions WHERE id = $1
+            ",
+        )
+        .bind(session.session_id)
+        .execute(pool.get_ref()) // -> Vec<Person>
+        .await?;
     }
     id.forget();
 
@@ -68,9 +72,14 @@ pub async fn logout(
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
-    pub session_uuid: String,
+    pub session_id: i32,
+    pub session_verifier: String,
 }
 
+// Retrieve the session from the cookie.
+// 1234:6a24fff4c79000aed2a1720532ef90016a24fff4c79000aed2a1720532ef9001
+// First part is the session primary key. Second is the verifier.
+// We hash the verifier as we store it hashed in the db.
 impl FromRequest for Session {
     type Config = ();
     type Error = CustomError;
@@ -78,8 +87,25 @@ impl FromRequest for Session {
 
     fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
         if let Ok(identity) = Identity::from_request(req, pl).into_inner() {
-            if let Some(session_uuid) = identity.identity() {
-                return ok(Session { session_uuid });
+            if let Some(session_id_and_verifier) = identity.identity() {
+                let split: Vec<&str> = session_id_and_verifier.split(":").collect();
+                if split.len() == 2 {
+                    let session_id = split[0];
+                    let session_id = session_id.parse::<i32>();
+                    if let Ok(session_id) = session_id {
+                        let session_verifier = split[1];
+                        let mut hasher = Sha256::new();
+                        let bytes = hex::decode(session_verifier);
+                        if let Ok(bytes) = bytes {
+                            hasher.update(bytes);
+                            let hex_hashed_session_verifier = hex::encode(hasher.finalize());
+                            return ok(Session {
+                                session_id,
+                                session_verifier: hex_hashed_session_verifier,
+                            });
+                        }
+                    }
+                }
             }
         }
         err(CustomError::Unauthorized)
@@ -95,9 +121,9 @@ async fn authorize(
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
     // If we have a session cookie, try and convert it to a user.
-    let mut logged_user: Option<User> = None;
+    let mut logged_user: Option<UserSession> = None;
     if let Some(session) = session {
-        logged_user = get_user_by_session_uuid(&session.session_uuid, pool).await;
+        logged_user = get_user_by_session(&session, pool.get_ref()).await;
     }
 
     // If we have Email Otp make sure the user has entered the code
@@ -117,7 +143,7 @@ async fn authorize(
     }
 }
 
-async fn envoy_external_auth(logged_user: Option<User>) -> Result<HttpResponse, Error> {
+async fn envoy_external_auth(logged_user: Option<UserSession>) -> Result<HttpResponse, Error> {
     if let Some(logged_user) = logged_user {
         let mut resp = HttpResponse::Ok();
         resp.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)));
@@ -127,18 +153,29 @@ async fn envoy_external_auth(logged_user: Option<User>) -> Result<HttpResponse, 
     }
 }
 
-async fn get_user_by_session_uuid(session_uuid: &str, pool: web::Data<PgPool>) -> Option<User> {
-    if let Ok(uuid) = Uuid::parse_str(session_uuid) {
-        let user = sqlx::query_as::<_, User>(
-            "
-            SELECT user_id, otp_code_confirmed FROM sessions WHERE session_uuid = $1
-            ",
-        )
-        .bind(uuid)
-        .fetch_one(pool.get_ref()) // -> Vec<Person>
-        .await;
+// Get a user session and resist timing attacks.
+async fn get_user_by_session(session: &Session, pool: &PgPool) -> Option<UserSession> {
+    let user = sqlx::query_as::<_, UserSession>(
+        "
+        SELECT 
+            id,
+            user_id, 
+            session_verifier, 
+            otp_code_confirmed, 
+            otp_code_encrypted, 
+            otp_code_attempts, 
+            otp_code_sent 
+        FROM 
+            sessions 
+        WHERE id = $1
+        ",
+    )
+    .bind(session.session_id)
+    .fetch_one(pool) // -> Vec<Person>
+    .await;
 
-        if let Ok(user) = user {
+    if let Ok(user) = user {
+        if constant_time_compare(&session.session_verifier, &user.session_verifier) {
             return Some(user);
         }
     }
@@ -146,9 +183,17 @@ async fn get_user_by_session_uuid(session_uuid: &str, pool: web::Data<PgPool>) -
     None
 }
 
+// Constant time string compare.
+pub fn constant_time_compare(a: &str, b: &str) -> bool {
+    a.bytes()
+        .zip(b.bytes())
+        .fold(0, |acc, (a, b)| acc | (a ^ b))
+        == 0
+}
+
 async fn reverse_proxy(
     req: HttpRequest,
-    logged_user: Option<User>,
+    logged_user: Option<UserSession>,
     body: web::Bytes,
     config: web::Data<config::Config>,
     client: web::Data<Client>,

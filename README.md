@@ -12,8 +12,10 @@
 * Works well as a Kubernetes side car.
 * Works with envoy proxy as an auth module.
 * Encrypted Mode - Generates ECDH and ECDSA keys client side. Uses a similar technique to Bitwarden but upgraded.
-* Generates secure HTTP only cookies encrypted with GCM and additional data.
+* Session state is stored client side in secure HTTP only cookies which are not accessible by JavaScript.
+* Client side session state is encrypted with AES-GCM and additional data.
 * Can replace rails devise or other popular open source auth libraries.
+* NKFC password normalisation.
 * TODO - WebAuthn for 2FA
 * TODO - Allow user to see sessions and logout devices.
 
