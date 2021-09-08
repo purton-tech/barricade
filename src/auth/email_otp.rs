@@ -57,9 +57,10 @@ pub async fn email_otp(
                     .fetch_one(pool.get_ref())
                     .await?;
 
-                    let otp_code = config.decrypt(
+                    let otp_code = crate::encryption::decrypt(
                         &user_session.otp_code_encrypted,
                         &format!("{}", user_session.user_id),
+                        &config.secret_key,
                     )?;
 
                     let email = Message::builder()
@@ -118,9 +119,10 @@ pub async fn process_otp(
                     .finish());
             }
 
-            let otp_code = config.decrypt(
+            let otp_code = crate::encryption::decrypt(
                 &user_session.otp_code_encrypted,
                 &format!("{}", user_session.user_id),
+                &config.secret_key,
             )?;
 
             if otp_code == form.code {

@@ -12,6 +12,7 @@ mod components;
 mod config;
 mod custom_error;
 mod email;
+mod encryption;
 mod layouts;
 use awc::{Client, ClientBuilder};
 use custom_error::CustomError;
@@ -74,12 +75,10 @@ pub async fn logout(
 pub struct Session {
     pub session_id: i32,
     pub session_verifier: String,
+    pub master_key_hash: Option<String>,
 }
 
-// Retrieve the session from the cookie.
-// 1234:6a24fff4c79000aed2a1720532ef90016a24fff4c79000aed2a1720532ef9001
-// First part is the session primary key. Second is the verifier.
-// We hash the verifier as we store it hashed in the db.
+// Retrieve the session from the cookie, replace the session verifier with a hashed version.
 impl FromRequest for Session {
     type Config = ();
     type Error = CustomError;
@@ -88,22 +87,19 @@ impl FromRequest for Session {
     fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
         if let Ok(identity) = Identity::from_request(req, pl).into_inner() {
             if let Some(session_id_and_verifier) = identity.identity() {
-                let split: Vec<&str> = session_id_and_verifier.split(":").collect();
-                if split.len() == 2 {
-                    let session_id = split[0];
-                    let session_id = session_id.parse::<i32>();
-                    if let Ok(session_id) = session_id {
-                        let session_verifier = split[1];
-                        let mut hasher = Sha256::new();
-                        let bytes = hex::decode(session_verifier);
-                        if let Ok(bytes) = bytes {
-                            hasher.update(bytes);
-                            let hex_hashed_session_verifier = hex::encode(hasher.finalize());
-                            return ok(Session {
-                                session_id,
-                                session_verifier: hex_hashed_session_verifier,
-                            });
-                        }
+                let parsed_cookie: Result<Session, serde_json::Error> =
+                    serde_json::from_str(&session_id_and_verifier);
+                if let Ok(parsed_cookie) = parsed_cookie {
+                    let mut hasher = Sha256::new();
+                    let bytes = hex::decode(&parsed_cookie.session_verifier);
+                    if let Ok(bytes) = bytes {
+                        hasher.update(bytes);
+                        let hex_hashed_session_verifier = hex::encode(hasher.finalize());
+                        return ok(Session {
+                            session_id: parsed_cookie.session_id,
+                            session_verifier: hex_hashed_session_verifier,
+                            master_key_hash: parsed_cookie.master_key_hash,
+                        });
                     }
                 }
             }

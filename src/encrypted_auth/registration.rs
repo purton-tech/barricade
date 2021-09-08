@@ -55,31 +55,67 @@ pub async fn process_registration(
 
     match user.validate() {
         Ok(_) => {
-            let user = sqlx::query_as::<_, InsertedUser>(&format!(
+            // Hash with Argon2id otherwise someone with readonly access to the db
+            // could use this directly as a logon token.
+            let master_password_hash =
+                crate::encryption::password_hash(&user.master_password_hash, false).await?;
+            let master_password_hash = "password123";
+
+            // Encrypt private keys one more time. Extra protection against brute
+            // force of the master password.
+            let server_wrapped_protected_symmetric_key = crate::encryption::kdf_and_wrap(
+                &user.protected_symmetric_key,
+                &master_password_hash,
+                &user.ecdh_public_key,
+            )
+            .await?;
+
+            let server_wrapped_protected_ecdh_private_key = crate::encryption::kdf_and_wrap(
+                &user.protected_ecdh_private_key,
+                &master_password_hash,
+                &user.ecdh_public_key,
+            )
+            .await?;
+
+            let server_wrapped_protected_ecdsa_private_key = crate::encryption::kdf_and_wrap(
+                &user.protected_ecdsa_private_key,
+                &master_password_hash,
+                &user.ecdh_public_key,
+            )
+            .await?;
+
+            let db_user = sqlx::query_as::<_, InsertedUser>(&format!(
                 "
-                    INSERT INTO {} 
-                        (email, 
-                        master_password_hash, 
-                        protected_symmetric_key, 
-                        protected_ecdh_private_key, 
-                        ecdh_public_key,
-                        protected_ecdsa_private_key, 
-                        ecdsa_public_key)
-                    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
-                    ",
+                INSERT INTO {} 
+                    (email, 
+                    master_password_hash, 
+                    protected_symmetric_key, 
+                    protected_ecdh_private_key, 
+                    ecdh_public_key,
+                    protected_ecdsa_private_key, 
+                    ecdsa_public_key)
+                VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
+                ",
                 config.user_table_name
             ))
             .bind(&user.email)
-            .bind(&user.master_password_hash)
-            .bind(&user.protected_symmetric_key)
-            .bind(&user.protected_ecdh_private_key)
+            .bind(&master_password_hash)
+            .bind(server_wrapped_protected_symmetric_key)
+            .bind(server_wrapped_protected_ecdh_private_key)
             .bind(&user.ecdh_public_key)
-            .bind(&user.protected_ecdsa_private_key)
+            .bind(server_wrapped_protected_ecdsa_private_key)
             .bind(&user.ecdsa_public_key)
             .fetch_one(db_pool.get_ref())
             .await?;
 
-            crate::auth::login::create_session(&config, db_pool, identity, user.id).await?;
+            crate::auth::login::create_session(
+                &config,
+                db_pool,
+                identity,
+                db_user.id,
+                Some(user.master_password_hash.clone()),
+            )
+            .await?;
 
             if config.email_otp_enabled {
                 return Ok(HttpResponse::SeeOther()

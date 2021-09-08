@@ -1,3 +1,4 @@
+mod decrypt;
 mod login;
 mod registration;
 
@@ -16,8 +17,8 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     );
     cfg.service(
         web::resource(crate::DECRYPT_MASTER_KEY_URL)
-            .route(web::get().to(login::decrypt))
-            .route(web::post().to(login::process_decryption)),
+            .route(web::get().to(decrypt::decrypt))
+            .route(web::post().to(decrypt::process_decryption)),
     );
     cfg.service(
         web::resource(crate::EMAIL_OTP_URL)

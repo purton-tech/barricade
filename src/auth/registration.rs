@@ -53,7 +53,11 @@ pub async fn process_registration(
     if valid {
         match form.validate() {
             Ok(_) => {
-                let hashed_password = super::password_hash(&form.password, &config).await?;
+                let hashed_password = crate::encryption::password_hash(
+                    &form.password,
+                    config.use_bcrypt_instead_of_argon,
+                )
+                .await?;
 
                 let registered_user = sqlx::query_as::<_, InsertedUser>(&format!(
                     "
@@ -67,7 +71,8 @@ pub async fn process_registration(
                 .fetch_one(pool.get_ref())
                 .await?;
 
-                super::login::create_session(&config, pool, identity, registered_user.id).await?;
+                super::login::create_session(&config, pool, identity, registered_user.id, None)
+                    .await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))

@@ -44,7 +44,11 @@ pub async fn process_change(
 
     match form.validate() {
         Ok(_) => {
-            let hashed_password = super::password_hash(&form.password, &config).await?;
+            let hashed_password = crate::encryption::password_hash(
+                &form.password,
+                config.use_bcrypt_instead_of_argon,
+            )
+            .await?;
 
             if let Ok(uuid) = Uuid::parse_str(&info.reset_token) {
                 dbg!(&uuid);

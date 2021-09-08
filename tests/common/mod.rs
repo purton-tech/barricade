@@ -1,5 +1,4 @@
 use aes_gcm::aead::{generic_array::GenericArray, Aead, NewAead, Payload};
-use aes_gcm::AeadInPlace;
 use aes_gcm::Aes256Gcm;
 use rand::Rng;
 use sqlx::PgPool;

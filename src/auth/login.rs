@@ -46,12 +46,17 @@ pub async fn create_session(
     pool: web::Data<PgPool>,
     identity: Identity,
     user_id: i32,
+    master_key_hash: Option<String>,
 ) -> Result<(), CustomError> {
     // We generate and OTP code and encrypt it.
     // Encryption helps secure against an attacker who has read only access to the database
     let mut rng = rand::thread_rng();
     let otp_code: u32 = rng.gen_range(10000..99999);
-    let otp_encrypted = config.encrypt(&format!("{}", otp_code), &format!("{}", user_id))?;
+    let otp_encrypted = crate::encryption::encrypt(
+        &format!("{}", otp_code),
+        &format!("{}", user_id),
+        &config.secret_key,
+    )?;
 
     // Create a random session verifier
     let random_bytes = rand::thread_rng().gen::<[u8; 32]>();
@@ -72,7 +77,16 @@ pub async fn create_session(
     .fetch_one(pool.get_ref())
     .await?;
 
-    identity.remember(session.id.to_string() + ":" + &hex::encode(random_bytes));
+    let session = crate::Session {
+        session_id: session.id,
+        session_verifier: hex::encode(random_bytes),
+        master_key_hash,
+    };
+
+    let serialized =
+        serde_json::to_string(&session).map_err(|e| CustomError::FaultySetup(e.to_string()))?;
+
+    identity.remember(serialized);
 
     Ok(())
 }
@@ -101,14 +115,17 @@ pub async fn process_login(
         if !users.is_empty() {
             // Passwords must be normalised
             let normalised_password = &form.password.nfkc().collect::<String>();
-            let valid =
-                super::verify_hash(&normalised_password, &users[0].hashed_password, &config)
-                    .await?;
+            let valid = crate::encryption::verify_hash(
+                &normalised_password,
+                &users[0].hashed_password,
+                config.use_bcrypt_instead_of_argon,
+            )
+            .await?;
 
             if valid {
                 // Generate a session
 
-                create_session(&config, pool, identity, users[0].id).await?;
+                create_session(&config, pool, identity, users[0].id, None).await?;
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))
