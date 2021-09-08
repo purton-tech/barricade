@@ -66,8 +66,6 @@ pub async fn decrypt(
                 )
                 .await?;
 
-                dbg!(unwrapped_protected_ecdh_private_key);
-
                 let unwrapped_protected_ecdsa_private_key = &crate::encryption::kdf_and_unwrap(
                     &users[0].protected_ecdsa_private_key,
                     &master_password_hash,
