@@ -24,5 +24,8 @@ alias mr='diesel migration run'
 alias mre='diesel migration redo'
 alias ml='diesel migration list'
 alias db='psql $DATABASE_URL'
+# Start node dev i..e parcel
+alias nrs='npm run start'
+
 # Leave a line below or the files will cat together
 

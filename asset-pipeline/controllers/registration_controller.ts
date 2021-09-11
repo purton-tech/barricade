@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import { InitialiseVaultWithNewKeysRequest, InitialiseVaultWithNewKeysResult, Jobs } from '../crypto_types'
-
+import { Vault } from '../vault'
 
 export default class extends Controller {
 
@@ -29,13 +29,13 @@ export default class extends Controller {
   readonly publicECDSAKeyTarget!: HTMLInputElement
   readonly protectedECDSAPrivateKeyTarget!: HTMLInputElement
 
-  register(event: MouseEvent) {
+  async register(event: MouseEvent) {
     event.preventDefault()
     document.querySelectorAll('span.error').forEach(e => e.remove());
     this.passwordTarget.classList.remove('error')
 
-    const pass1 = this.passwordTarget.value.normalize('NFC');
-    const pass2 = this.confirmPasswordTarget.value.normalize('NFC');
+    const pass1 = this.passwordTarget.value;
+    const pass2 = this.confirmPasswordTarget.value;
 
     if (pass1 != pass2) {
       this.passwordTarget.classList.add('error')
@@ -48,38 +48,17 @@ export default class extends Controller {
     this.passwordTarget.disabled = true
     this.confirmPasswordTarget.disabled = true
 
-    const w = new Worker('../crypto_worker.ts');
-    const controller = this
-    w.onmessage = e => {
+    const authToken = await Vault.unlock(pass1, this.emailTarget.value)
 
-      const data = e.data;
-      if (data.status == 'done') {
+    const protectedKeys = await Vault.new()
 
-        const masterKeyResult : InitialiseVaultWithNewKeysResult = data.response
-        console.log(masterKeyResult)
-        this.emailCopyTarget.value = this.emailTarget.value
-        controller.protectedECDSAPrivateKeyTarget.value = masterKeyResult.protectedECDHPrivateKey
-        controller.publicECDSAKeyTarget.value = masterKeyResult.publicECDHKey
-        controller.protectedECDHPrivateKeyTarget.value = masterKeyResult.protectedECDSAPrivateKey
-        controller.publicECDHKeyTarget.value = masterKeyResult.publicECDSAKey
-        controller.protectedSymmetricKeyTarget.value = masterKeyResult.protectedSymmetricKey
-        controller.masterPasswordHashTarget.value = masterKeyResult.masterPasswordHash
-        controller.formTarget.submit()
-      }
-      else {
-        console.log(data)
-      }
-    }
-
-    const masterReq: InitialiseVaultWithNewKeysRequest = {
-      masterPassword: pass1,
-      email: controller.emailTarget.value,
-      pbkdf2Iterations: 100000
-    }
-
-    w.postMessage({
-      cmd: Jobs[Jobs.InitialiseVaultWithNewKeys],
-      request: masterReq
-    })
+    this.emailCopyTarget.value = this.emailTarget.value
+    this.protectedECDSAPrivateKeyTarget.value = protectedKeys.protectedECDHPrivateKey.string
+    this.publicECDSAKeyTarget.value = protectedKeys.publicECDHKey
+    this.protectedECDHPrivateKeyTarget.value = protectedKeys.protectedECDSAPrivateKey.string
+    this.publicECDHKeyTarget.value = protectedKeys.publicECDSAKey
+    this.protectedSymmetricKeyTarget.value = protectedKeys.protectedSymmetricKey.string
+    this.masterPasswordHashTarget.value = authToken.b64
+    this.formTarget.submit()
   }
 }
