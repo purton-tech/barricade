@@ -1,5 +1,4 @@
 import { Controller } from 'stimulus'
-import { InitialiseVaultWithNewKeysRequest, InitialiseVaultWithNewKeysResult, Jobs } from '../crypto_types'
 import { Vault } from '../vault'
 
 export default class extends Controller {
