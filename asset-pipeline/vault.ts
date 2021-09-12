@@ -1,4 +1,5 @@
 import { openDB } from 'idb';
+import { scrypt } from './scrypt'
 
 export interface ProtectedKeys {
     protectedSymmetricKey: Cipher
@@ -137,7 +138,13 @@ export class Vault {
         const masterPassword = enc.encode(password.normalize('NFKC'))
         const email = enc.encode(username.normalize('NFKC'))
     
-        const masterCryptoKey = await this.pbkdf2(masterPassword, email, iterations, 256)
+
+        const scryptResult: ArrayBuffer = await scrypt(masterPassword, email, 16384, 8, 8, 32, (progress) => {
+            console.log((progress * 100.00).toFixed(2) + '%')
+        })
+        const masterCryptoKey = await self.crypto.subtle.importKey('raw',
+                scryptResult, AES_OPTIONS, true, ['encrypt', 'decrypt']);
+        //const masterCryptoKey = await this.pbkdf2(masterPassword, email, iterations, 256)
         const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
         const authKey = await this.pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
         const authKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', authKey))

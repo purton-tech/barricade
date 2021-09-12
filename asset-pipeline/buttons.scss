@@ -97,4 +97,20 @@
 			border-color: var(--success);
 		}
 	}
+	
+	&.disabled {
+		background: #fafafa !important;
+		border-color: #eaeaea !important;
+		color: #ccc !important;
+		cursor: not-allowed !important;
+	}
+	
+	&.disabled:hover {
+		background: #fafafa !important;
+		border-color: #eaeaea !important;
+		color: #ccc !important;
+		cursor: not-allowed !important;
+	}
+	
+	
 }

@@ -124,7 +124,7 @@ pub async fn kdf_and_unwrap(
     password: &str,
     aead: &str,
 ) -> Result<String, CustomError> {
-    let split: Vec<&str> = wrapped_data.split(":").collect();
+    let split: Vec<&str> = wrapped_data.split(':').collect();
 
     if split.len() == 2 {
         let decode_bytes =
@@ -151,7 +151,7 @@ pub async fn password_hash(password: &str, use_bcrypt: bool) -> Result<String, c
 
         // Argon2 with default params (Argon2id v19)
         let argon2 = Argon2::default();
-        let vec_bytes = normalised_password.clone().into_bytes();
+        let vec_bytes = normalised_password.into_bytes();
 
         // Hash password to PHC string ($argon2id$v=19$...)
         argon2
