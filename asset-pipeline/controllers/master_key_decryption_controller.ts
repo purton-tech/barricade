@@ -1,5 +1,5 @@
 import { Controller } from 'stimulus'
-import { ImportProtectedKeysIntoVaultRequest, Jobs } from '../crypto_types'
+import { Vault, ProtectedKeys, Cipher } from '../vault'
 
 
 export default class extends Controller {
@@ -25,24 +25,16 @@ export default class extends Controller {
 
     connect() {
 
-        const w = new Worker('../crypto_worker.ts');
-        w.onmessage = e => {
-
-            const data = e.data;
-            this.formTarget.submit()
-        }
-
-        const req: ImportProtectedKeysIntoVaultRequest = {
-            protectedSymmetricKey: this.protectedSymmetricKeyTarget.value,
-            protectedECDSAPrivateKey: this.protectedECDSAPrivateKeyTarget.value,
+        const keysToRestore: ProtectedKeys = {
+            protectedSymmetricKey: Cipher.fromString(this.protectedSymmetricKeyTarget.value),
+            protectedECDSAPrivateKey: Cipher.fromString(this.protectedECDSAPrivateKeyTarget.value),
             publicECDSAKey: this.publicECDSAKeyTarget.value,
-            protectedECDHPrivateKey: this.protectedECDHPrivateKeyTarget.value,
+            protectedECDHPrivateKey: Cipher.fromString(this.protectedECDHPrivateKeyTarget.value),
             publicECDHKey: this.publicECDHKeyTarget.value
         }
 
-        w.postMessage({
-            cmd: Jobs[Jobs.ImportProtectedKeysIntoVault],
-            request: req,
-        })
+        Vault.restore(keysToRestore)
+
+        this.formTarget.submit()
     }
 }

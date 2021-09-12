@@ -49,6 +49,13 @@
       }
     }
 
+    input.disabled {
+      color: #98A2B3;
+      cursor: not-allowed;
+      background: #eef2f7;
+      box-shadow: inset 0 0 0 1px rgb(15 39 118 / 10%);
+    }
+
     input:not([type="submit"]), textarea, select {
       font-size: 16px;
       padding: 0.5em;
