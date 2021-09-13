@@ -1,5 +1,4 @@
 import { openDB } from 'idb';
-import { scrypt } from './scrypt'
 
 export interface ProtectedKeys {
     protectedSymmetricKey: Cipher
@@ -8,6 +7,9 @@ export interface ProtectedKeys {
     protectedECDHPrivateKey: Cipher
     publicECDHKey: string
 }
+
+// NIST recommends ten million for secure applications.
+const NIST_RECOMMENDED_PBKDF_ITERATIONS = 10_000_000
 
 const ECDSA_OPTIONS = {
     name: "ECDSA",
@@ -49,7 +51,7 @@ export class Vault {
     public static async unlock(masterPassword: string, email: string) : Promise<ByteData> {
 
         const [masterCryptoKey, masterKeyData, authKey, authKeyData] = 
-            await this.generateMasterKey(email, masterPassword)
+            await this.generateMasterKey(email, masterPassword, NIST_RECOMMENDED_PBKDF_ITERATIONS)
 
         // Now store it in the vault
         await this.storeMasterKey(masterKeyData)
@@ -137,14 +139,8 @@ export class Vault {
         let enc = new TextEncoder();
         const masterPassword = enc.encode(password.normalize('NFKC'))
         const email = enc.encode(username.normalize('NFKC'))
-    
 
-        const scryptResult: ArrayBuffer = await scrypt(masterPassword, email, 16384, 8, 8, 32, (progress) => {
-            console.log((progress * 100.00).toFixed(2) + '%')
-        })
-        const masterCryptoKey = await self.crypto.subtle.importKey('raw',
-                scryptResult, AES_OPTIONS, true, ['encrypt', 'decrypt']);
-        //const masterCryptoKey = await this.pbkdf2(masterPassword, email, iterations, 256)
+        const masterCryptoKey = await this.pbkdf2(masterPassword, email, iterations, 256)
         const masterKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', masterCryptoKey))
         const authKey = await this.pbkdf2(masterKeyData.arr, masterPassword, 1, 256)
         const authKeyData = new ByteData(await self.crypto.subtle.exportKey('raw', authKey))

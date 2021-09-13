@@ -181,12 +181,10 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
 
 
 ```console
-psql=# select * from users;
- id |        email         |                                         hashed_password                                          |         created_at         |         updated_at         | reset_password_token | reset_pa
-ssword_sent_at 
-----+----------------------+--------------------------------------------------------------------------------------------------+----------------------------+----------------------------+----------------------+---------
----------------
-  6 | some_user@gmail.com  | $argon2id$v=19$m=4096,t=3,p=1$kf7KkCPIIfbl1dgasa58yQ$WFNVT05c2ptBtBAZQI1CIGaEqbR9m3505WiZ+/oflk0 | 2021-09-07 11:03:35.663096 | 2021-09-07 11:03:35.663096 |                      | 
+psql=# select id, email, hashed_password from users;
+ id |        email         |                                         hashed_password                                          |
+----+----------------------+--------------------------------------------------------------------------------------------------+
+  6 | some_user@gmail.com  | $argon2id$v=19$m=4096,t=3,p=1$kf7KkCPIIfbl1dgasa58yQ$WFNVT05c2ptBtBAZQI1CIGaEqbR9m3505WiZ+/oflk0 |
 (1 row)
 ```
 

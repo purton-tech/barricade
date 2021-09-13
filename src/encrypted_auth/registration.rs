@@ -138,7 +138,7 @@ pub async fn process_registration(
 
 markup::define! {
     RegistrationPage<'a>(form: &'a  Registration) {
-        div["data-controller" = "registration"] {
+        div["data-controller" = "registration password"] {
             form.m_authentication {
 
                 h1 { "Register" }
@@ -148,13 +148,17 @@ markup::define! {
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }
-                input#password[name="password", type="password", "data-target" = "registration.password"] {}
-                span.a_help_text { "The master password is the password we use to generate your private keys. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
+                input#password[name="password", type="password",
+                    "data-action"="keyup->password#keyPress",
+                    "data-target" = "registration.password password.password"] {}
+                span.a_help_text["data-target" = "password.help"] { "The master password is the password we use to generate your private keys. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
+                span.a_help_text["data-target" = "password.warning"] {}
+                span.a_help_text["data-target" = "password.suggestions"] {}
 
                 label[for="confirm_password"] { "Re-type Master Password" }
                 input#confirm_password[name="confirm_password", type="password", "data-target" = "registration.confirmPassword"] {}
 
-                button.a_button.success[type = "submit", "data-target" = "registration.button",
+                button.a_button.success[type = "submit", "data-target" = "registration.button password.button",
                     "data-action" = "registration#register"] { "Sign Up" }
 
                 a[href=crate::SIGN_IN_URL] { "Sign In Instead" }
