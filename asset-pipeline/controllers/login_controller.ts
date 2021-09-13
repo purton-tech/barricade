@@ -15,13 +15,16 @@ export default class extends Controller {
 
   async login(event : MouseEvent) {
     event.preventDefault()
-    this.passwordTarget.classList.remove('error')
+    this.emailTarget.classList.remove('error')
 
     this.buttonTarget.disabled = true
     this.emailTarget.disabled = true
     this.passwordTarget.disabled = true
+    this.emailTarget.classList.add('disabled')
+    this.passwordTarget.classList.add('disabled')
+    this.buttonTarget.classList.add('disabled')
 
-    const authToken = await Vault.unlock(this.emailTarget.value, this.passwordTarget.value)
+    const authToken = await Vault.unlock(this.passwordTarget.value, this.emailTarget.value)
     this.emailCopyTarget.value = this.emailTarget.value
     this.masterPasswordHashTarget.value = authToken.b64
     this.formTarget.submit()

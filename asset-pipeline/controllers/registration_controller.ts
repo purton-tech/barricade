@@ -1,6 +1,5 @@
 import { Controller } from 'stimulus'
 import { Vault } from '../vault'
-import { scrypt } from '../scrypt'
 
 export default class extends Controller {
 
@@ -53,6 +52,7 @@ export default class extends Controller {
         this.buttonTarget.classList.add('disabled')
 
         // Derive an authToken
+        this.buttonTarget.innerText = "Generating Your Keys"
         const authToken = await Vault.unlock(pass1, this.emailTarget.value)
         const protectedKeys = await Vault.new()
 
