@@ -61,7 +61,7 @@ markup::define! {
 
 pub fn marketing_layout(title: &str, content: &str) -> HttpResponse {
     let csp_content = Some(format!(
-        "default-src 'none';  script-src {}; frame-src {}; style-src {}; connect-src {}",
+        "default-src 'none'; script-src {} 'unsafe-inline'; frame-src {}; style-src {}; connect-src {};",
         "self https://hcaptcha.com https://*.hcaptcha.com",
         "https://hcaptcha.com https://*.hcaptcha.com",
         "self https://hcaptcha.com https://*.hcaptcha.com",
