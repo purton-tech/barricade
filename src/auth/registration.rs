@@ -69,10 +69,24 @@ pub async fn process_registration(
                 .bind(&form.email.to_lowercase())
                 .bind(hashed_password)
                 .fetch_one(pool.get_ref())
-                .await?;
+                .await;
 
-                super::login::create_session(&config, pool, identity, registered_user.id, None)
+                if let Ok(registered_user) = registered_user {
+                    super::login::create_session(&config, pool, identity, registered_user.id, None)
+                        .await?;
+                } else {
+                    // Looks like the user already exists.
+                    // create a fake session, we have to make it look like everything is normal
+                    // do defend against account enumeration attacks.
+                    super::login::create_session(
+                        &config,
+                        pool,
+                        identity,
+                        crate::auth::email_otp::INVALID_USER_ID,
+                        None,
+                    )
                     .await?;
+                }
 
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, config.redirect_url.clone()))

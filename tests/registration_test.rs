@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 
 use dotenv::dotenv;
 use std::path::Path;
@@ -31,34 +31,8 @@ async fn registration() -> WebDriverResult<()> {
         .await?
         .contains("Invalid email or password"));
 
-    let email = common::random_email();
-
-    // Let's go and register
-    driver
-        .find_element(By::LinkText("SIGN UP"))
-        .await?
-        .click()
-        .await?;
-    driver
-        .find_element(By::Id("email"))
-        .await?
-        .send_keys(&email)
-        .await?;
-    driver
-        .find_element(By::Id("password"))
-        .await?
-        .send_keys(&email)
-        .await?;
-    driver
-        .find_element(By::Id("confirm_password"))
-        .await?
-        .send_keys(&email)
-        .await?;
-    driver
-        .find_element(By::Css("button[type='submit']"))
-        .await?
-        .click()
-        .await?;
+    // Register someone
+    let email = common::register_random_user(&driver).await?;
 
     // OTP Code
     // Wait for page to load as code might not be in database yet.

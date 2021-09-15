@@ -9,6 +9,8 @@ use sqlx::PgPool;
 use std::default::Default;
 use validator::ValidationErrors;
 
+pub static INVALID_USER_ID: i32 = -1000;
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct Otp {
     pub code: String,
@@ -47,7 +49,7 @@ pub async fn email_otp(
                 .await?;
 
                 if let Some(smtp_config) = &config.smtp_config {
-                    let db_user: User = sqlx::query_as::<_, User>(&format!(
+                    let db_user = sqlx::query_as::<_, User>(&format!(
                         "
                         SELECT email FROM {} WHERE id = $1
                         ",
@@ -55,7 +57,7 @@ pub async fn email_otp(
                     ))
                     .bind(user_session.user_id)
                     .fetch_one(pool.get_ref())
-                    .await?;
+                    .await;
 
                     let otp_code = crate::encryption::decrypt(
                         &user_session.otp_code_encrypted,
@@ -63,23 +65,28 @@ pub async fn email_otp(
                         &config.secret_key,
                     )?;
 
-                    let email = Message::builder()
-                        .from(smtp_config.from_email.clone())
-                        .to(db_user.email.parse().unwrap())
-                        .subject("Your confirmation code")
-                        .body(
-                            format!(
-                                "
-                            Your confirmation code is {}
-                            ",
-                                otp_code
+                    if let Ok(db_user) = db_user {
+                        let email = Message::builder()
+                            .from(smtp_config.from_email.clone())
+                            .to(db_user.email.parse().unwrap())
+                            .subject("Your confirmation code")
+                            .body(
+                                format!(
+                                    "
+                                Your confirmation code is {}
+                                ",
+                                    otp_code
+                                )
+                                .trim()
+                                .to_string(),
                             )
-                            .trim()
-                            .to_string(),
-                        )
-                        .unwrap();
+                            .unwrap();
 
-                    crate::email::send_email(&config, email)
+                        crate::email::send_email(&config, email)
+                    } else if user_session.user_id == INVALID_USER_ID {
+                        // Looks like the an attempt to register a duplicate user
+                        // There may be a timing attack here.
+                    }
                 }
             }
 

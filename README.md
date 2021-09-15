@@ -131,7 +131,7 @@ CREATE TABLE users (
 
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY, 
-    session_uuid UUID NOT NULL DEFAULT gen_random_uuid(), 
+    session_verifier VARCHAR NOT NULL, 
     user_id INT NOT NULL, 
     otp_code_encrypted VARCHAR NOT NULL;
     otp_code_attempts INTEGER NOT NULL DEFAULT 0;
