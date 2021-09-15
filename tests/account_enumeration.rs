@@ -39,15 +39,13 @@ async fn account_enumeration_login() -> WebDriverResult<()> {
         .await?
         .click()
         .await?;
+
+    // Look for the class to implicitly wait for the page to load.
+    driver.find_element(By::ClassName("error")).await?;
     let no_user_page_source = driver.page_source().await?;
     assert!(no_user_page_source.contains("Invalid email or password"));
 
     // Try and log in as existing user with wrong password
-    driver
-        .find_element(By::Id("email"))
-        .await?
-        .send_keys(&email)
-        .await?;
     driver
         .find_element(By::Id("password"))
         .await?
@@ -58,6 +56,9 @@ async fn account_enumeration_login() -> WebDriverResult<()> {
         .await?
         .click()
         .await?;
+
+    // Look for the class to implicitly wait for the page to load.
+    driver.find_element(By::ClassName("error")).await?;
     let existing_user_page_source = driver.page_source().await?;
 
     assert!(existing_user_page_source.contains("Invalid email or password"));
@@ -85,6 +86,10 @@ async fn account_enumeration_registration() -> WebDriverResult<()> {
 
     // Try and register as a user that doesn't exist
     let email = common::register_random_user(&driver).await?;
+
+    // Wait for page to load as code might not be in database yet.
+    driver.find_element(By::Id("code")).await?;
+
     let no_user_page_source = driver.page_source().await?;
     assert!(no_user_page_source.contains("Enter your confirmation code"));
 
@@ -119,6 +124,10 @@ async fn account_enumeration_registration() -> WebDriverResult<()> {
         .await?
         .click()
         .await?;
+
+    // Wait for page to load as code might not be in database yet.
+    driver.find_element(By::Id("code")).await?;
+
     let existing_user_page_source = driver.page_source().await?;
 
     assert!(existing_user_page_source.contains("Enter your confirmation code"));

@@ -9,7 +9,7 @@ pub fn redirect_and_snackbar(url: &str, message: &'static str) -> HttpResponse {
 }
 
 markup::define! {
-    MarketingHeader <'a>(title: &'a str, csp_content: &'a Option<String>, google_analytics: Option<String>) {
+    MarketingHeader <'a>(title: &'a str, csp_content: &'a Option<String>) {
 
         head {
             meta [ charset="utf-8" ] {}
@@ -17,23 +17,10 @@ markup::define! {
             meta [ name="viewport", content="width=device-width, initial-scale=1" ] {}
             title { {title} }
 
-            //link[rel="icon", type="image/ico",href= format!("/public/{}",statics::favicon_ico.name)]  {}
-
             script [ src = statics::get_index_js(),
                 type="text/javascript", async=""] {}
 
             link [ rel = "stylesheet", type="text/css" , href = statics::get_index_css()] {}
-
-            @if let Some(ga) = {google_analytics} {
-                script[async="async", src=format!("https://www.googletagmanager.com/gtag/js?id={}", ga)] {}
-                script {
-                    {format!("\
-                    window.dataLayer = window.dataLayer || []; \
-                    function gtag(){{dataLayer.push(arguments);}} \
-                    gtag('js', new Date()); \
-                    gtag('config', '{}');", ga)}
-                }
-            }
 
             @if let Some(csp_content) = {csp_content} {
                 meta [ "http-equiv"="Content-Security-Policy", content=csp_content ] {}
@@ -49,8 +36,7 @@ markup::define! {
 
         }
     }
-    MarketingLayout<'a>(content: &'a str, title: &'a str, csp_content: Option<String>,
-        google_analytics: Option<String>) {
+    MarketingLayout<'a>(content: &'a str, title: &'a str, csp_content: Option<String>) {
 
         @markup::doctype()
 
@@ -58,8 +44,7 @@ markup::define! {
 
             @MarketingHeader {
                 title,
-                csp_content,
-                google_analytics: google_analytics.clone()
+                csp_content
             }
 
             body.l_marketing {
@@ -74,16 +59,19 @@ markup::define! {
 
 }
 
-pub fn marketing_layout(
-    title: &str,
-    content: &str,
-    google_analytics: Option<String>,
-) -> HttpResponse {
+pub fn marketing_layout(title: &str, content: &str) -> HttpResponse {
+    let csp_content = Some(format!(
+        "default-src 'none';  script-src {}; frame-src {}; style-src {}; connect-src {}",
+        "self https://hcaptcha.com https://*.hcaptcha.com",
+        "https://hcaptcha.com https://*.hcaptcha.com",
+        "self https://hcaptcha.com https://*.hcaptcha.com",
+        "https://hcaptcha.com https://*.hcaptcha.com",
+    ));
+
     let l = MarketingLayout {
         title,
-        csp_content: None,
+        csp_content,
         content,
-        google_analytics,
     };
     HttpResponse::Ok()
         .content_type("text/html")
@@ -91,5 +79,5 @@ pub fn marketing_layout(
 }
 
 pub fn session_layout(title: &str, content: &str) -> HttpResponse {
-    marketing_layout(title, content, None)
+    marketing_layout(title, content)
 }

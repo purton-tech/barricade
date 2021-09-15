@@ -64,8 +64,6 @@ impl Config {
 }
 
 pub async fn register_random_user(driver: &WebDriver) -> WebDriverResult<String> {
-
-
     let email = random_email();
 
     // Register someone
