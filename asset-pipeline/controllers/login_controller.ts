@@ -16,6 +16,7 @@ export default class extends Controller {
   async login(event : MouseEvent) {
     event.preventDefault()
     this.emailTarget.classList.remove('error')
+    document.querySelectorAll('.error').forEach(e => e.remove());
 
     this.buttonTarget.disabled = true
     this.emailTarget.disabled = true
@@ -23,7 +24,8 @@ export default class extends Controller {
     this.emailTarget.classList.add('disabled')
     this.passwordTarget.classList.add('disabled')
     this.buttonTarget.classList.add('disabled')
-
+    this.buttonTarget.innerText = "Generating Your Keys"
+    
     const authToken = await Vault.unlock(this.passwordTarget.value, this.emailTarget.value)
     this.emailCopyTarget.value = this.emailTarget.value
     this.masterPasswordHashTarget.value = authToken.b64

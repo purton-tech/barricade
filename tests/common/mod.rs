@@ -63,6 +63,39 @@ impl Config {
     }
 }
 
+pub async fn register_random_user(driver: &WebDriver) -> WebDriverResult<String> {
+    let email = random_email();
+
+    // Register someone
+    driver
+        .find_element(By::LinkText("SIGN UP"))
+        .await?
+        .click()
+        .await?;
+    driver
+        .find_element(By::Id("email"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Id("password"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Id("confirm_password"))
+        .await?
+        .send_keys(&email)
+        .await?;
+    driver
+        .find_element(By::Css("button[type='submit']"))
+        .await?
+        .click()
+        .await?;
+
+    Ok(email)
+}
+
 pub(crate) const NONCE_LEN: usize = 12;
 
 pub fn decrypt(cipher: &str, aad: &str, secret_key: &[u8]) -> String {

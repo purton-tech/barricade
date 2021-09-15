@@ -105,16 +105,30 @@ pub async fn process_registration(
             .bind(server_wrapped_protected_ecdsa_private_key)
             .bind(&user.ecdsa_public_key)
             .fetch_one(db_pool.get_ref())
-            .await?;
+            .await;
 
-            crate::auth::login::create_session(
-                &config,
-                db_pool,
-                identity,
-                db_user.id,
-                Some(user.master_password_hash.clone()),
-            )
-            .await?;
+            if let Ok(db_user) = db_user {
+                crate::auth::login::create_session(
+                    &config,
+                    db_pool,
+                    identity,
+                    db_user.id,
+                    Some(user.master_password_hash.clone()),
+                )
+                .await?;
+            } else {
+                // Looks like the user already exists.
+                // create a fake session, we have to make it look like everything is normal
+                // do defend against account enumeration attacks.
+                crate::auth::login::create_session(
+                    &config,
+                    db_pool,
+                    identity,
+                    crate::auth::email_otp::INVALID_USER_ID,
+                    Some(user.master_password_hash.clone()),
+                )
+                .await?;
+            }
 
             if config.email_otp_enabled {
                 return Ok(HttpResponse::SeeOther()

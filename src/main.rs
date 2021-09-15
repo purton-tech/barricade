@@ -1,8 +1,8 @@
 use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{
-    cookie, dev::Payload, error, http, middleware, web, App, Error, FromRequest, HttpRequest,
-    HttpResponse, HttpServer,
+    cookie, dev::Payload, error, http, middleware, web, web::Data, App, Error, FromRequest,
+    HttpRequest, HttpResponse, HttpServer,
 };
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
@@ -261,9 +261,9 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         let client = ClientBuilder::new().disable_redirects().finish();
         App::new()
-            .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
-            .data(config.clone())
-            .data(client)
+            .app_data(Data::new(db_pool.clone()))
+            .app_data(Data::new(config.clone()))
+            .app_data(Data::new(client))
             .service(statics::static_file)
             .configure(auth_routes)
             // The proxy
