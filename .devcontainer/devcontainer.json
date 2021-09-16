@@ -1,5 +1,5 @@
 {
-	"name": "Contor",
+	"name": "authn-tech",
 	"dockerComposeFile": [
 		"docker-compose.yml"
 	],

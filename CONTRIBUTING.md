@@ -62,7 +62,7 @@ PORT=9095
 USER_TABLE_NAME=bcrypt_users
 ```
 
-## Building Contor
+## Building Authn-Tech
 
 For a full stack web development you need an [asset pipeline](https://www.theodinproject.com/courses/ruby-on-rails/lessons/the-asset-pipeline). This is responsible for compiling Typescript to Javascript, Compiling our SCSS and managing dependencies.
 

@@ -1,6 +1,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/contorsystems/contor?style=plastic)
 
-**Contor** is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Contor uses your database and requires minimal configuration.
+**Contor** is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Authn-tech uses your database and requires minimal configuration.
 
 ## Features 
 
@@ -19,7 +19,7 @@
 * TODO - WebAuthn for 2FA
 * TODO - Allow user to see sessions and logout devices.
 
-## Contor defends against the following attacks
+## Authn-tech defends against the following attacks
 
 * Account enumeration 
 * Password stuffing
@@ -55,8 +55,8 @@ services:
     image: containous/whoami
 
   # Configure contor to listen on port 9090 and reverse proxy nginx on port 80.
-  contor:
-    image: contorsystems/contor
+  authn:
+    image: purton-tech/authn-tech
     environment:
         # This secret key is used to encrypt cookies.
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949

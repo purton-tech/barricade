@@ -140,17 +140,17 @@ jobs:
       
       - name: Create Docker file
         run: |
-          EXE_NAME=contor
+          EXE_NAME=authn-tech
           set -e
           chmod +x ./target/x86_64-unknown-linux-musl/release/$EXE_NAME
           echo 'FROM scratch' > ./Dockerfile
           echo "COPY ./target/x86_64-unknown-linux-musl/release/$EXE_NAME /rust-executable" >> ./Dockerfile
           echo 'COPY ./asset-pipeline/dist /asset-pipeline/dist' >> ./Dockerfile
           echo 'CMD ["/rust-executable"]' >> ./Dockerfile
-          docker build -t contorsystems/contor .
+          docker build -t purtontech/authn-tech .
 
       - name: Deploy to Docker Hub.
         if: github.ref == 'refs/heads/master'
         run: |
           docker login -u ${{ secrets.USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-          docker push contorsystems/contor
+          docker push purtontech/authn-tech

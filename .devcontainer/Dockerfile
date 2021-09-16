@@ -44,3 +44,7 @@ RUN sudo apt-get install -y nodejs
 COPY *.bash .
 
 RUN cat *.bash >> ~/.bashrc && sudo rm *.bash
+
+# Setup volumes so they have non root owner
+RUN sudo mkdir -p /vscode/target && sudo chown $USERNAME:$USERNAME /vscode/target
+RUN sudo mkdir -p /vscode/node_modules && sudo chown $USERNAME:$USERNAME /vscode/node_modules
