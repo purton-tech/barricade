@@ -23,6 +23,9 @@ jobs:
     # For this list of included software 
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     runs-on: ubuntu-latest
+    env:
+      EXE_NAME: authn-tech
+      DOCKER_HUB_DESTINATION: purtontech/authn-tech
 
     # Service containers to run with `container-job`
     services:
@@ -86,11 +89,11 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432
 
       - name: Strip
-        run: strip target/x86_64-unknown-linux-musl/release/contor
+        run: strip target/x86_64-unknown-linux-musl/release/$EXE_NAME
 
       - name: Integraton Testing
         run: |
-          target/x86_64-unknown-linux-musl/release/contor &
+          target/x86_64-unknown-linux-musl/release/$EXE_NAME &
           chromedriver --whitelisted-ips="" &
           cargo test --release --target x86_64-unknown-linux-musl
         env:
@@ -114,7 +117,7 @@ jobs:
 
       - name: Integraton Testing (Encrypted)
         run: |
-          target/x86_64-unknown-linux-musl/release/contor &
+          target/x86_64-unknown-linux-musl/release/$EXE_NAME &
           chromedriver --whitelisted-ips="" &
           cargo test --release --target x86_64-unknown-linux-musl
         env:
@@ -140,17 +143,16 @@ jobs:
       
       - name: Create Docker file
         run: |
-          EXE_NAME=authn-tech
           set -e
           chmod +x ./target/x86_64-unknown-linux-musl/release/$EXE_NAME
           echo 'FROM scratch' > ./Dockerfile
           echo "COPY ./target/x86_64-unknown-linux-musl/release/$EXE_NAME /rust-executable" >> ./Dockerfile
           echo 'COPY ./asset-pipeline/dist /asset-pipeline/dist' >> ./Dockerfile
           echo 'CMD ["/rust-executable"]' >> ./Dockerfile
-          docker build -t purtontech/authn-tech .
+          docker build -t $DOCKER_HUB_DESTINATION .
 
       - name: Deploy to Docker Hub.
         if: github.ref == 'refs/heads/master'
         run: |
           docker login -u ${{ secrets.USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-          docker push purtontech/authn-tech
+          docker push $DOCKER_HUB_DESTINATION
