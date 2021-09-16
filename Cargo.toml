@@ -1,5 +1,5 @@
 [package]
-name = "contor"
+name = "authn-tech"
 version = "0.1.0"
 authors = ["Ian Purton <ian.purton@gmail.com>"]
 edition = "2018"
