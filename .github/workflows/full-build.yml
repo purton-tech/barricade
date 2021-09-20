@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXE_NAME: authn-proxy
-      DOCKER_HUB_DESTINATION: authn-proxy/authn-proxy
+      DOCKER_HUB_DESTINATION: authnproxy/authnproxy
 
     # Service containers to run with `container-job`
     services:
