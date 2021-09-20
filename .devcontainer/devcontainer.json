@@ -1,5 +1,5 @@
 {
-	"name": "authn-tech",
+	"name": "Authn Proxy",
 	"dockerComposeFile": [
 		"docker-compose.yml"
 	],

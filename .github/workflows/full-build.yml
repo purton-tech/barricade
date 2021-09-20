@@ -24,8 +24,8 @@ jobs:
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     runs-on: ubuntu-latest
     env:
-      EXE_NAME: authn-tech
-      DOCKER_HUB_DESTINATION: purtontech/authn-tech
+      EXE_NAME: authn-proxy
+      DOCKER_HUB_DESTINATION: authn-proxy/authn-proxy
 
     # Service containers to run with `container-job`
     services:
