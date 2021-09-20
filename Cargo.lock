@@ -376,7 +376,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "authn-tech"
+name = "authn-proxy"
 version = "0.1.0"
 dependencies = [
  "actix-files",

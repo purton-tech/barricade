@@ -1,6 +1,6 @@
-![Docker Pulls](https://img.shields.io/docker/pulls/contorsystems/contor?style=plastic)
+![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy?style=plastic)
 
-**Contor** is a proxy you put in front of your application. It then intercepts requests and will show a logon or registration page to the user. Authn-tech uses your database and requires minimal configuration.
+**Authn Proxy** stands in front of your application. It then intercepts requests and will show a logon or registration page to the user. Authn Proxy uses your database and requires minimal configuration.
 
 ## Features 
 
@@ -19,7 +19,7 @@
 * TODO - WebAuthn for 2FA
 * TODO - Allow user to see sessions and logout devices.
 
-## Authn-tech defends against the following attacks
+## Authn Proxy defends against the following attacks
 
 * Account enumeration 
 * Password stuffing
@@ -29,7 +29,7 @@
 
 ## Try it out 
 
-To show how quickly you can get going with Contor let's add authentication to a small web app called [Whoami](https://hub.docker.com/r/containous/whoami). Whoami is a tiny Go webserver that prints os information and HTTP request to output and is avaible on docker hub. 
+To show how quickly you can get going with Authn Proxy let's add authentication to a small web app called [Whoami](https://hub.docker.com/r/containous/whoami). Whoami is a tiny Go webserver that prints os information and HTTP request to output and is avaible on docker hub. 
 
 To get started cut and paste the following definition into a file called `docker-compose.yml` 
 
@@ -54,9 +54,9 @@ services:
   whoami:
     image: containous/whoami
 
-  # Configure contor to listen on port 9090 and reverse proxy nginx on port 80.
+  # Configure Authn Proxy to listen on port 9090 and reverse proxy nginx on port 80.
   authn:
-    image: purton-tech/authn-tech
+    image: authn-proxy/authn-proxy
     environment:
         # This secret key is used to encrypt cookies.
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949
@@ -100,7 +100,7 @@ We set our environment variable `SKIP_AUTH_FOR` to `/api*` which means we allow 
 ## Access an endpoint that requires authentication.
 
 
-Access `localhost:9091` and you'll see contor block your request.
+Access `localhost:9091` and you'll see Authn Proxy block your request.
 
 <p align="center">
   <img src="./.github/assets/login-large.png" width="100%" />
@@ -169,7 +169,7 @@ You'll then be greated with
 There's two important things to note from the whoami screenshot.
 
 * The Cookie header `session=` is stored client side and is an encrypted cookie based on `SECRET_KEY`
-* A header called `x-user-id` is passed in. This is the primary key of the user in the Users table. Your app can retrieve this header to access the logged in user. This is not stored on the client it's only passed from Contor to your application.
+* A header called `x-user-id` is passed in. This is the primary key of the user in the Users table. Your app can retrieve this header to access the logged in user. This is not stored on the client it's only passed from Authn Proxy to your application.
 
 ## Finally take a look in the database
 

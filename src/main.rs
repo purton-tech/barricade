@@ -131,7 +131,7 @@ async fn authorize(
         }
     }
 
-    // If the contor header is set, then this is an envoy external auth request.
+    // If the Authn Proxy header is set, then this is an envoy external auth request.
     if let Some(_header) = req.headers().get("x-envoy-internal") {
         envoy_external_auth(logged_user).await
     } else {
