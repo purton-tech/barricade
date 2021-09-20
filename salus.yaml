@@ -25,3 +25,4 @@ scanner_configs:
       - advisory_id: 1693
         changed_by: ianpurton
         notes: Waiting for fix in parcel.
+        
