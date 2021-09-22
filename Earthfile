@@ -2,6 +2,7 @@ FROM ianpurton/rust-fullstack-devcontainer:latest
 
 ARG EXE_NAME=authn-proxy
 ARG FOLDER=.
+ARG DOCKER_HUB_DESTINATION=authnproxy/authnproxy
 
 WORKDIR /build
 
@@ -20,7 +21,7 @@ npm-build:
     SAVE ARTIFACT asset-pipeline/dist
 
 prepare-cache:
-    COPY --dir $FOLDER/src $FOLDER/Cargo.lock $FOLDER/Cargo.toml $FOLDER/build.rs $FOLDER/asset-pipeline .
+    COPY --dir $FOLDER/src $FOLDER/Cargo.lock $FOLDER/Cargo.toml .
     RUN cargo chef prepare --recipe-path recipe.json
     SAVE ARTIFACT recipe.json
 
@@ -31,10 +32,11 @@ build-cache:
     SAVE ARTIFACT $CARGO_HOME cargo_home
 
 build:
-    COPY --dir $FOLDER/src $FOLDER/Cargo.lock $FOLDER/Cargo.toml $FOLDER/build.rs $FOLDER/asset-pipeline .
+    COPY --dir $FOLDER/src $FOLDER/Cargo.lock $FOLDER/Cargo.toml $FOLDER/build.rs .
     COPY +build-cache/cargo_home $CARGO_HOME
     COPY +build-cache/target target
-    COPY +npm-build/dist asset-pipeline
+    RUN mkdir asset-pipeline
+    COPY --dir +npm-build/dist asset-pipeline
     RUN cargo build --release --target x86_64-unknown-linux-musl
     SAVE ARTIFACT target/x86_64-unknown-linux-musl/release/$EXE_NAME $EXE_NAME
 
@@ -45,7 +47,7 @@ docker:
     COPY --dir $FOLDER/asset-pipeline/images asset-pipeline/images
     EXPOSE 8080
     ENTRYPOINT ["./rust-exe"]
-    SAVE IMAGE --push ianpurton/cream-webui:latest
+    SAVE IMAGE --push $DOCKER_HUB_DESTINATION:latest
 
 integration-test:
     FROM +build
