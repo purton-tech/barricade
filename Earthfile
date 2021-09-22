@@ -15,7 +15,6 @@ npm-deps:
 npm-build:
     FROM +npm-deps
     COPY $FOLDER/asset-pipeline asset-pipeline
-    COPY $FOLDER/src src
     COPY +npm-deps/node_modules node_modules
     RUN npm run release
     SAVE ARTIFACT asset-pipeline/dist
@@ -30,6 +29,7 @@ build-cache:
     RUN cargo chef cook --release --target x86_64-unknown-linux-musl 
     SAVE ARTIFACT target
     SAVE ARTIFACT $CARGO_HOME cargo_home
+    SAVE IMAGE --cache-hint
 
 build:
     COPY --dir $FOLDER/src $FOLDER/Cargo.lock $FOLDER/Cargo.toml $FOLDER/build.rs .
