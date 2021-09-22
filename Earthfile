@@ -56,6 +56,13 @@ integration-test:
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     ARG WEB_DRIVER_URL=http://localhost:4444/wd/hub
     ARG WEB_DRIVER_DESTINATION_HOST=localhost:8080
+    ARG SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
+    ARG FORWARD_URL=localhost
+    ARG FORWARD_PORT=8080
+    ARG REDIRECT_URL=/
+    ARG ENABLE_EMAIL_OTP='true'
+    ARG PORT=9095
+    ARG USER_TABLE_NAME=bcrypt_users
     USER root
     WITH DOCKER \
         --load $CONTAINER_NAME:latest=+docker
