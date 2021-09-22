@@ -43,4 +43,4 @@ jobs:
     - name: Earthly version
       run: earthly --version
     - name: Run build
-      run: earthly --ci --remote-cache=authn/authn:cache +build
+      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache --push +build
