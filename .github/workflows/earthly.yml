@@ -44,8 +44,8 @@ jobs:
     # Earthly with caching https://docs.earthly.dev/docs/guides/shared-cache
     - name: Run build using Readonly Cache
       if: github.ref != 'refs/heads/master'
-      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache +integration-test
+      run: earthly --allow-privileged --ci --remote-cache=authnproxy/authnproxy:cache +integration-test
       
     - name: Run build and Deploy Containers
       if: github.ref == 'refs/heads/master'
-      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache --push +integration-test
+      run: earthly --allow-privileged --ci --remote-cache=authnproxy/authnproxy:cache --push +integration-test
