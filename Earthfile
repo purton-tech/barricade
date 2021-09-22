@@ -2,7 +2,7 @@ FROM ianpurton/rust-fullstack-devcontainer:latest
 
 ARG EXE_NAME=authn-proxy
 ARG FOLDER=.
-ARG DOCKER_HUB_DESTINATION=authnproxy/authnproxy
+ARG CONTAINER_NAME=authnproxy/authnproxy
 
 WORKDIR /build
 
@@ -46,7 +46,7 @@ docker:
     COPY --dir +npm-build/dist asset-pipeline/dist
     EXPOSE 8080
     ENTRYPOINT ["./rust-exe"]
-    SAVE IMAGE --push $DOCKER_HUB_DESTINATION:latest
+    SAVE IMAGE --push $CONTAINER_NAME:latest
 
 integration-test:
     FROM +build
@@ -58,8 +58,8 @@ integration-test:
     ARG WEB_DRIVER_DESTINATION_HOST=localhost:8080
     USER root
     WITH DOCKER \
-        --load $DOCKER_HUB_DESTINATION:latest=+docker
-        RUN docker run -d --rm --network=host webui:latest \
+        --load $CONTAINER_NAME:latest=+docker
+        RUN docker run -d --rm --network=host $CONTAINER_NAME:latest \
             && docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:3.141.59 \
             && docker run -d --rm --network=host -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=testpassword postgres:alpine \
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
