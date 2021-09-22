@@ -44,7 +44,6 @@ docker:
     FROM scratch
     COPY +build/$EXE_NAME rust-exe
     COPY --dir +npm-build/dist asset-pipeline/dist
-    COPY --dir $FOLDER/asset-pipeline/images asset-pipeline/images
     EXPOSE 8080
     ENTRYPOINT ["./rust-exe"]
     SAVE IMAGE --push $DOCKER_HUB_DESTINATION:latest
@@ -59,11 +58,11 @@ integration-test:
     ARG WEB_DRIVER_DESTINATION_HOST=localhost:8080
     USER root
     WITH DOCKER \
-        --load webui:latest=+docker
+        --load $DOCKER_HUB_DESTINATION:latest=+docker
         RUN docker run -d --rm --network=host webui:latest \
             && docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:3.141.59 \
             && docker run -d --rm --network=host -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=testpassword postgres:alpine \
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
-            && cargo test hello_world --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END

@@ -22,8 +22,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      #DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      #DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       FORCE_COLOR: 1
     steps:
     - uses: actions/checkout@v2
@@ -42,5 +40,12 @@ jobs:
       run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.5.23/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
     - name: Earthly version
       run: earthly --version
-    - name: Run build
-      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache --push +build
+
+    # Earthly with caching https://docs.earthly.dev/docs/guides/shared-cache
+    - name: Run build using Readonly Cache
+      if: github.ref != 'refs/heads/master'
+      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache +integration-test
+      
+    - name: Run build and Deploy Containers
+      if: github.ref == 'refs/heads/master'
+      run: earthly --ci --remote-cache=authnproxy/authnproxy:cache --push +integration-test
