@@ -55,7 +55,7 @@ lettre = { version = "0.10.0-rc.3", default-features = false,  features = ["rust
 unicode-normalization = "0"
 
 # AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
-aes-gcm = "0"
+aes-gcm = "0.8"
 base64= "0"
 
 [build-dependencies]

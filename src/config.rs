@@ -160,11 +160,7 @@ impl Config {
             false
         };
 
-        let use_bcrypt_instead_of_argon: bool = if env::var("use_bcrypt_instead_of_argon").is_ok() {
-            true
-        } else {
-            false
-        };
+        let use_bcrypt_instead_of_argon: bool = env::var("use_bcrypt_instead_of_argon").is_ok();
 
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();

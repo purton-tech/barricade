@@ -24,10 +24,10 @@ impl Config {
             "http://selenium:4444/wd/hub".into()
         };
 
-        let headless = if env::var("DISABLE_HEADLESS").is_ok() {
-            false
-        } else {
+        let headless = if env::var("ENABLE_HEADLESS").is_ok() {
             true
+        } else {
+            false
         };
 
         let host = if env::var("WEB_DRIVER_DESTINATION_HOST").is_ok() {
