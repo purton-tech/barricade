@@ -1,0 +1,8 @@
+.github
+.devcontainer
+.git
+tmp
+*.pdf
+node_modules
+target
+*.md

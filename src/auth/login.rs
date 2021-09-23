@@ -116,7 +116,7 @@ pub async fn process_login(
             // Passwords must be normalised
             let normalised_password = &form.password.nfkc().collect::<String>();
             let valid = crate::encryption::verify_hash(
-                &normalised_password,
+                normalised_password,
                 &users[0].hashed_password,
                 config.use_bcrypt_instead_of_argon,
             )

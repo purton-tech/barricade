@@ -52,7 +52,6 @@ integration-test:
     FROM +build
     COPY --dir $FOLDER/tests .
     COPY --dir migrations .
-    COPY .devcontainer/docker-compose.yml ./ 
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     ARG WEB_DRIVER_URL=http://localhost:4444/wd/hub
     ARG WEB_DRIVER_DESTINATION_HOST=localhost:8080
@@ -67,7 +66,7 @@ integration-test:
     WITH DOCKER \
         --load $CONTAINER_NAME:latest=+docker
         RUN docker run -d --rm --network=host $CONTAINER_NAME:latest \
-            && docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:3.141.59 \
+            && docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
             && docker run -d --rm --network=host -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=testpassword postgres:alpine \
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \

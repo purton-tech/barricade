@@ -24,17 +24,23 @@ services:
     
   # Integration testing using a headless chrome browser
   selenium:
+    # Doesn't work on OSX !!!
     image: selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916
+    #image: selenium/standalone-chrome-debug:3.141.59
     shm_size: 2gb
+    environment:
+      VNC_NO_PASSWORD: 1
     ports:
-      - "7901:7900"
+      # VNC
+      - 5901:5900
+      # No VNC
+      - 7901:7900
 
   # MailHog is an email testing tool for developers.
   smtp:
     image: mailhog/mailhog
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "8026:8025"
 
   # Devconatiner development
   development:

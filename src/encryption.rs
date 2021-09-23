@@ -105,7 +105,7 @@ async fn stretch_password(password: &str, salt: &SaltString) -> Result<Vec<u8>, 
     let vec_bytes = password.as_bytes();
 
     let argoned: PasswordHash = argon2
-        .hash_password(&vec_bytes, &salt)
+        .hash_password(vec_bytes, &salt)
         .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
 
     if let Some(hash) = argoned.hash {
