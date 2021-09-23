@@ -52,12 +52,15 @@ integration-test:
     FROM +build
     COPY --dir $FOLDER/tests .
     COPY --dir migrations .
+    COPY +build/$EXE_NAME ./rust-exe
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
+    # Enc vrs picked up by the tests
     ARG WEB_DRIVER_URL=http://localhost:4444/wd/hub
-    ARG WEB_DRIVER_DESTINATION_HOST=localhost:8080
+    ARG WEB_DRIVER_DESTINATION_HOST=localhost:9095
+    # Env vars for the app
     ARG SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
     ARG FORWARD_URL=localhost
-    ARG FORWARD_PORT=8080
+    ARG FORWARD_PORT=80
     ARG REDIRECT_URL=/
     ARG ENABLE_EMAIL_OTP='true'
     ARG PORT=9095
@@ -65,10 +68,27 @@ integration-test:
     USER root
     WITH DOCKER \
         --load $CONTAINER_NAME:latest=+docker
-        RUN docker run -d --rm --network=host $CONTAINER_NAME:latest \
-            && docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
+        #RUN docker run --name $EXE_NAME -d --rm --network=host $CONTAINER_NAME:latest \
+        #        -e PORT=9095 \
+        #        -e ENABLE_EMAIL_OTP='true' \
+        #        -e REDIRECT_URL='/' \
+        #        -e FORWARD_PORT=80 \
+        #        -e FORWARD_URL=localhost \
+        #        -e SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe \
+        #        -e USER_TABLE_NAME=bcrypt_users \
+        #        -e DATABASE_URL=postgresql://postgres:testpassword@localhost:5432 \
+        RUN \
+            # Authn Proxy will add auth to the whoami service
+            docker run --name whoami -d --rm --network=host containous/whoami \
+            # Run up postgres
             && docker run -d --rm --network=host -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=testpassword postgres:alpine \
+            # Run the database migrations
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
-            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
+            # Now the database is up start the exe
+            && chmod +x ./rust-exe && ./rust-exe & \
+            # Run up selenium for browser testing.
+            docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
+            # Finally run the browser testing
+            && cargo test account_enumeration_login --release --target x86_64-unknown-linux-musl -- --nocapture
     END
