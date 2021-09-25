@@ -56,7 +56,7 @@ services:
 
   # Configure Authn Proxy to listen on port 9090 and reverse proxy nginx on port 80.
   authn:
-    image: authn-proxy/authn-proxy
+    image: authnproxy/authnproxy
     environment:
         # This secret key is used to encrypt cookies.
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949
