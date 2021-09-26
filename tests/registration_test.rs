@@ -16,6 +16,7 @@ async fn registration() -> WebDriverResult<()> {
     driver.set_implicit_wait_timeout(delay).await?;
 
     driver.get(&config.host).await?;
+    //driver.get("http://localhost:9095").await?;
 
     // Click the logoin button with nothing in.
     let elem_button = driver

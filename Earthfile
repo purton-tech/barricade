@@ -56,8 +56,8 @@ integration-test:
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     # Enc vrs picked up by the tests
     #ARG WEB_DRIVER_URL=http://localhost:4444/wd/hub
-    ARG WEB_DRIVER_URL=http://localhost:9515
-    ARG WEB_DRIVER_DESTINATION_HOST=localhost:9095
+    ARG WEB_DRIVER_URL=http://localhost:4444
+    ARG WEB_DRIVER_DESTINATION_HOST=http://localhost:9095
     # Env vars for the app
     ARG SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
     ARG FORWARD_URL=localhost
@@ -91,5 +91,5 @@ integration-test:
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
             # Finally run the browser testing
-            && cargo test hello_wiki --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
