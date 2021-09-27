@@ -77,20 +77,10 @@ integration-test:
             # Run the database migrations
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
-
             # Now the database is up start the exe
             && chmod +x ./rust-exe && ./rust-exe & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
-            
             # Finally run the browser testing
-            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
-
-            # Run integration tests encrypted
-            && export PORT=9096 \
-            && export USER_TABLE_NAME=keypair_users \
-            && export AUTH_TYPE=encrypted \
-            && ./rust-exe & \
-            WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 \
-                cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
