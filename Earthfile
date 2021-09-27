@@ -56,8 +56,8 @@ integration-test:
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     # Enc vrs picked up by the tests
     #ARG WEB_DRIVER_URL=http://localhost:4444/wd/hub
-    ARG WEB_DRIVER_URL=http://localhost:9515
-    ARG WEB_DRIVER_DESTINATION_HOST=localhost:9095
+    ARG WEB_DRIVER_URL=http://localhost:4444
+    ARG WEB_DRIVER_DESTINATION_HOST=http://localhost:9095
     # Env vars for the app
     ARG SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
     ARG FORWARD_URL=localhost
@@ -69,16 +69,10 @@ integration-test:
     ARG USER_TABLE_NAME=bcrypt_users
     USER root
     WITH DOCKER \
-        --load $CONTAINER_NAME:latest=+docker
-        #RUN docker run --name $EXE_NAME -d --rm --network=host $CONTAINER_NAME:latest \
-        #        -e PORT=9095 \
-        #        -e ENABLE_EMAIL_OTP='true' \
-        #        -e REDIRECT_URL='/' \
-        #        -e FORWARD_PORT=80 \
-        #        -e FORWARD_URL=localhost \
-        #        -e SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe \
-        #        -e USER_TABLE_NAME=bcrypt_users \
-        #        -e DATABASE_URL=postgresql://postgres:testpassword@localhost:5432 \
+        --load $CONTAINER_NAME:latest=+docker \
+        --pull postgres:alpine \
+        --pull containous/whoami \
+        --pull selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916
         RUN \
             docker run --name whoami -d --rm --network=host containous/whoami \
             # Run up postgres
@@ -88,8 +82,10 @@ integration-test:
                 diesel migration run \
             # Now the database is up start the exe
             && chmod +x ./rust-exe && ./rust-exe & \
+            PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
             # Finally run the browser testing
-            && cargo test hello_wiki --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
+            && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END

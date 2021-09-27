@@ -1,6 +1,22 @@
 name: Earthly CI
 on:
   workflow_dispatch:
+  push:
+    branches:
+    - master
+    paths-ignore:
+      - .github/**
+      - .vscode/**
+      - README.md
+      - doc/**
+      - .devcontainer/**
+  pull_request: 
+    paths-ignore:
+      - .github/**
+      - .vscode/**
+      - README.md
+      - doc/**
+      - .devcontainer/**
 
 jobs:
   build:
