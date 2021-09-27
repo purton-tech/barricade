@@ -70,15 +70,6 @@ integration-test:
     USER root
     WITH DOCKER \
         --load $CONTAINER_NAME:latest=+docker
-        #RUN docker run --name $EXE_NAME -d --rm --network=host $CONTAINER_NAME:latest \
-        #        -e PORT=9095 \
-        #        -e ENABLE_EMAIL_OTP='true' \
-        #        -e REDIRECT_URL='/' \
-        #        -e FORWARD_PORT=80 \
-        #        -e FORWARD_URL=localhost \
-        #        -e SECRET_KEY=50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe \
-        #        -e USER_TABLE_NAME=bcrypt_users \
-        #        -e DATABASE_URL=postgresql://postgres:testpassword@localhost:5432 \
         RUN \
             docker run --name whoami -d --rm --network=host containous/whoami \
             # Run up postgres
