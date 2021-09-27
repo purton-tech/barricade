@@ -69,7 +69,10 @@ integration-test:
     ARG USER_TABLE_NAME=bcrypt_users
     USER root
     WITH DOCKER \
-        --load $CONTAINER_NAME:latest=+docker
+        --load $CONTAINER_NAME:latest=+docker \
+        --pull postgres:alpine \
+        --pull containous/whoami \
+        --pull selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916
         RUN \
             docker run --name whoami -d --rm --network=host containous/whoami \
             # Run up postgres
@@ -83,5 +86,6 @@ integration-test:
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
             # Finally run the browser testing
-            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
+            && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
