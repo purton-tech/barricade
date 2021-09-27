@@ -1,22 +1,7 @@
 name: Full Clean Build
 
 on:
-  push:
-    branches:
-    - master
-    paths-ignore:
-      - .github/**
-      - .vscode/**
-      - README.md
-      - doc/**
-      - .devcontainer/**
-  pull_request: 
-    paths-ignore:
-      - .github/**
-      - .vscode/**
-      - README.md
-      - doc/**
-      - .devcontainer/**
+  workflow_dispatch:
 
 jobs:
   build:
