@@ -79,6 +79,7 @@ integration-test:
                 diesel migration run \
             # Now the database is up start the exe
             && chmod +x ./rust-exe && ./rust-exe & \
+            PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
             # Finally run the browser testing
