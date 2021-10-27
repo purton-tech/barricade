@@ -2,6 +2,8 @@ FROM ianpurton/rust-fullstack-devcontainer:latest AS development
 
 ARG USERNAME=vscode
 
+RUN sudo apt install -y lld
+
 COPY *.bash .
 
 RUN cat *.bash >> ~/.bashrc && sudo rm *.bash
