@@ -80,7 +80,6 @@ pub struct Session {
 
 // Retrieve the session from the cookie, replace the session verifier with a hashed version.
 impl FromRequest for Session {
-    type Config = ();
     type Error = CustomError;
     type Future = Ready<Result<Session, CustomError>>;
 
