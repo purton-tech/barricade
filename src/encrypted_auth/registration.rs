@@ -1,3 +1,4 @@
+use crate::components::forms;
 use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
@@ -158,7 +159,7 @@ markup::define! {
                 h1 { "Register" }
 
                 label[for="email"] { "Email" }
-                input#email[name = "email", value = &form.email, "data-target" = "registration.email"] {}
+                input#email[name = "email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }

@@ -1,4 +1,4 @@
-use crate::components::forms::{FormInput, InputType, Stimulus};
+use crate::components::forms;
 use crate::config;
 use crate::custom_error::CustomError;
 use crate::layouts;
@@ -109,30 +109,16 @@ markup::define! {
 
                 h1 { "Sign In" }
 
-                @FormInput {
-                    input_type: InputType::Text,
-                    name: String::from("email"),
-                    value: String::from(&form.email),
-                    label: String::from("Email"),
-                    stimulus: Some(Stimulus {
-                        data_target: Some("login.email".to_string()),
-                        data_action: None
-                    }),
-                    errors: errors.clone(),
-                    ..Default::default()
+                label[for="email"] { "Email" }
+                @if errors.is_none() {
+                    input#email[name = "email", value = forms::escape(&form.email), "data-target" = "login.email"] {}
+                } else {
+                    input.error#email[name = "email", value = &form.email, "data-target" = "login.email"] {}
+                    span.error { "Invalid email or password" }
                 }
 
-                @FormInput {
-                    input_type: InputType::Password,
-                    name: String::from("password"),
-                    value: String::from(&form.email),
-                    label: String::from("Password"),
-                    stimulus: Some(Stimulus {
-                        data_target: Some("login.password".to_string()),
-                        data_action: None
-                    }),
-                    ..Default::default()
-                }
+                label[for="password"] { "Password" }
+                input#password[name = "password", "data-target" = "login.password"] {}
 
                 button.a_button.success[type = "submit",
                     "data-target" = "login.button",
