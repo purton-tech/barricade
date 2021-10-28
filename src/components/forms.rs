@@ -1,6 +1,7 @@
+use std::fmt::Write;
 use validator::ValidationErrors;
 
-pub fn filter_errors(name: &str, errors: &ValidationErrors) -> Vec<String> {
+fn filter_errors(name: &str, errors: &ValidationErrors) -> Vec<String> {
     let mut filtered_errors: Vec<String> = Default::default();
     if let Some(errs) = errors.field_errors().get(name) {
         for error in errs.iter() {
@@ -12,119 +13,24 @@ pub fn filter_errors(name: &str, errors: &ValidationErrors) -> Vec<String> {
     filtered_errors
 }
 
-// Taken from
-// https://github.com/utkarshkukreti/markup.rs/blob/master/markup/src/escape.rs
-pub fn escape(str: &str, w: &mut impl std::fmt::Write) -> std::fmt::Result {
-    let mut last = 0;
-    for (index, byte) in str.bytes().enumerate() {
-        match byte {
-            b'&' | b'<' | b'>' | b'"' => {
-                w.write_str(&str[last..index])?;
-                w.write_str(match byte {
-                    b'&' => "&amp;",
-                    b'<' => "&lt;",
-                    b'>' => "&gt;",
-                    _ => "&quot;",
-                })?;
-                last = index + 1;
+pub fn escape(src: &str) -> String {
+    let mut escaped = String::with_capacity(src.len());
+    let mut utf16_buf = [0u16; 2];
+    for c in src.chars() {
+        match c {
+            '&' => escaped += "",
+            '<' => escaped += "",
+            '>' => escaped += "",
+            '"' => escaped += "",
+            c => {
+                let encoded = c.encode_utf16(&mut utf16_buf);
+                for utf16 in encoded {
+                    write!(&mut escaped, "\\u{:04X}", utf16).unwrap();
+                }
             }
-            _ => {}
         }
     }
-    w.write_str(&str[last..])
-}
-
-#[derive(Debug)]
-pub enum InputType {
-    Text,
-    //Date,
-    Password,
-}
-
-impl Default for InputType {
-    fn default() -> Self {
-        InputType::Text
-    }
-}
-
-#[derive(Default)]
-pub struct Help {
-    pub placeholder: String,
-    pub help_text: String,
-}
-
-pub struct Stimulus {
-    pub data_target: Option<String>,
-    pub data_action: Option<String>,
-}
-
-#[derive(Default)]
-pub struct FormInput {
-    pub input_type: InputType,
-    pub name: String,
-    pub value: String,
-    pub label: String,
-    pub stimulus: Option<Stimulus>,
-    pub help: Option<Help>,
-    pub errors: Option<ValidationErrors>,
-}
-
-impl markup::Render for FormInput {
-    fn write_to(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
-        write!(f, "<label for='{}'>{}</label>", self.name, self.label)?;
-
-        let input_type = format!("{:?}", self.input_type);
-        let mut val = String::new();
-        escape(&self.value, &mut val)?;
-
-        if self.errors.is_some() {
-            write!(
-                f,
-                "<input class='error', id='{}' name='{}' type={:?} value='{}'",
-                self.name,
-                self.name,
-                input_type.to_lowercase(),
-                val
-            )?;
-        } else {
-            write!(
-                f,
-                "<input id='{}' name='{}' type={:?} value='{}'",
-                self.name,
-                self.name,
-                input_type.to_lowercase(),
-                val
-            )?;
-        }
-
-        // data-target='form.email' data-action='form.click'
-        if let Some(stimulus) = &self.stimulus {
-            if let Some(data_target) = &stimulus.data_target {
-                write!(f, " data-target='{}'", data_target)?;
-            }
-            if let Some(data_action) = &stimulus.data_action {
-                write!(f, " data-action='{}'", data_action)?;
-            }
-        }
-
-        if let Some(help) = &self.help {
-            write!(f, " placeholder='{}' />", help.placeholder)?;
-        } else {
-            write!(f, "/>")?;
-        }
-
-        if let Some(errors) = &self.errors {
-            for error in &filter_errors(&self.name, errors) {
-                write!(f, "<span class='error'>{}</span>", error)?;
-            }
-        }
-
-        if let Some(help) = &self.help {
-            write!(f, "<span class='a_help_text'>{}</span>", help.help_text)?;
-        }
-
-        Ok(())
-    }
+    escaped
 }
 
 markup::define! {
@@ -149,9 +55,6 @@ markup::define! {
     }
     EmailInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
         { Input{ title, name, value, input_type: "email", help_text, errors } }
-    }
-    NumberInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
-        { Input{ title, name, value, input_type: "number", help_text, errors } }
     }
     TextInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
         { Input{ title, name, value, input_type: "text", help_text, errors } }

@@ -2,6 +2,12 @@ scanner_configs:
   CargoAudit:
     elevate_warnings: false
     exceptions:
+      - advisory_id: RUSTSEC-2020-0159
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
+      - advisory_id: RUSTSEC-2020-0071
+        changed_by: ianpurton
+        notes: Waiting for parent dependencies to update
       - advisory_id: RUSTSEC-2021-0064
         changed_by: ianpurton
         notes: Waiting for parent dependencies to update
