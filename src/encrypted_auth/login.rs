@@ -118,7 +118,7 @@ markup::define! {
                 }
 
                 label[for="password"] { "Password" }
-                input#password[name = "password", "data-target" = "login.password"] {}
+                input#password[name = "password", type="password", "data-target" = "login.password"] {}
 
                 button.a_button.success[type = "submit",
                     "data-target" = "login.button",
