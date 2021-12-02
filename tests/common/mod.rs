@@ -24,11 +24,7 @@ impl Config {
             "http://selenium:4444/wd/hub".into()
         };
 
-        let headless = if env::var("ENABLE_HEADLESS").is_ok() {
-            true
-        } else {
-            false
-        };
+        let headless = env::var("ENABLE_HEADLESS").is_ok();
 
         let host = if env::var("WEB_DRIVER_DESTINATION_HOST").is_ok() {
             env::var("WEB_DRIVER_DESTINATION_HOST").unwrap()
@@ -113,9 +109,7 @@ pub fn decrypt(cipher: &str, aad: &str, secret_key: &[u8]) -> String {
         .decrypt(GenericArray::from_slice(nonce), payload)
         .unwrap();
 
-    let decrypted = String::from_utf8(decrypted).unwrap();
-
-    decrypted
+    String::from_utf8(decrypted).unwrap()
 }
 
 pub async fn get_otp_code_from_database(config: &Config) -> Result<String, sqlx::Error> {

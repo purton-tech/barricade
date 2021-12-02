@@ -46,7 +46,7 @@ async fn registration() -> WebDriverResult<()> {
     driver
         .find_element(By::Id("code"))
         .await?
-        .send_keys(format!("{}", code))
+        .send_keys(code.to_string())
         .await?;
     driver
         .find_element(By::Css("button[type='submit']"))
@@ -109,7 +109,7 @@ async fn registration() -> WebDriverResult<()> {
     driver
         .find_element(By::Id("code"))
         .await?
-        .send_keys(format!("{}", code))
+        .send_keys(code.to_string())
         .await?;
     driver
         .find_element(By::Css("button[type='submit']"))
