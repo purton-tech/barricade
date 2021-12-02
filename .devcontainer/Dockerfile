@@ -6,7 +6,11 @@ RUN sudo apt install -y lld
 
 COPY *.bash .
 
+# Add our aliases and ps1 to bashrc
 RUN cat *.bash >> ~/.bashrc && sudo rm *.bash
+
+# Enable our git hooks
+RUN echo 'git config core.hooksPath /vscode/.devconatiner/.githooks' >> ~/.bashrc
 
 # Setup volumes so they have non root owner
 RUN sudo mkdir -p /vscode/target && sudo chown $USERNAME:$USERNAME /vscode/target
