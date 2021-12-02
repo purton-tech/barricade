@@ -98,7 +98,7 @@ pub async fn process_registration(
                 ",
                 config.user_table_name
             ))
-            .bind(&user.email)
+            .bind(&user.email.to_lowercase())
             .bind(&master_password_hash)
             .bind(server_wrapped_protected_symmetric_key)
             .bind(server_wrapped_protected_ecdh_private_key)
@@ -159,7 +159,7 @@ markup::define! {
                 h1 { "Register" }
 
                 label[for="email"] { "Email" }
-                input#email[name = "email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
+                input#email[name = "email", type="email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }

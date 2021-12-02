@@ -113,7 +113,7 @@ markup::define! {
                 @if errors.is_none() {
                     input#email[name = "email", value = forms::escape(&form.email), "data-target" = "login.email"] {}
                 } else {
-                    input.error#email[name = "email", value = &form.email, "data-target" = "login.email"] {}
+                    input.error#email[name = "email", type="email", value = &form.email, "data-target" = "login.email"] {}
                     span.error { "Invalid email or password" }
                 }
 
