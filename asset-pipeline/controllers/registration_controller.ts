@@ -51,12 +51,15 @@ export default class extends Controller {
         this.confirmPasswordTarget.classList.add('disabled')
         this.buttonTarget.classList.add('disabled')
 
+        // We have to force email to lowercase. On safari it sometimes gets capitalized
+        const email = this.emailTarget.value.toLowerCase()
+
         // Derive an authToken
         this.buttonTarget.innerText = "Generating Your Keys"
-        const authToken = await Vault.unlock(pass1, this.emailTarget.value)
+        const authToken = await Vault.unlock(pass1, email)
         const protectedKeys = await Vault.new()
 
-        this.emailCopyTarget.value = this.emailTarget.value
+        this.emailCopyTarget.value = email
         this.protectedECDSAPrivateKeyTarget.value = protectedKeys.protectedECDHPrivateKey.string
         this.publicECDSAKeyTarget.value = protectedKeys.publicECDHKey
         this.protectedECDHPrivateKeyTarget.value = protectedKeys.protectedECDSAPrivateKey.string

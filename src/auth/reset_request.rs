@@ -68,8 +68,7 @@ pub async fn process_request(
                         If you requested a password reset please follow this link 
                         \n{}/auth/change_password/{}
                         ",
-                            smtp_config.domain,
-                            users[0].reset_password_token.to_string()
+                            smtp_config.domain, users[0].reset_password_token
                         )
                         .trim()
                         .to_string(),
