@@ -19,14 +19,6 @@ pub struct Otp {
 }
 
 #[derive(sqlx::FromRow, Debug)]
-pub struct Session {
-    user_id: i32,
-    otp_code_encrypted: String,
-    otp_code_attempts: i32,
-    otp_code_sent: bool,
-}
-
-#[derive(sqlx::FromRow, Debug)]
 pub struct User {
     email: String,
 }
