@@ -3,6 +3,7 @@ FROM ianpurton/rust-fullstack-devcontainer:latest
 ARG EXE_NAME=authn-proxy
 ARG FOLDER=.
 ARG CONTAINER_NAME=authnproxy/authnproxy
+ARG SELENIUM=selenium/standalone-chrome:4.1.1-20220121
 
 WORKDIR /build
 
@@ -72,7 +73,7 @@ integration-test:
         --load $CONTAINER_NAME:latest=+docker \
         --pull postgres:alpine \
         --pull containous/whoami \
-        --pull selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916
+        --pull $SELENIUM
         RUN \
             docker run --name whoami -d --rm --network=host containous/whoami \
             # Run up postgres
@@ -84,7 +85,7 @@ integration-test:
             && chmod +x ./rust-exe && ./rust-exe & \
             PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
             # Run up selenium for browser testing.
-            docker run -d --rm --network=host --shm-size="2g" selenium/standalone-chrome:4.0.0-rc-2-prerelease-20210916 \
+            docker run -d --rm --network=host --shm-size="2g" $SELENIUM \
             # Finally run the browser testing
             && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
             && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
