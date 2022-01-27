@@ -49,6 +49,10 @@ jobs:
     - name: Run build and Deploy Containers
       if: github.ref == 'refs/heads/master'
       run: earthly --allow-privileged --ci --remote-cache=authnproxy/authnproxy:cache --push +integration-test
+      
+    - name: Run build and Deploy Containers
+      if: github.ref == 'refs/heads/master'
+      run: docker pull authnproxy/authnproxy:latest
 
     - name: Semantic Release
       run: | 
