@@ -13,12 +13,12 @@ const NIST_RECOMMENDED_PBKDF_ITERATIONS = 10_000_000
 
 const ECDSA_OPTIONS = {
     name: "ECDSA",
-    namedCurve: "P-384"
+    namedCurve: "P-256"
 };
 
 const ECDH_OPTIONS = {
     name: "ECDH",
-    namedCurve: "P-384"
+    namedCurve: "P-256"
 };
 
 const AES_OPTIONS = {
