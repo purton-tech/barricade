@@ -49,3 +49,10 @@ jobs:
     - name: Run build and Deploy Containers
       if: github.ref == 'refs/heads/master'
       run: earthly --allow-privileged --ci --remote-cache=authnproxy/authnproxy:cache --push +integration-test
+
+    - name: Semantic Release
+      run: | 
+        npm i -D @semantic-release/exec
+        npm i -D @semantic-release-plus/docker
+        npm i -D @semantic-release/git
+        npx semantic-release

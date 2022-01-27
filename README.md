@@ -27,6 +27,41 @@
 * Session Hijacking
 * Data breach password brute forcing.
 
+## Configuration Environment Variables
+
+| Name  | Type | Descrition |
+| ---- | ---- | ---- |
+| DATABASE_URL | Mandatory | URL of the Postgres database |
+| SECRET_KEY | Mandatory | 256 bits of entropy in hex. Used to encrypt the cookie. You can use `openssl rand -hex 32` |
+| REDIRECT_URL | Mandatory | After login or registration redirect the user to this URL |
+| SECURE_COOKIE | Optional | If present set the authentication cookie to secure. |
+| PORT | Optional | The port to listen on, defaults to 9090 |
+| USER_TABLE_NAME | Optional | Set this to the table name of your users table. Defaults to `users` |
+| ENABLE_EMAIL_OTP | Optional | If enabled every logon and registration requires email confirmation |
+| SMTP_HOST | Optional | The hostname of your email provider |
+| SMTP_USERNAME | Mandatory when using SMTP | The hostname of your username provider |
+| SMTP_PASSWORD | Mandatory when using SMTP | The hostname of your password provider |
+| SMTP_PORT | Mandatory when using SMTP | The SMTP port of your email provider |
+| SMTP_TLS_OFF | Optional | Switch off SMTP TLS useful for local devlopment |
+| RESET_DOMAIN | Mandatory when using SMTP | For a password reset email set your domain |
+| RESET_FROM_EMAIL_ADDRESS | Mandatory when using SMTP | For a password reset email set your from email address |
+
+## Proxy Mode
+
+| Name  | Type | Descrition |
+| ---- | ---- | ---- |
+| FORWARD_URL | Mandatory | The host to proxy |
+| FORWARD_PORT | Mandatory | The port of the host to proxy |
+| SKIP_AUTH_FOR | Mandatory | Comma separated list of paths that are not to be authenticated |
+| MAX_PAYLOAD_SIZE | Optional | The maximum data size of a request we will proxy |
+
+## Hcaptcha
+
+| Name  | Type | Descrition |
+| ---- | ---- | ---- |
+| HCAPTCHA_SITE_KEY | Optional | Hcaptcha site key |
+| HCAPTCHA_SECRET_KEY | Mandatory if site ket is set | Hcaptcha secret key |
+
 ## Try it out 
 
 To show how quickly you can get going with Authn Proxy let's add authentication to a small web app called [Whoami](https://hub.docker.com/r/containous/whoami). Whoami is a tiny Go webserver that prints os information and HTTP request to output and is avaible on docker hub. 

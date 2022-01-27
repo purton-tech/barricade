@@ -159,11 +159,11 @@ markup::define! {
                 h1 { "Register" }
 
                 label[for="email"] { "Email" }
-                input#email[name = "email", type="email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
+                input[id="email", name = "email", type="email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }
-                input#password[name="password", type="password",
+                input[id="password", name="password", type="password",
                     "data-action"="keyup->password#keyPress",
                     "data-target" = "registration.password password.password"] {}
                 span.a_help_text["data-target" = "password.help"] { "The master password is the password we use to generate your private keys. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
@@ -171,7 +171,7 @@ markup::define! {
                 span.a_help_text["data-target" = "password.suggestions"] {}
 
                 label[for="confirm_password"] { "Re-type Master Password" }
-                input#confirm_password[name="confirm_password", type="password", "data-target" = "registration.confirmPassword"] {}
+                input[id="confirm_password", name="confirm_password", type="password", "data-target" = "registration.confirmPassword"] {}
 
                 button.a_button.success[type = "submit", "data-target" = "registration.button password.button",
                     "data-action" = "registration#register"] { "Sign Up" }
