@@ -29,7 +29,7 @@
 
 ## Configuration Environment Variables
 
-| Name  | Type | Descrition |
+| Name  | Type | Description |
 | ---- | ---- | ---- |
 | DATABASE_URL | Mandatory | URL of the Postgres database |
 | SECRET_KEY | Mandatory | 256 bits of entropy in hex. Used to encrypt the cookie. You can use `openssl rand -hex 32` |
@@ -48,7 +48,7 @@
 
 ## Proxy Mode
 
-| Name  | Type | Descrition |
+| Name  | Type | Description |
 | ---- | ---- | ---- |
 | FORWARD_URL | Mandatory | The host to proxy |
 | FORWARD_PORT | Mandatory | The port of the host to proxy |
@@ -57,7 +57,7 @@
 
 ## Hcaptcha
 
-| Name  | Type | Descrition |
+| Name  | Type | Description |
 | ---- | ---- | ---- |
 | HCAPTCHA_SITE_KEY | Optional | Hcaptcha site key |
 | HCAPTCHA_SECRET_KEY | Mandatory if site ket is set | Hcaptcha secret key |
