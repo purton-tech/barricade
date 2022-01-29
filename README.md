@@ -1,6 +1,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy?style=plastic)
 
-**Authn Proxy** stands in front of your application. It then intercepts requests and will show a logon or registration page to the user. Authn Proxy uses your database and requires minimal configuration.
+**Authn Proxy** is a docker container that implements logon and registration using your database. It's aim is to implement all authentication best practices with minimal integration for your application.
 
 ## Features 
 
@@ -10,7 +10,7 @@
 * Small high performance Docker container built with Rust.
 * Configure with environment variables.
 * Works well as a Kubernetes side car.
-* Works with envoy proxy as an auth module.
+* Works with envoy proxy as an [external auth filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto). 
 * Encrypted Mode - Generates ECDH and ECDSA keys client side. Uses a similar technique to Bitwarden but upgraded.
 * Session state is stored client side in secure HTTP only cookies which are not accessible by JavaScript.
 * Client side session state is encrypted with AES-GCM and additional data.
@@ -57,10 +57,12 @@
 
 ## Hcaptcha
 
+If enabled [Invisible hCaptcha] will be used on all form submit buttons. This should provide protect against bot attacks and mitigate password stuffing, account enumeration as well as brtute force attacks.
+
 | Name  | Type | Description |
 | ---- | ---- | ---- |
-| HCAPTCHA_SITE_KEY | Optional | Hcaptcha site key |
-| HCAPTCHA_SECRET_KEY | Mandatory if site ket is set | Hcaptcha secret key |
+| HCAPTCHA_SITE_KEY | Optional | hCaptcha site key |
+| HCAPTCHA_SECRET_KEY | Mandatory if site ket is set | hCaptcha secret key |
 
 ## Try it out 
 
