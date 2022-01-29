@@ -58,7 +58,7 @@
 
 ## Hcaptcha
 
-If enabled [Invisible hCaptcha](https://docs.hcaptcha.com/invisible/) will be used on all form submit buttons. This should provide protect against bot attacks and mitigate password stuffing, account enumeration as well as brtute force attacks.
+If enabled [Invisible hCaptcha](https://docs.hcaptcha.com/invisible/) will be used on all form submit buttons. This should provide protect against bot attacks and mitigate password stuffing, account enumeration as well as brute force attacks.
 
 | Name  | Type | Description |
 | ---- | ---- | ---- |
