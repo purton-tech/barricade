@@ -1,4 +1,4 @@
-[![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy?style=plastic)](https://hub.docker.com/u/authnproxy)
+[![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy)](https://hub.docker.com/u/authnproxy)
 [![Docker Hub](https://img.shields.io/docker/image-size/authnproxy/authnproxy?sort=date)](https://hub.docker.com/u/authnproxy)
 
 **Authn Proxy** is a docker container that implements logon and registration forms for your application. It's aim is to implement all authentication best practices with minimal integration.
