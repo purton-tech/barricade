@@ -1,6 +1,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy?style=plastic)
 
-**Authn Proxy** is a docker container that implements logon and registration using your database. It's aim is to implement all authentication best practices with minimal integration for your application.
+**Authn Proxy** is a docker container that implements logon and registration forms for your application. It's aim is to implement all authentication best practices with minimal integration.
 
 ## Features 
 
