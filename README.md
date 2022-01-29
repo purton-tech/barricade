@@ -49,6 +49,8 @@
 
 ## Proxy Mode
 
+If enabled all traffic that is not `/auth*` will be passed through to the app listinging on `FORWARD_URL:FORWARD_PORT`.
+
 | Name  | Type | Description |
 | ---- | ---- | ---- |
 | FORWARD_URL | Mandatory | The host to proxy |
