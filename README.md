@@ -5,12 +5,12 @@
 ## Features 
 
 * A "No Code" solution. Zero integration.
-* You can replace your existing auth solution and you get to remove code from your app. 
+* Reduces the number of dependencies for your main application reducing he risk of supply chain attacks. 
 * Data in your region in your database and under your control.
 * Small high performance Docker container built with Rust.
 * Configure with environment variables.
 * Works well as a Kubernetes side car.
-* Works with envoy proxy as an [external auth filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto). 
+* Works with [Envoy Proxy](https://www.envoyproxy.io/) as an [External Authorization](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto). 
 * Encrypted Mode - Generates ECDH and ECDSA keys client side. Uses a similar technique to Bitwarden but upgraded.
 * Session state is stored client side in secure HTTP only cookies which are not accessible by JavaScript.
 * Client side session state is encrypted with AES-GCM and additional data.
