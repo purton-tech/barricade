@@ -1,7 +1,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy)](https://hub.docker.com/u/authnproxy)
 [![Docker Hub](https://img.shields.io/docker/image-size/authnproxy/authnproxy?sort=date)](https://hub.docker.com/u/authnproxy)
 
-**Authn Proxy** is a docker container that implements logon and registration forms for your application. It's aim is to implement all authentication best practices with minimal integration.
+**Barricade** is a docker container that implements logon and registration forms for your application. It's aim is to implement all authentication best practices with minimal integration.
 
 ## Features 
 
@@ -20,7 +20,7 @@
 * TODO - WebAuthn for 2FA
 * TODO - Allow user to see sessions and logout devices.
 
-## Authn Proxy defends against the following attacks
+## Barricade defends against the following attacks
 
 * Account enumeration 
 * Password stuffing
