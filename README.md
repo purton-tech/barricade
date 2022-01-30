@@ -157,7 +157,6 @@ docker-compose run db psql postgres://postgres:testpassword@db:5432
 Once you have the psql command prompt you can cut and paste the following code to create a users and sessions table.
 
 ```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY, 
