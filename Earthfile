@@ -1,8 +1,8 @@
 FROM ianpurton/rust-fullstack-devcontainer:latest
 
-ARG EXE_NAME=authn-proxy
+ARG EXE_NAME=barricade
 ARG FOLDER=.
-ARG CONTAINER_NAME=authnproxy/authnproxy
+ARG CONTAINER_NAME=purtontech/barricade
 ARG SELENIUM=selenium/standalone-chrome:4.1.1-20220121
 
 WORKDIR /build
