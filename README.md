@@ -1,5 +1,5 @@
-[![Docker Pulls](https://img.shields.io/docker/pulls/authnproxy/authnproxy)](https://hub.docker.com/u/authnproxy)
-[![Docker Hub](https://img.shields.io/docker/image-size/authnproxy/authnproxy?sort=date)](https://hub.docker.com/u/authnproxy)
+[![Docker Pulls](https://img.shields.io/docker/pulls/purtontech/barricade)](https://hub.docker.com/r/purtontech/barricade)
+[![Docker Hub](https://img.shields.io/docker/image-size/purtontech/barricade?sort=date)](https://hub.docker.com/r/purtontech/barricade)
 
 **Barricade** is a docker container that implements logon and registration forms for your application. It's aim is to implement all authentication best practices with minimal integration.
 
@@ -95,7 +95,7 @@ services:
     image: containous/whoami
 
   # Configure Authn Proxy to listen on port 9090 and reverse proxy nginx on port 80.
-  authn:
+  barricade:
     image: purtontech/barricade
     environment:
         # This secret key is used to encrypt cookies.
