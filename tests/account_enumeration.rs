@@ -4,6 +4,7 @@ use dotenv::dotenv;
 use thirtyfour::prelude::*;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[ignore] // Doesn't work well in github actions
 async fn account_enumeration_login() -> WebDriverResult<()> {
     dotenv().ok();
 
@@ -73,6 +74,7 @@ async fn account_enumeration_login() -> WebDriverResult<()> {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[ignore] // Doesn't work well in github actions
 async fn account_enumeration_registration() -> WebDriverResult<()> {
     dotenv().ok();
 
