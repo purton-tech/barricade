@@ -1,5 +1,5 @@
 [package]
-name = "authn-proxy"
+name = "barricade"
 version = "0.1.0"
 authors = ["Ian Purton <ian.purton@gmail.com>"]
 edition = "2021"
