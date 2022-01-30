@@ -68,7 +68,7 @@ services:
       SMTP_PASSWORD: thisisnotused
       SMTP_TLS_OFF: 'true'
       RESET_DOMAIN: http://localhost:9095
-      RESET_FROM_EMAIL_ADDRESS: support@authn.tech
+      RESET_FROM_EMAIL_ADDRESS: support@yourdomain.tech
       PORT: 9095
       USER_TABLE_NAME: bcrypt_users
       SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe

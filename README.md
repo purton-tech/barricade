@@ -69,7 +69,7 @@ If enabled [Invisible hCaptcha](https://docs.hcaptcha.com/invisible/) will be us
 
 ## Try it out 
 
-To show how quickly you can get going with Authn Proxy let's add authentication to a small web app called [Whoami](https://hub.docker.com/r/containous/whoami). Whoami is a tiny Go webserver that prints os information and HTTP request to output and is avaible on docker hub. 
+To show how quickly you can get going with Barricade let's add authentication to a small web app called [Whoami](https://hub.docker.com/r/containous/whoami). Whoami is a tiny Go webserver that prints os information and HTTP request to output and is avaible on docker hub. 
 
 To get started cut and paste the following definition into a file called `docker-compose.yml` 
 
@@ -96,7 +96,7 @@ services:
 
   # Configure Authn Proxy to listen on port 9090 and reverse proxy nginx on port 80.
   authn:
-    image: authnproxy/authnproxy
+    image: purtontech/barricade
     environment:
         # This secret key is used to encrypt cookies.
         SECRET_KEY: 190a5bf4b3cbb6c0991967ab1c48ab30790af876720f1835cbbf3820f4f5d949

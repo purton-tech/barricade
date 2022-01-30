@@ -416,40 +416,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "authn-proxy"
-version = "0.1.0"
-dependencies = [
- "actix-files",
- "actix-identity",
- "actix-web",
- "aes-gcm 0.8.0",
- "argon2",
- "awc",
- "base64",
- "bcrypt",
- "dotenv",
- "env_logger",
- "futures",
- "hex",
- "lettre",
- "markup",
- "rand",
- "rand_core",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha1",
- "sha2 0.10.1",
- "sqlx",
- "thirtyfour",
- "tokio",
- "unicode-normalization",
- "url",
- "validator",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -487,6 +453,40 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "tokio",
+]
+
+[[package]]
+name = "barricade"
+version = "0.1.0"
+dependencies = [
+ "actix-files",
+ "actix-identity",
+ "actix-web",
+ "aes-gcm 0.8.0",
+ "argon2",
+ "awc",
+ "base64",
+ "bcrypt",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "hex",
+ "lettre",
+ "markup",
+ "rand",
+ "rand_core",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2 0.9.9",
+ "sqlx",
+ "thirtyfour",
+ "tokio",
+ "unicode-normalization",
+ "url",
+ "validator",
 ]
 
 [[package]]
