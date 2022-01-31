@@ -115,6 +115,13 @@ async fn authorize(
     pool: web::Data<PgPool>,
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
+    // Remove any attempt to add USER_HEADER_NAME externally
+    if req.headers().get(USER_HEADER_NAME).is_some() {
+        return Ok(HttpResponse::SeeOther()
+            .append_header((http::header::LOCATION, SIGN_IN_URL))
+            .finish());
+    }
+
     // If we have a session cookie, try and convert it to a user.
     let mut logged_user: Option<UserSession> = None;
     if let Some(session) = session {

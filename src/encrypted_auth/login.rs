@@ -22,13 +22,17 @@ struct LoginUser {
     master_password_hash: String,
 }
 
-pub async fn login() -> Result<HttpResponse> {
+pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = LoginPage {
         form: &Login::default(),
         errors: None,
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 pub async fn process_login(
@@ -99,7 +103,11 @@ pub async fn process_login(
         errors: Some(validation_errors),
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 markup::define! {

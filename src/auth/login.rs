@@ -38,7 +38,11 @@ pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
         errors: &ValidationErrors::default(),
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 pub async fn create_session(
@@ -163,7 +167,11 @@ pub async fn process_login(
         errors: &validation_errors,
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 markup::define! {
