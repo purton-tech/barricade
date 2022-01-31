@@ -91,6 +91,7 @@ pub async fn email_otp(
             return Ok(layouts::session_layout(
                 "Confirmation Code",
                 &body.to_string(),
+                config.hcaptcha_config.is_some(),
             ));
         }
     }

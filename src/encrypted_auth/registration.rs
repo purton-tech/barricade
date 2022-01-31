@@ -31,12 +31,16 @@ pub struct Registration {
     pub ecdh_public_key: String,
 }
 
-pub async fn registration() -> Result<HttpResponse> {
+pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = RegistrationPage {
         form: &Registration::default(),
     };
 
-    Ok(layouts::session_layout("Registration", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Registration",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 #[derive(sqlx::FromRow)]
 struct InsertedUser {
@@ -146,7 +150,11 @@ pub async fn process_registration(
                 form: &registration,
             };
 
-            Ok(layouts::session_layout("Registration", &body.to_string()))
+            Ok(layouts::session_layout(
+                "Registration",
+                &body.to_string(),
+                config.hcaptcha_config.is_some(),
+            ))
         }
     }
 }

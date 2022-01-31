@@ -30,7 +30,11 @@ pub async fn reset_request(config: web::Data<config::Config>) -> Result<HttpResp
         errors: &ValidationErrors::default(),
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 pub async fn process_request(
@@ -110,7 +114,11 @@ pub async fn process_request(
             .finish());
     }
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Login",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 markup::define! {

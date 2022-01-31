@@ -29,7 +29,11 @@ pub async fn registration(config: web::Data<config::Config>) -> Result<HttpRespo
         errors: &ValidationErrors::default(),
     };
 
-    Ok(layouts::session_layout("Registration", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Registration",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 #[derive(sqlx::FromRow)]
@@ -99,7 +103,11 @@ pub async fn process_registration(
                     errors: &validation_errors,
                 };
 
-                Ok(layouts::session_layout("Registration", &body.to_string()))
+                Ok(layouts::session_layout(
+                    "Registration",
+                    &body.to_string(),
+                    config.hcaptcha_config.is_some(),
+                ))
             }
         }
     } else {
@@ -122,7 +130,11 @@ pub async fn process_registration(
             errors: &validation_errors,
         };
 
-        Ok(layouts::session_layout("Registration", &body.to_string()))
+        Ok(layouts::session_layout(
+            "Registration",
+            &body.to_string(),
+            config.hcaptcha_config.is_some(),
+        ))
     }
 }
 

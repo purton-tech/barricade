@@ -23,13 +23,17 @@ pub struct Params {
     reset_token: String,
 }
 
-pub async fn change_password() -> Result<HttpResponse> {
+pub async fn change_password(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = ResetPage {
         form: &Reset::default(),
         errors: &ValidationErrors::default(),
     };
 
-    Ok(layouts::session_layout("Login", &body.to_string()))
+    Ok(layouts::session_layout(
+        "Change Password",
+        &body.to_string(),
+        config.hcaptcha_config.is_some(),
+    ))
 }
 
 pub async fn process_change(
@@ -82,7 +86,11 @@ pub async fn process_change(
                 errors: &validation_errors,
             };
 
-            Ok(layouts::session_layout("Registration", &body.to_string()))
+            Ok(layouts::session_layout(
+                "Registration",
+                &body.to_string(),
+                config.hcaptcha_config.is_some(),
+            ))
         }
     }
 }

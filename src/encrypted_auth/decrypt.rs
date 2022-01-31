@@ -77,7 +77,11 @@ pub async fn decrypt(
                     unwrapped_protected_ecdsa_private_key,
                 };
 
-                return Ok(layouts::session_layout("Master Key", &page.to_string()));
+                return Ok(layouts::session_layout(
+                    "Master Key",
+                    &page.to_string(),
+                    false,
+                ));
             }
         }
     }

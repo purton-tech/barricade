@@ -9,7 +9,7 @@ pub fn redirect_and_snackbar(url: &str, message: &'static str) -> HttpResponse {
 }
 
 markup::define! {
-    MarketingHeader <'a>(title: &'a str, csp_content: &'a Option<String>) {
+    Header <'a>(title: &'a str) {
 
         head {
             meta [ charset="utf-8" ] {}
@@ -21,10 +21,6 @@ markup::define! {
                 type="text/javascript", async=""] {}
 
             link [ rel = "stylesheet", type="text/css" , href = statics::get_index_css()] {}
-
-            @if let Some(csp_content) = {csp_content} {
-                meta [ "http-equiv"="Content-Security-Policy", content=csp_content ] {}
-            }
         }
     }
     Footer {
@@ -36,15 +32,14 @@ markup::define! {
 
         }
     }
-    MarketingLayout<'a>(content: &'a str, title: &'a str, csp_content: Option<String>) {
+    AuthenticationLayout<'a>(content: &'a str, title: &'a str) {
 
         @markup::doctype()
 
         html[lang="en"] {
 
-            @MarketingHeader {
+            @Header {
                 title,
-                csp_content
             }
 
             body.l_marketing {
@@ -59,25 +54,51 @@ markup::define! {
 
 }
 
-pub fn marketing_layout(title: &str, content: &str) -> HttpResponse {
-    let csp_content = Some(format!(
-        "default-src 'none'; script-src {} 'unsafe-inline'; frame-src {}; style-src {}; connect-src {};",
-        "self https://hcaptcha.com https://*.hcaptcha.com",
-        "https://hcaptcha.com https://*.hcaptcha.com",
-        "self https://hcaptcha.com https://*.hcaptcha.com",
-        "https://hcaptcha.com https://*.hcaptcha.com",
-    ));
-
-    let l = MarketingLayout {
-        title,
-        csp_content,
-        content,
+pub fn session_layout(title: &str, content: &str, use_hcaptcha: bool) -> HttpResponse {
+    // https://docs.hcaptcha.com/#content-security-policy-settings
+    let csp_content = if use_hcaptcha {
+        format!(
+            "default-src 'none'; script-src {}; frame-src {}; style-src {}; connect-src {};",
+            "self https://hcaptcha.com https://*.hcaptcha.com",
+            "https://hcaptcha.com https://*.hcaptcha.com",
+            "self https://hcaptcha.com https://*.hcaptcha.com",
+            "https://hcaptcha.com https://*.hcaptcha.com",
+        )
+    } else {
+        "default-src 'none'; script-src 'self'; style-src 'self';".to_string()
     };
+
+    let l = AuthenticationLayout { title, content };
     HttpResponse::Ok()
         .content_type("text/html")
+        .append_header((
+            http::header::CONTENT_SECURITY_POLICY,
+            csp_content
+        ))
+        .append_header((
+            http::header::X_FRAME_OPTIONS, "deny",
+        ))
+        .append_header((
+            http::header::X_XSS_PROTECTION, "1; mode=block",
+        ))
+        .append_header((
+            http::header::X_CONTENT_TYPE_OPTIONS, "nosniff",
+        ))
+        .append_header((
+            http::header::REFERRER_POLICY, "no-referrer",
+        ))
+        .append_header((
+            http::header::HeaderName::from_static("x-download-options"), "noopen",
+        ))
+        .append_header((
+            http::header::X_DNS_PREFETCH_CONTROL, "off",
+        ))
+        .append_header((
+            http::header::STRICT_TRANSPORT_SECURITY, "max-age=31536000; includeSubDomains",
+        ))
+        .append_header((
+            http::header::HeaderName::from_static("permissions-policy"),
+            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        ))
         .body(l.to_string())
-}
-
-pub fn session_layout(title: &str, content: &str) -> HttpResponse {
-    marketing_layout(title, content)
 }
