@@ -10,6 +10,7 @@ use std::default::Default;
 use validator::ValidationErrors;
 
 pub static INVALID_USER_ID: i32 = -1000;
+pub static MAX_OTP_ATTEMPTS: i32 = 10;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Otp {
@@ -114,8 +115,17 @@ pub async fn process_otp(
             if user_session.otp_code_attempts > 0
                 && !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await
             {
+                // The hCaptcha was invalid send them back.
                 return Ok(HttpResponse::SeeOther()
                     .append_header((http::header::LOCATION, crate::EMAIL_OTP_URL))
+                    .finish());
+            }
+
+            // Brute force detection
+            if user_session.otp_code_attempts > MAX_OTP_ATTEMPTS {
+                // In the case of what looks like a brute force, log them out.
+                return Ok(HttpResponse::SeeOther()
+                    .append_header((http::header::LOCATION, crate::SIGN_OUT_URL))
                     .finish());
             }
 
