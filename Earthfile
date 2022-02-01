@@ -84,6 +84,7 @@ integration-test:
             && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
 
+# The final stage after testing
 docker:
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
