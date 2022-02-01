@@ -85,7 +85,7 @@ integration-test:
     END
     SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
 
-# The final stage after testing
+# The final stage after testing, build our tiny container
 docker:
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
