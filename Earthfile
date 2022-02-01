@@ -7,6 +7,10 @@ ARG SELENIUM=selenium/standalone-chrome:4.1.1-20220121
 
 WORKDIR /build
 
+all:
+    BUILD +docker
+    BUILD +integration-test
+
 npm-deps:
     COPY $FOLDER/package.json package.json
     COPY $FOLDER/package-lock.json package-lock.json
@@ -41,7 +45,7 @@ build:
     RUN cargo build --release --target x86_64-unknown-linux-musl
     SAVE ARTIFACT target/x86_64-unknown-linux-musl/release/$EXE_NAME $EXE_NAME
 
-containerize:
+docker:
     FROM scratch
     COPY +build/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
@@ -53,7 +57,7 @@ integration-test:
     FROM +build
     COPY --dir $FOLDER/tests .
     COPY --dir migrations .
-    COPY +containerize/$EXE_NAME ./$EXE_NAME
+    COPY +build/$EXE_NAME ./rust-exe
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     
     # Env vars used by the integration tests
@@ -83,7 +87,7 @@ integration-test:
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
             # Now the database is up start the exe
-            && chmod +x ./$EXE_NAME && ./$EXE_NAME & \
+            && chmod +x ./rust-exe && ./rust-exe & \
             PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" $SELENIUM \
