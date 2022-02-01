@@ -45,11 +45,11 @@ jobs:
     # Earthly with caching https://docs.earthly.dev/docs/guides/shared-cache
     - name: Run build using Readonly Cache
       if: github.ref != 'refs/heads/master'
-      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache +all
+      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache +docker
       
     - name: Run build and Deploy Containers
       if: github.ref == 'refs/heads/master'
-      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache --push +all
+      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache --push +docker
       
     - name: Run build and Deploy Containers
       if: github.ref == 'refs/heads/master'
