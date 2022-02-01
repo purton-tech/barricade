@@ -76,17 +76,17 @@ integration-test:
                 diesel migration run \
             # Now the database is up start the exe
             && chmod +x ./$EXE_NAME && ./$EXE_NAME & \
-            PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
+            PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./$EXE_NAME & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" $SELENIUM \
             # Finally run the browser testing
             && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
             && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
+    SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
 
 # The final stage after testing
 docker:
-    FROM integration-test
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
