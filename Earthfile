@@ -41,7 +41,7 @@ build:
     RUN cargo build --release --target x86_64-unknown-linux-musl
     SAVE ARTIFACT target/x86_64-unknown-linux-musl/release/$EXE_NAME $EXE_NAME
 
-docker:
+containerize:
     FROM scratch
     COPY +build/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
@@ -53,7 +53,7 @@ integration-test:
     FROM +build
     COPY --dir $FOLDER/tests .
     COPY --dir migrations .
-    COPY +build/$EXE_NAME ./rust-exe
+    COPY +containerize/$EXE_NAME ./$EXE_NAME
     ARG DATABASE_URL=postgresql://postgres:testpassword@localhost:5432
     
     # Env vars used by the integration tests
@@ -72,7 +72,6 @@ integration-test:
     
     USER root
     WITH DOCKER \
-        --load $CONTAINER_NAME:latest=+docker \
         --pull postgres:alpine \
         --pull containous/whoami \
         --pull $SELENIUM
@@ -84,7 +83,7 @@ integration-test:
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
             # Now the database is up start the exe
-            && chmod +x ./rust-exe && ./rust-exe & \
+            && chmod +x ./$EXE_NAME && ./$EXE_NAME & \
             PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./rust-exe & \
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --shm-size="2g" $SELENIUM \
