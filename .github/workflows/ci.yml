@@ -38,7 +38,7 @@ jobs:
     - name: Docker Login
       run: docker login -u ${{ secrets.USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
     - name: Download latest earthly
-      run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.5.23/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+      run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
     - name: Earthly version
       run: earthly --version
 

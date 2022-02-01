@@ -43,10 +43,10 @@ build:
 
 docker:
     FROM scratch
-    COPY +build/$EXE_NAME rust-exe
+    COPY +build/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
     EXPOSE 8080
-    ENTRYPOINT ["./rust-exe"]
+    ENTRYPOINT ["./barricade"]
     SAVE IMAGE --push $CONTAINER_NAME:latest
 
 integration-test:
