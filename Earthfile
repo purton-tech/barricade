@@ -86,6 +86,7 @@ integration-test:
 
 # The final stage after testing
 docker:
+    FROM integration-test
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
