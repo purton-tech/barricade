@@ -94,4 +94,5 @@ docker:
     COPY --dir +npm-build/dist asset-pipeline/dist
     EXPOSE 8080
     ENTRYPOINT ["./barricade"]
+    # We call the image build and let semantic release handle tagging and ushing latest
     SAVE IMAGE --push $CONTAINER_NAME:build
