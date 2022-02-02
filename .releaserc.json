@@ -5,7 +5,7 @@
       "@semantic-release/release-notes-generator",
       "@semantic-release/github",
       ["@semantic-release-plus/docker", {
-          "name": "purtontech/barricade:latest",
+          "name": "purtontech/barricade:build",
           "skipLogin": true
       }]
     ]
