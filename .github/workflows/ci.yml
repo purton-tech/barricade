@@ -43,9 +43,18 @@ jobs:
       run: earthly --version
 
     # Earthly with caching https://docs.earthly.dev/docs/guides/shared-cache
-    - name: Run build and Deploy Containers
+    - name: Run build and Deploy Containers (Read Write Caching)
+      if: github.ref == 'refs/heads/main'
       run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache --push +docker
 
+    - name: Run build and Deploy Containers (Read Only Cache)
+      if: github.ref != 'refs/heads/main'
+      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache +docker
+
+    - name: Bring the image back from docker so we can tag it
+      if: github.ref == 'refs/heads/master'
+      run: docker pull purtontech/barricade:build
+      
     - name: Semantic Release
       run: | 
         npm i -D @semantic-release-plus/docker
