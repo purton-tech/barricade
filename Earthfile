@@ -40,6 +40,7 @@ build:
     COPY --dir +npm-build/dist asset-pipeline
     RUN cargo build --release --target x86_64-unknown-linux-musl
     SAVE ARTIFACT target/x86_64-unknown-linux-musl/release/$EXE_NAME $EXE_NAME
+    SAVE IMAGE --cache-hint
 
 integration-test:
     FROM +build
@@ -84,6 +85,7 @@ integration-test:
             && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
     SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
+    SAVE IMAGE --cache-hint
 
 # The final stage after testing, build our tiny container
 docker:
