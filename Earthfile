@@ -94,4 +94,4 @@ docker:
     COPY --dir +npm-build/dist asset-pipeline/dist
     EXPOSE 8080
     ENTRYPOINT ["./barricade"]
-    SAVE IMAGE $CONTAINER_NAME:build
+    SAVE IMAGE --push $CONTAINER_NAME:build
