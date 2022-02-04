@@ -68,8 +68,14 @@ img {
     @media (min-width: 1800px) { @content; }
 }
 
+.center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
 
 @import './master-key.scss';
 //@import './forms.scss';
 @import './buttons.scss';
 @import './authentication.scss';
+@import './loader.scss';

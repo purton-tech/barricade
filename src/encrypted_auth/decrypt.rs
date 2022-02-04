@@ -106,11 +106,11 @@ markup::define! {
         unwrapped_protected_ecdsa_private_key: &'a str) {
         .m_decryption["data-controller" = "master"] {
             h1 { "Decrypting Your Master Key" }
-            svg.progress[viewBox="0 0 200 200"] {
-                path[class="bg", stroke="#ccc", d="M41 149.5a77 77 0 1 1 117.93 0",  fill="none"] {}
-                path["data-target" = "master.path", class="meter", stroke="#09c", d="M41 149.5a77 77 0 1 1 117.93 0",
-                    fill="none", "stroke-dasharray"="350", "stroke-dashoffset"="350"] {}
+
+            div.center {
+                div[class="lds-dual-ring"] {}
             }
+
             form[method="post", "data-target" = "master.form"] {
                 input["data-target" = "master.protectedSymmetricKey", type="hidden",
                     value=unwrapped_protected_symmetric_key] {}
