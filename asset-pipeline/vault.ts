@@ -116,7 +116,7 @@ export class Vault {
                 'pkcs8', decryptedECDHPrivateKey.arr.buffer, ECDH_OPTIONS, false, 
                 ['deriveKey', 'deriveBits'])
             const publicECDHKey: CryptoKey = await self.crypto.subtle.importKey(
-                'spki', ByteData.fromB64(protectedKeys.publicECDSAKey).arr.buffer, 
+                'spki', ByteData.fromB64(protectedKeys.publicECDHKey).arr.buffer, 
                 ECDH_OPTIONS,
                 true, [])
 
