@@ -6,7 +6,7 @@
 ## Features 
 
 * A "No Code" solution. Minimal integration.
-* Reduces the number of dependencies for your main application reducing he risk of supply chain attacks. 
+* Reduces the number of dependencies for your main application reducing the risk of supply chain attacks. 
 * Data in your region in your database and under your control.
 * Small high performance Docker container built with Rust.
 * Configure with environment variables.
