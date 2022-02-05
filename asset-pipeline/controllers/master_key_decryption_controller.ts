@@ -23,7 +23,7 @@ export default class extends Controller {
     readonly protectedECDHPrivateKeyTarget!: HTMLInputElement
     readonly publicECDHKeyTarget!: HTMLInputElement
 
-    connect() {
+    async connect() {
 
         const keysToRestore: ProtectedKeys = {
             protectedSymmetricKey: Cipher.fromString(this.protectedSymmetricKeyTarget.value),
@@ -33,7 +33,7 @@ export default class extends Controller {
             publicECDHKey: this.publicECDHKeyTarget.value
         }
 
-        Vault.restore(keysToRestore)
+        await Vault.restore(keysToRestore)
 
         this.formTarget.submit()
     }

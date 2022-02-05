@@ -1,3 +1,4 @@
+DELETE FROM keypair_users;
 ALTER TABLE keypair_users DROP protected_ecdsa_private_key;
 ALTER TABLE keypair_users DROP ecdsa_public_key;
 ALTER TABLE keypair_users DROP protected_ecdh_private_key;
