@@ -140,8 +140,10 @@ async fn authorize(
     // If the Authn Proxy header is set, then this is an envoy external auth request.
     if let Some(_header) = req.headers().get("x-envoy-internal") {
         envoy_external_auth(logged_user).await
+    } else if let Some(proxy_config) = &config.proxy_config {
+        reverse_proxy(req, logged_user, body, proxy_config, client).await
     } else {
-        reverse_proxy(req, logged_user, body, config, client).await
+        Ok(HttpResponse::Forbidden().finish())
     }
 }
 
@@ -197,7 +199,7 @@ async fn reverse_proxy(
     req: HttpRequest,
     logged_user: Option<UserSession>,
     body: web::Bytes,
-    config: web::Data<config::Config>,
+    config: &config::ProxyConfig,
     client: web::Data<Client>,
 ) -> Result<HttpResponse, Error> {
     let mut new_url = config.forward_url.clone();

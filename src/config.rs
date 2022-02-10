@@ -32,6 +32,64 @@ impl HCaptchaConfig {
 }
 
 #[derive(Clone, Debug)]
+pub struct ProxyConfig {
+    // Configure an optional proxy
+    // Who we are proxying
+    pub forward_url: Url,
+    // Which paths can get through without auth i.e. "^/$,/blog/*,/static/*"
+    // in regular expression format, comma seperated.
+    pub skip_auth_for: Vec<String>,
+
+    // In proxy mode the maximum size of payload we can receive.
+    pub max_payload_size: usize,
+}
+
+impl ProxyConfig {
+    pub fn new() -> Option<ProxyConfig> {
+        let skip_auth_for: Vec<String> = if env::var("SKIP_AUTH_FOR").is_ok() {
+            env::var("SKIP_AUTH_FOR")
+                .unwrap()
+                .split(',')
+                .map(|s| s.into())
+                .collect()
+        } else {
+            Default::default()
+        };
+
+        let max_payload_size: usize = if env::var("MAX_PAYLOAD_SIZE").is_ok() {
+            env::var("MAX_PAYLOAD_SIZE")
+                .unwrap()
+                .parse::<usize>()
+                .unwrap()
+        } else {
+            2_000_000 // 2mb approx
+        };
+
+        if let Ok(forwarded_addr) = env::var("FORWARD_URL") {
+            if let Ok(forwarded_port) = env::var("FORWARD_PORT") {
+                let forward_port = forwarded_port.parse::<u16>().unwrap();
+                let forward_url = Url::parse(&format!(
+                    "http://{}",
+                    (forwarded_addr, forward_port)
+                        .to_socket_addrs()
+                        .unwrap()
+                        .next()
+                        .unwrap()
+                ))
+                .unwrap();
+                return Some(ProxyConfig {
+                    forward_url,
+                    skip_auth_for,
+                    max_payload_size,
+                });
+            }
+        }
+
+        None
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct SmtpConfig {
     // Configure SMTP for email.
     pub host: String,
@@ -95,12 +153,10 @@ pub struct Config {
     // https://www.browserling.com/tools/random-hex
     // And choose 32 bytes (64 digits)
     pub secret_key: Vec<u8>,
-    // Who we are proxying
-    pub forward_url: Url,
-    // Which paths can get through without auth i.e. "^/$,/blog/*,/static/*"
-    // in regular expression format, comma seperated.
-    pub skip_auth_for: Vec<String>,
+
     pub hcaptcha_config: Option<HCaptchaConfig>,
+
+    pub proxy_config: Option<ProxyConfig>,
 
     pub email_otp_enabled: bool,
 
@@ -111,39 +167,11 @@ pub struct Config {
 
     // How many hits oin a fingerprint before we show the captcha
     pub hit_rate: u32,
-
-    // In proxy mode the maximum size of payload we can receive.
-    pub max_payload_size: usize,
 }
 
 impl Config {
     pub fn new() -> Config {
         let hex = env::var("SECRET_KEY").expect("SECRET_KEY not set");
-        let forwarded_addr = env::var("FORWARD_URL").expect("FORWARD_URL not set");
-        let forwarded_port = env::var("FORWARD_PORT")
-            .expect("FORWARD_PORT not set")
-            .parse::<u16>()
-            .unwrap();
-
-        let forward_url = Url::parse(&format!(
-            "http://{}",
-            (forwarded_addr, forwarded_port)
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap()
-        ))
-        .unwrap();
-
-        let skip_auth_for: Vec<String> = if env::var("SKIP_AUTH_FOR").is_ok() {
-            env::var("SKIP_AUTH_FOR")
-                .unwrap()
-                .split(',')
-                .map(|s| s.into())
-                .collect()
-        } else {
-            Default::default()
-        };
 
         let port: u16 = if env::var("PORT").is_ok() {
             env::var("PORT").unwrap().parse::<u16>().unwrap()
@@ -179,15 +207,6 @@ impl Config {
             "users".into()
         };
 
-        let max_payload_size: usize = if env::var("MAX_PAYLOAD_SIZE").is_ok() {
-            env::var("MAX_PAYLOAD_SIZE")
-                .unwrap()
-                .parse::<usize>()
-                .unwrap()
-        } else {
-            2_000_000 // 2mb approx
-        };
-
         Config {
             port,
             auth_type,
@@ -196,14 +215,12 @@ impl Config {
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL not set"),
             secure_cookie: env::var("SECURE_COOKIE").is_ok(),
             secret_key: hex_to_bytes(&hex).expect("SECRET_KEY could not parse"),
-            forward_url,
-            skip_auth_for,
             hcaptcha_config: HCaptchaConfig::new(),
+            proxy_config: ProxyConfig::new(),
             email_otp_enabled,
             use_bcrypt_instead_of_argon,
             smtp_config: SmtpConfig::new(),
             hit_rate: 10,
-            max_payload_size,
         }
     }
 }
