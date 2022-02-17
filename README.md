@@ -25,7 +25,7 @@
 * Account enumeration - Failed logins or duplicate registration requests show the same results for existing or non existing accounts.
 * Password stuffing - Prevented with hCaptcha and email OTP.
 * Password Brute forcing - Prevented with hCaptcha and email OTP.
-* Session Hijacking Resistance - Session cookie is unpredictable, encrypted, Secure, HTTP only and therefore is immune to XSS attacks.
+* Session Hijacking Resistance - Session cookie is unpredictable, encrypted, Secure, HTTP only and therefore immune to XSS attacks.
 * Data breach password brute forcing - Prevented by using Argon2id hashing.
 
 ## Configuration Environment Variables
