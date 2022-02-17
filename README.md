@@ -22,7 +22,7 @@
 
 ## Barricade defends against the following attacks
 
-* Account enumeration - Failed logins or dupliucate registration requests show the same results for existing or non existing accounts.
+* Account enumeration - Failed logins or duplicate registration requests show the same results for existing or non existing accounts.
 * Password stuffing - Prevented with hCaptcha and email OTP.
 * Password Brute forcing - Prevented with hCaptcha and email OTP.
 * Session Hijacking Prevention - Session cookie is encrypted and HTTP only.
