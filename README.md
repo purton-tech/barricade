@@ -22,11 +22,11 @@
 
 ## Barricade defends against the following attacks
 
-* Account enumeration 
-* Password stuffing
-* Password Brute forcing
-* Session Hijacking
-* Data breach password brute forcing.
+* Account enumeration - Failed logins or dupliucate registration requests show the same results for existing or non existing accounts.
+* Password stuffing - Prevented with hCaptcha and email OTP.
+* Password Brute forcing - Prevented with hCaptcha and email OTP.
+* Session Hijacking Prevention - Session cookie is encrypted and HTTP only.
+* Data breach password brute forcing - Prevented by using Argon2id hashing.
 
 ## Configuration Environment Variables
 
@@ -58,9 +58,11 @@ If enabled all traffic that is not `/auth*` will be passed through to the app li
 | SKIP_AUTH_FOR | Mandatory | Comma separated list of paths that are not to be authenticated |
 | MAX_PAYLOAD_SIZE | Optional | The maximum data size of a request we will proxy |
 
-## Hcaptcha
+## hCaptcha
 
-If enabled [Invisible hCaptcha](https://docs.hcaptcha.com/invisible/) will be used on all form submit buttons. This should provide protect against bot attacks and mitigate password stuffing, account enumeration as well as brute force attacks.
+If enabled [Invisible hCaptcha](https://docs.hcaptcha.com/invisible/) will be used on all form submit buttons. hCaptcha claims to stop malicious bots and protect user privacy. 
+
+Even if you have OTP switched on which will stop password stuffing and brute force attacks, hCaptcha can be used as a defence in depth measure. 
 
 | Name  | Type | Description |
 | ---- | ---- | ---- |
