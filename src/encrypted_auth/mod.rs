@@ -25,5 +25,5 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(crate::auth::email_otp::email_otp))
             .route(web::post().to(crate::auth::email_otp::process_otp)),
     );
-    cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::get().to(crate::logout)));
+    cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::post().to(crate::logout)));
 }

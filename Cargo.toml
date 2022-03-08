@@ -7,10 +7,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = { version = "4.0.0-beta.9", default-features = false, features = ["cookies", "secure-cookies"] }
-actix-files = "0.6.0-beta.7"
+actix-web = { version = "4", default-features = false, features = ["macros", "cookies", "secure-cookies"] }
+actix-files = "0"
 dotenv = "0.15"
-actix-identity = "0.4.0-beta.2"
+actix-identity = "0"
+tokio = { version = "1", features = ["macros"] }
 
 # Used for generating OTP codes and sessions.
 rand = "0"
@@ -28,7 +29,7 @@ regex = "1" # For checking if we need to skip auth
 url = "2.0"
 
 # HTML and Validation
-markup = "0.11"
+markup = "0"
 validator = { version = "0.12", features = ["derive"] }
 
 # Bcrypt for legacy apps, argon for new apps.
@@ -38,7 +39,7 @@ argon2 = "0"
 rand_core = { version = "0.6", features = ["std"] }
 
 # Use this for access to hcaptcha
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0", default-features = false, features = ["json", "rustls-tls"] }
 
 # The database
 sqlx = { version = "0.5", default-features = false,  features = [ "runtime-tokio-rustls", "postgres", "macros", "uuid" ] }
@@ -49,13 +50,13 @@ serde_json = "1.0"
 futures = "0.3"
 
 # For sending emails
-lettre = { version = "0.10.0-rc.3", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
+lettre = { version = "0.10.0-rc.4", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
 
 # NFKC password normalisation.
 unicode-normalization = "0"
 
 # AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
-aes-gcm = "0.8"
+aes-gcm = "0"
 base64= "0"
 
 [build-dependencies]
