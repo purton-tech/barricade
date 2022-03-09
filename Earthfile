@@ -93,7 +93,7 @@ integration-test:
     SAVE IMAGE --cache-hint
 
 # The final stage after testing, build our tiny container
-app-container:
+docker:
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
     COPY --dir +npm-build/dist asset-pipeline/dist
