@@ -85,8 +85,7 @@ integration-test:
             # Run up selenium for browser testing.
             docker run -d --rm --network=host --name selenium --shm-size="2g" $SELENIUM \
             # Finally run the browser testing
-            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
-            && ls -la /build/tmp 
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
     SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
     SAVE IMAGE --cache-hint
