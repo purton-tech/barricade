@@ -88,7 +88,6 @@ integration-test:
             && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
             && ls -la /build/tmp 
     END
-    SAVE ARTIFACT /build/tmp AS LOCAL ./tmp/earthly
     SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
     SAVE IMAGE --cache-hint
 
