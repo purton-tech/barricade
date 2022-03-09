@@ -62,11 +62,13 @@ integration-test:
     ARG ENABLE_HEADLESS=1
     ARG PORT=9095
     ARG USER_TABLE_NAME=bcrypt_users
+    ARG WEB_DRIVER_DESTINATION_HOST=http://localhost:9096
     
     USER root
     WITH DOCKER \
         --pull postgres:alpine \
         --pull containous/whoami \
+        # Record our selenium session
         --pull $SELENIUM
         RUN \
             docker run --name whoami -d --rm --network=host containous/whoami \
@@ -75,14 +77,15 @@ integration-test:
             # Run the database migrations
             && while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
                 diesel migration run \
-            # Now the database is up start the exe
-            && chmod +x ./$EXE_NAME && ./$EXE_NAME & \
+            && chmod +x ./$EXE_NAME \
+            # Now the database is up start the exe in normal mode
+            && ./$EXE_NAME & \
+            # Start exe in encrypted mode
             PORT=9096 USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted ./$EXE_NAME & \
             # Run up selenium for browser testing.
-            docker run -d --rm --network=host --shm-size="2g" $SELENIUM \
+            docker run -d --rm --network=host --name selenium --shm-size="2g" $SELENIUM \
             # Finally run the browser testing
-            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture \
-            && WEB_DRIVER_DESTINATION_HOST=http://localhost:9096 cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
+            && cargo test --release --target x86_64-unknown-linux-musl -- --nocapture
     END
     SAVE ARTIFACT ./$EXE_NAME $EXE_NAME
     SAVE IMAGE --cache-hint
@@ -94,5 +97,5 @@ docker:
     COPY --dir +npm-build/dist asset-pipeline/dist
     EXPOSE 8080
     ENTRYPOINT ["./barricade"]
-    # We call the image build and let semantic release handle tagging and ushing latest
+    # We call the image build and let semantic release handle tagging and pushing latest
     SAVE IMAGE --push $CONTAINER_NAME:build

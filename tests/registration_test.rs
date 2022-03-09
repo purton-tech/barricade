@@ -72,13 +72,7 @@ async fn registration() -> WebDriverResult<()> {
         .screenshot(Path::new("./target/registered.png"))
         .await?;
 
-    driver
-        .get(format!("{}/auth/sign_out", &config.host))
-        .await?;
-
-    let cookie = driver.get_cookie("session").await;
-
-    assert!(cookie.is_err());
+    driver.get(format!("{}/auth/sign_in", &config.host)).await?;
 
     // Lets log back in again.
 

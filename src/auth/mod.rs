@@ -88,7 +88,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(login::login))
             .route(web::post().to(login::process_login)),
     );
-    cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::get().to(crate::logout)));
+    cfg.service(web::resource(crate::SIGN_OUT_URL).route(web::post().to(crate::logout)));
     cfg.service(
         web::resource(crate::RESET_REQUEST_URL)
             .route(web::get().to(reset_request::reset_request))
