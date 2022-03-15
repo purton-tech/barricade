@@ -64,10 +64,9 @@ pub async fn logout(
     }
     id.forget();
 
-    Ok(crate::layouts::redirect_and_snackbar(
-        "/",
-        "You succesfully logged out",
-    ))
+    return Ok(HttpResponse::SeeOther()
+        .append_header((http::header::LOCATION, "/"))
+        .finish());
 }
 
 #[derive(Debug, Serialize, Deserialize)]
