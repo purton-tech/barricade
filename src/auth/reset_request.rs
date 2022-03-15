@@ -4,8 +4,10 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
 use lettre::Message;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
+use sha2::{Digest, Sha256};
+use sqlx::PgPool;
 use std::borrow::Cow;
 use std::default::Default;
 use validator::{ValidationError, ValidationErrors};
@@ -15,12 +17,6 @@ pub struct Reset {
     pub email: String,
     #[serde(rename = "h-captcha-response")]
     pub h_captcha_response: Option<String>,
-}
-
-#[derive(sqlx::FromRow, Debug)]
-pub struct User {
-    email: String,
-    reset_password_token: Uuid,
 }
 
 pub async fn reset_request(config: web::Data<config::Config>) -> Result<HttpResponse> {
@@ -45,42 +41,52 @@ pub async fn process_request(
     let mut validation_errors = ValidationErrors::default();
 
     if super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await {
-        let users = sqlx::query_as::<_, User>(&format!(
+        let invitation_selector = rand::thread_rng().gen::<[u8; 8]>();
+        let invitation_selector_base64 =
+            base64::encode_config(invitation_selector, base64::URL_SAFE);
+        let invitation_verifier = rand::thread_rng().gen::<[u8; 24]>();
+        let invitation_verifier_hash = Sha256::digest(&invitation_verifier);
+        let invitation_verifier_hash_base64 =
+            base64::encode_config(invitation_verifier_hash, base64::URL_SAFE);
+        let invitation_verifier_base64 =
+            base64::encode_config(invitation_verifier, base64::URL_SAFE);
+
+        sqlx::query(&format!(
             "
-            UPDATE {} SET 
-                reset_password_token = gen_random_uuid(),
-                reset_password_sent_at = now()
-            WHERE 
-                email = $1 
-            RETURNING email, reset_password_token
+                UPDATE {} SET 
+                    reset_password_selector = $1,
+                    reset_password_validator_hash = $2,
+                    reset_password_sent_at = now()
+                WHERE 
+                    email = $3
             ",
             config.user_table_name
         ))
+        .bind(&invitation_selector_base64)
+        .bind(&invitation_verifier_hash_base64)
         .bind(&form.email.to_lowercase())
-        .fetch_all(pool.get_ref()) // -> Vec<Person>
+        .execute(pool.get_ref()) // -> Vec<Person>
         .await?;
 
         if let Some(smtp_config) = &config.smtp_config {
-            if users.len() == 1 {
-                let email = Message::builder()
-                    .from(smtp_config.from_email.clone())
-                    .to(users[0].email.parse().unwrap())
-                    .subject("Did you request a password reset?")
-                    .body(
-                        format!(
-                            "
+            let email = Message::builder()
+                .from(smtp_config.from_email.clone())
+                .to(form.email.parse().unwrap())
+                .subject("Did you request a password reset?")
+                .body(
+                    format!(
+                        "
                         If you requested a password reset please follow this link 
-                        \n{}/auth/change_password/{}
+                        \n{}/auth/change_password?reset_password_selector={}&reset_password_validator={}
                         ",
-                            smtp_config.domain, users[0].reset_password_token
-                        )
-                        .trim()
-                        .to_string(),
+                        smtp_config.domain, invitation_selector_base64, invitation_verifier_base64
                     )
-                    .unwrap();
+                    .trim()
+                    .to_string(),
+                )
+                .unwrap();
 
-                crate::email::send_email(&config, email)
-            }
+            crate::email::send_email(&config, email)
         }
 
         return Ok(HttpResponse::SeeOther()
