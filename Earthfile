@@ -91,6 +91,7 @@ integration-test:
     SAVE IMAGE --cache-hint
 
 # The final stage after testing, build our tiny container
+# hub.docker.com/r/purtontech/barricade
 docker:
     FROM scratch
     COPY +integration-test/$EXE_NAME barricade
