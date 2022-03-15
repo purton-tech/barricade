@@ -31,7 +31,7 @@ pub static DECRYPT_MASTER_KEY_URL: &str = "/auth/decrypt";
 pub static SIGN_OUT_URL: &str = "/auth/sign_out";
 pub static RESET_REQUEST_URL: &str = "/auth/reset_request";
 pub static EMAIL_OTP_URL: &str = "/auth/email_otp";
-pub static CHANGE_PASSWORD_URL: &str = "/auth/change_password/{reset_token}";
+pub static CHANGE_PASSWORD_URL: &str = "/auth/change_password";
 
 pub static COOKIE_NAME: &str = "session";
 pub static USER_HEADER_NAME: &str = "x-user-id";

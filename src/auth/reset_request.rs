@@ -77,7 +77,7 @@ pub async fn process_request(
                     format!(
                         "
                         If you requested a password reset please follow this link 
-                        \n{}/auth/change_password/?invite_selector={}&invite_validator={}
+                        \n{}/auth/change_password?reset_password_selector={}&reset_password_validator={}
                         ",
                         smtp_config.domain, invitation_selector_base64, invitation_verifier_base64
                     )

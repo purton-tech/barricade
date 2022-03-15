@@ -4,8 +4,8 @@ use crate::custom_error::CustomError;
 use crate::layouts;
 use actix_web::{http, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
-use std::default::Default;
+use sha2::{Digest, Sha256};
+use sqlx::PgPool;
 use validator::{Validate, ValidationErrors};
 
 #[derive(Serialize, Validate, Deserialize, Default)]
@@ -16,16 +16,30 @@ pub struct Reset {
     pub confirm_password: String,
     #[serde(rename = "h-captcha-response")]
     pub h_captcha_response: Option<String>,
+    #[validate(length(min = 1, message = "Hidden field"))]
+    reset_password_selector: String,
+    #[validate(length(min = 1, message = "Hidden field"))]
+    reset_password_validator: String,
 }
 
 #[derive(Deserialize)]
 pub struct Params {
-    reset_token: String,
+    reset_password_selector: String,
+    reset_password_validator: String,
 }
 
-pub async fn change_password(config: web::Data<config::Config>) -> Result<HttpResponse> {
+pub async fn change_password(
+    validator: web::Query<Params>,
+    config: web::Data<config::Config>,
+) -> Result<HttpResponse> {
+    let form = Reset {
+        reset_password_selector: validator.reset_password_selector.clone(),
+        reset_password_validator: validator.reset_password_validator.clone(),
+        ..Default::default()
+    };
+
     let body = ResetPage {
-        form: &Reset::default(),
+        form: &form,
         errors: &ValidationErrors::default(),
     };
 
@@ -37,12 +51,13 @@ pub async fn change_password(config: web::Data<config::Config>) -> Result<HttpRe
 }
 
 pub async fn process_change(
-    info: web::Path<Params>,
     config: web::Data<config::Config>,
     pool: web::Data<PgPool>,
     form: web::Form<Reset>,
 ) -> Result<HttpResponse, CustomError> {
     let reset = Reset {
+        reset_password_selector: form.reset_password_selector.clone(),
+        reset_password_validator: form.reset_password_validator.clone(),
         ..Default::default()
     };
 
@@ -54,26 +69,47 @@ pub async fn process_change(
             )
             .await?;
 
-            if let Ok(uuid) = Uuid::parse_str(&info.reset_token) {
-                dbg!(&uuid);
+            let user: Vec<(i32, String)> = sqlx::query_as(&format!(
+                "
+                SELECT 
+                    id, 
+                    reset_password_validator_hash 
+                FROM {} 
+                WHERE 
+                    reset_password_selector = $1
+                ",
+                config.user_table_name
+            ))
+            .bind(&form.reset_password_selector)
+            .fetch_all(pool.get_ref())
+            .await?;
 
-                sqlx::query(&format!(
-                    "
+            let reset_password_verifier =
+                base64::decode_config(&form.reset_password_validator, base64::URL_SAFE)
+                    .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
+            let reset_password_verifier_hash = Sha256::digest(&reset_password_verifier);
+            let reset_password_verifier_hash_base64 =
+                base64::encode_config(reset_password_verifier_hash, base64::URL_SAFE);
+
+            if let Some(user) = user.first() {
+                if reset_password_verifier_hash_base64 == user.1 {
+                    sqlx::query(&format!(
+                        "
                         UPDATE {} 
-                            SET hashed_password = $1,
-                            reset_password_token = NULL,
-                            reset_password_sent_at = NULL
+                        SET
+                            hashed_password = $1,
+                            reset_password_selector = NULL,
+                            reset_password_validator_hash = NULL
                         WHERE 
-                            reset_password_token = $2
-                        AND 
-                            reset_password_sent_at > now() - '1 hour'::interval
-                    ",
-                    config.user_table_name
-                ))
-                .bind(hashed_password)
-                .bind(uuid)
-                .execute(pool.get_ref())
-                .await?;
+                            id = $2
+                        ",
+                        config.user_table_name
+                    ))
+                    .bind(hashed_password)
+                    .bind(user.0)
+                    .execute(pool.get_ref()) // -> Vec<Person>
+                    .await?;
+                }
             }
 
             return Ok(HttpResponse::SeeOther()
@@ -87,7 +123,7 @@ pub async fn process_change(
             };
 
             Ok(layouts::session_layout(
-                "Registration",
+                "Change Password",
                 &body.to_string(),
                 config.hcaptcha_config.is_some(),
             ))
@@ -105,6 +141,8 @@ markup::define! {
             @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
             @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, help_text: "", errors }
 
+            input[type="hidden", value=&form.reset_password_selector, name="reset_password_selector"] {}
+            input[type="hidden", value=&form.reset_password_validator, name="reset_password_validator"] {}
             button.a_button.success[type = "submit"] { "Change My Password" }
         }
     }
