@@ -88,11 +88,16 @@ pub async fn process_change(
                 base64::decode_config(&form.reset_password_validator, base64::URL_SAFE)
                     .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
             let reset_password_verifier_hash = Sha256::digest(&reset_password_verifier);
-            let reset_password_verifier_hash_base64 =
-                base64::encode_config(reset_password_verifier_hash, base64::URL_SAFE);
 
             if let Some(user) = user.first() {
-                if reset_password_verifier_hash_base64 == user.1 {
+                let reset_password_verifier_hash_from_db =
+                    base64::decode_config(&user.1, base64::URL_SAFE)
+                        .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
+
+                if compare_constant_time(
+                    &reset_password_verifier_hash,
+                    &reset_password_verifier_hash_from_db,
+                ) {
                     sqlx::query(&format!(
                         "
                         UPDATE {} 
@@ -129,6 +134,22 @@ pub async fn process_change(
             ))
         }
     }
+}
+
+pub fn compare_constant_time(x: &[u8], y: &[u8]) -> bool {
+    let length = x.len();
+
+    if length != y.len() {
+        return false;
+    }
+
+    let mut result: u8 = 0;
+
+    for n in 0..length {
+        result |= x[n] ^ y[n];
+    }
+
+    result == 0
 }
 
 markup::define! {
