@@ -32,8 +32,8 @@
 
 | Name  | Type | Description |
 | ---- | ---- | ---- |
-| DATABASE_URL | Mandatory | URL of the Postgres database |
 | SECRET_KEY | Mandatory | 256 bits of entropy in hex. Used to encrypt the cookie. You can use `openssl rand -hex 32` |
+| DATABASE_URL | Mandatory | URL of the Postgres database |
 | REDIRECT_URL | Mandatory | After login or registration redirect the user to this URL |
 | SECURE_COOKIE | Optional | If present set the authentication cookie to secure. |
 | PORT | Optional | The port to listen on, defaults to 9090 |
