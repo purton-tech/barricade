@@ -52,9 +52,9 @@ pub fn session_layout(title: &str, content: &str, use_hcaptcha: bool) -> HttpRes
     let csp_content = if use_hcaptcha {
         format!(
             "default-src 'none'; script-src {}; frame-src {}; style-src {}; connect-src {};",
-            "self https://hcaptcha.com https://*.hcaptcha.com",
+            "'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com",
             "https://hcaptcha.com https://*.hcaptcha.com",
-            "self https://hcaptcha.com https://*.hcaptcha.com",
+            "'self' https://hcaptcha.com https://*.hcaptcha.com",
             "https://hcaptcha.com https://*.hcaptcha.com",
         )
     } else {

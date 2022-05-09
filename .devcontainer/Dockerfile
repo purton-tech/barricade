@@ -1,6 +1,23 @@
-FROM ianpurton/rust-fullstack-devcontainer:latest AS development
+FROM purtontech/rust-on-nails-devcontainer:1.0.5 AS cargo
+
+# Configure apt and install packages
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends \
+        libpq-dev \
+    #
+    #
+    # Clean up
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -r /var/cache/* /var/lib/apt/lists/*
+
+RUN cargo install diesel_cli --no-default-features --features postgres && ls -la /home/vscode
+
+FROM purtontech/rust-on-nails-devcontainer:1.0.5 AS development
 
 ARG USERNAME=vscode
+
+COPY --from=cargo /usr/local/cargo/bin/diesel* /usr/local/cargo/bin/
 
 COPY *.bash .
 
@@ -12,5 +29,5 @@ RUN echo 'git config core.hooksPath /vscode/.devcontainer/.githooks' >> ~/.bashr
     && echo 'sudo chmod 777 /var/run/docker.sock' >> ~/.bashrc
 
 # Setup volumes so they have non root owner
-RUN sudo mkdir -p /vscode/target && sudo chown $USERNAME:$USERNAME /vscode/target
-RUN sudo mkdir -p /vscode/node_modules && sudo chown $USERNAME:$USERNAME /vscode/node_modules
+RUN sudo mkdir -p /workspace/target && sudo chown $USERNAME:$USERNAME /workspace/target
+RUN sudo mkdir -p /workspace/node_modules && sudo chown $USERNAME:$USERNAME /workspace/node_modules
