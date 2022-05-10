@@ -1,5 +1,4 @@
 .github
-.devcontainer
 .git
 tmp
 *.pdf

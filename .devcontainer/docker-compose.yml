@@ -6,6 +6,11 @@ services:
     environment:
       POSTGRES_PASSWORD: testpassword
       POSTGRES_USER: vscode
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vscode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
       
   # To test the config
   # docker run --rm -v %cd%\.devcontainer\envoy.yaml:/etc/envoy/envoy.yaml -p 10003:51051 envoyproxy/envoy-dev:e419892f7272326504e1a7cbd7ebed8b0dc8b491

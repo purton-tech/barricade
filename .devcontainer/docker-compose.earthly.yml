@@ -1,0 +1,32 @@
+services:
+
+  # For the earthly integration testing we need to make some ports public.
+  db:
+    ports:
+      - "5432:5432" 
+    
+  selenium:
+    ports:
+      - 4444:4444
+
+  # Bring up the app we want to test
+  app:
+    image: purtontech/barricade:build
+    ports:
+      - 9096:9096
+    environment:
+      # Barricade type i.e. encrypted or not
+      USER_TABLE_NAME: bcrypt_users
+      #USER_TABLE_NAME: keypair_users
+      #AUTH_TYPE: encrypted
+
+      PORT: 9096
+      SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
+      FORWARD_URL: whoami
+      FORWARD_PORT: 80
+      REDIRECT_URL: /
+      ENABLE_EMAIL_OTP: 'true'
+      DATABASE_URL: postgresql://vscode:testpassword@db:5432
+    depends_on:
+      db:
+        condition: service_healthy
