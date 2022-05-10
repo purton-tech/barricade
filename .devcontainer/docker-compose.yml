@@ -6,6 +6,11 @@ services:
     environment:
       POSTGRES_PASSWORD: testpassword
       POSTGRES_USER: vscode
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vscode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
       
   # To test the config
   # docker run --rm -v %cd%\.devcontainer\envoy.yaml:/etc/envoy/envoy.yaml -p 10003:51051 envoyproxy/envoy-dev:e419892f7272326504e1a7cbd7ebed8b0dc8b491
@@ -49,11 +54,10 @@ services:
       dockerfile: Dockerfile
     
     volumes:
-      - ..:/vscode:cached
-      - ~/.ssh:/home/host-ssh:cached
+      - ..:/workspace:cached
       - /var/run/docker.sock:/var/run/docker.sock
-      - target:/vscode/target # Set target as a volume for performance. 
-      - auth_node_modules:/vscode/node_modules # Set target as a volume for performance. 
+      - target:/workspace/target # Set target as a volume for performance. 
+      - auth_node_modules:/workspace/node_modules # Set target as a volume for performance. 
       # Is the bellow g8iving me issues on windows?
       #- auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
 
@@ -77,8 +81,8 @@ services:
       REDIRECT_URL: /
       ENABLE_EMAIL_OTP: 'true'
       ## Hcaptcha for throttleing - These are test keys
-      #HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001'
-      #HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000'
+      HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001'
+      HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000'
 
     working_dir: /vscode
 
