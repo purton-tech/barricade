@@ -225,3 +225,13 @@ psql=# select id, email, hashed_password from users;
 ```
 
 This is how your user table looks after a user registration.
+
+## The Book
+
+The following book helped greatly to put this project together. If you're thinking of building your own authentication system it's an absolute must read.
+
+<p align="center">
+  <img src="./.github/assets/the-book.png" width="100%" />
+</p>
+
+[Password Authentication for Web and Mobile Apps](https://dchest.com/authbook/)
