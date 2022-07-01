@@ -231,7 +231,7 @@ This is how your user table looks after a user registration.
 The following book helped greatly to put this project together. If you're thinking of building your own authentication system it's an absolute must read.
 
 <p align="center">
-  <img src="./.github/assets/the-book.png" width="100%" />
+  <img src="./.github/assets/the-book.png" style="border: 1px solid blacl" width="50%" />
 </p>
 
 [Password Authentication for Web and Mobile Apps](https://dchest.com/authbook/)
