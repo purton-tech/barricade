@@ -59,4 +59,4 @@ jobs:
       run: | 
         npm i -D @semantic-release-plus/docker
         npm i -D @semantic-release/git
-        $ npx -p node@v18-lts -c "npx semantic-release"
+        npx -p node@v18-lts -c "npx semantic-release"
