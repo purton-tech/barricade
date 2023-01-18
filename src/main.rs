@@ -49,6 +49,7 @@ struct UserSession {
 
 pub async fn logout(
     id: Identity,
+    config: web::Data<config::Config>,
     session: Option<Session>,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
@@ -65,7 +66,7 @@ pub async fn logout(
     id.forget();
 
     return Ok(HttpResponse::SeeOther()
-        .append_header((http::header::LOCATION, "/"))
+        .append_header((http::header::LOCATION, config.logout_url.clone()))
         .finish());
 }
 
