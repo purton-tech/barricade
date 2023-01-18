@@ -146,6 +146,7 @@ pub struct Config {
     pub auth_type: AuthType,
     pub user_table_name: String,
     pub redirect_url: String,
+    pub logout_url: String,
     // The database
     pub database_url: String,
     // Id we are using TLS we can set the cookie to secure
@@ -207,11 +208,18 @@ impl Config {
             "users".into()
         };
 
+        let logout_url: String = if env::var("LOGOUT_URL").is_ok() {
+            env::var("LOGOUT_URL").unwrap()
+        } else {
+            "/".into()
+        };
+
         Config {
             port,
             auth_type,
             user_table_name,
             redirect_url: env::var("REDIRECT_URL").expect("REDIRECT_URL not set"),
+            logout_url,
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL not set"),
             secure_cookie: env::var("SECURE_COOKIE").is_ok(),
             secret_key: hex_to_bytes(&hex).expect("SECRET_KEY could not parse"),

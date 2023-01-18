@@ -55,6 +55,11 @@ jobs:
       if: github.ref == 'refs/heads/master'
       run: docker pull purtontech/barricade:build
       
+    - name: Setup Node.js for Semantic Release
+      uses: actions/setup-node@v3
+      with:
+        node-version: "lts/*"
+
     - name: Semantic Release
       run: | 
         npm i -D @semantic-release-plus/docker

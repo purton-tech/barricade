@@ -4,7 +4,6 @@ use actix_web::{
     cookie, dev::Payload, error, http, middleware, web, web::Data, App, Error, FromRequest,
     HttpRequest, HttpResponse, HttpServer,
 };
-use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 mod components;
@@ -49,6 +48,7 @@ struct UserSession {
 
 pub async fn logout(
     id: Identity,
+    config: web::Data<config::Config>,
     session: Option<Session>,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
@@ -65,7 +65,7 @@ pub async fn logout(
     id.forget();
 
     return Ok(HttpResponse::SeeOther()
-        .append_header((http::header::LOCATION, "/"))
+        .append_header((http::header::LOCATION, config.logout_url.clone()))
         .finish());
 }
 
@@ -251,8 +251,6 @@ async fn reverse_proxy(
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
-
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let config = config::Config::new();
