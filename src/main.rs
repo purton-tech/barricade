@@ -4,7 +4,6 @@ use actix_web::{
     cookie, dev::Payload, error, http, middleware, web, web::Data, App, Error, FromRequest,
     HttpRequest, HttpResponse, HttpServer,
 };
-use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 mod components;
@@ -252,8 +251,6 @@ async fn reverse_proxy(
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
-
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let config = config::Config::new();
