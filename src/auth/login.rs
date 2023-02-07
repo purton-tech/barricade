@@ -31,14 +31,8 @@ struct InsertedSession {
     id: i32,
 }
 
-pub async fn login(config: web::Data<config::Config>, session: Option<crate::Session>) -> Result<HttpResponse> {
+pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
 
-    // Do we already have a session? If so, redirect.
-    if let Some(_) = session {
-        return Ok(HttpResponse::SeeOther()
-            .append_header((http::header::LOCATION, config.redirect_url.clone()))
-            .finish());
-    }
     let body = LoginPage {
         form: &Login::default(),
         hcaptcha_config: &config.hcaptcha_config,
