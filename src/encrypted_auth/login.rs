@@ -23,7 +23,6 @@ struct LoginUser {
 }
 
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
-
     let body = LoginPage {
         form: &Login::default(),
         errors: None,

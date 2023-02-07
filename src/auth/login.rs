@@ -32,7 +32,6 @@ struct InsertedSession {
 }
 
 pub async fn login(config: web::Data<config::Config>) -> Result<HttpResponse> {
-
     let body = LoginPage {
         form: &Login::default(),
         hcaptcha_config: &config.hcaptcha_config,
