@@ -2,6 +2,6 @@ node_modules
 target
 .env
 .cache
-asset-pipeline/dist
+crates/asset-pipeline/dist
 .vscode
 tmp
