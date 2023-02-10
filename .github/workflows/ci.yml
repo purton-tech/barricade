@@ -45,11 +45,11 @@ jobs:
     # Earthly with caching https://docs.earthly.dev/docs/guides/shared-cache
     - name: Run build and Deploy Containers (Read Write Caching)
       if: github.ref == 'refs/heads/master'
-      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache --push +docker
+      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache --push +app-container
 
     - name: Run build and Deploy Containers (Read Only Cache)
       if: github.ref != 'refs/heads/master'
-      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache +docker
+      run: earthly --allow-privileged --ci --remote-cache=purtontech/barricade:cache +app-container
 
     - name: Bring the image back from docker so we can tag it
       if: github.ref == 'refs/heads/master'
