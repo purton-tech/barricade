@@ -17,10 +17,6 @@ use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
 use sha2::{Digest, Sha256};
 
-pub mod statics {
-    include!(concat!(env!("OUT_DIR"), "/statics.rs"));
-}
-
 mod auth;
 mod encrypted_auth;
 

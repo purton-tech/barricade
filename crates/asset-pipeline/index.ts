@@ -1,4 +1,4 @@
-import '../node_modules/node-snackbar/dist/snackbar.css'
+import './node_modules/node-snackbar/dist/snackbar.css'
 import './index.scss'
 
 import { Application } from "stimulus"

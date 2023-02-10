@@ -1,4 +1,4 @@
-use crate::statics;
+use assets::files;
 use actix_web::{http, HttpResponse};
 
 markup::define! {
@@ -10,10 +10,10 @@ markup::define! {
             meta [ name="viewport", content="width=device-width, initial-scale=1" ] {}
             title { {title} }
 
-            script [ src = statics::get_index_js(),
+            script [ src = files::index_js.name,
                 type="text/javascript", async=""] {}
 
-            link [ rel = "stylesheet", type="text/css" , href = statics::get_index_css()] {}
+            link [ rel = "stylesheet", type="text/css" , href = files::index_css.name] {}
         }
     }
     Footer {

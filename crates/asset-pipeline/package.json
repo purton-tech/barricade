@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "parcel watch asset-pipeline/index.ts --no-hmr --cache-dir .cache --dist-dir asset-pipeline/dist --public-url /auth/static",
-    "release": "parcel build asset-pipeline/index.ts --cache-dir .cache --dist-dir asset-pipeline/dist --public-url /auth/static"
+    "start": "parcel watch index.ts --no-hmr --cache-dir .cache --dist-dir dist --public-url /auth/static",
+    "release": "parcel build index.ts --cache-dir .cache --dist-dir dist --public-url /auth/static"
   },
   "keywords": [],
   "author": "",
