@@ -57,7 +57,7 @@ services:
       - ..:/workspace:cached
       - /var/run/docker.sock:/var/run/docker.sock
       - target:/workspace/target # Set target as a volume for performance. 
-      - auth_node_modules:/workspace/node_modules # Set target as a volume for performance. 
+      - auth_node_modules:/workspace/asset-pipeline/node_modules # Set target as a volume for performance. 
       # Is the bellow g8iving me issues on windows?
       #- auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
 
@@ -65,7 +65,7 @@ services:
     command: sleep infinity
 
     environment:
-      DATABASE_URL: postgresql://vscode:testpassword@db:5432
+      DATABASE_URL: postgresql://vscode:testpassword@db:5432?sslmode=disable
       SMTP_HOST: smtp
       SMTP_PORT: 1025
       SMTP_USERNAME: thisisnotused

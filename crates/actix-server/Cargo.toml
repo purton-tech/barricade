@@ -1,0 +1,67 @@
+[package]
+name = "barricade"
+version = "0.1.0"
+authors = ["Ian Purton <ian.purton@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = { version = "4", default-features = false, features = ["macros", "cookies", "secure-cookies"] }
+actix-files = "0"
+actix-identity = "0"
+tokio = { version = "1.24", features = ["macros"] }
+
+# Used for generating OTP codes and sessions.
+rand = "0"
+# Sha256 and hex for hashing the session verifier. (Both from SQLx)
+sha2 = "0"
+hex = "0"
+
+# Actix Web Client - Used for the reverese proxy
+awc = "3.0.0-beta.3"
+
+env_logger = "0.7"
+regex = "1" # For checking if we need to skip auth
+
+# Used by the proxy
+url = "2.0"
+
+# HTML and Validation
+markup = "0"
+validator = { version = "0.12", features = ["derive"] }
+
+# Bcrypt for legacy apps, argon for new apps.
+bcrypt = "0.9.0"
+argon2 = "0"
+# required by argon.
+rand_core = { version = "0.6", features = ["std"] }
+
+# Use this for access to hcaptcha
+reqwest = { version = "0", default-features = false, features = ["json", "rustls-tls"] }
+
+# The database
+sqlx = { version = "0.5", default-features = false,  features = [ "runtime-tokio-rustls", "postgres", "macros", "uuid" ] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Use by authentication
+futures = "0.3"
+
+# For sending emails
+lettre = { version = "0.10.0-rc.4", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
+
+# NFKC password normalisation.
+unicode-normalization = "0"
+
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0"
+base64= "0"
+
+[build-dependencies]
+sha1 = "0.6"  # Use by build.rs for cache busting.
+
+[dev-dependencies]
+# WebDriver Library for UI testing.
+thirtyfour = { version = "0", default-features = false, features = [ "reqwest-rustls-tls", "tokio-runtime" ] }
+tokio = { version = "1", features = ["macros"] }
