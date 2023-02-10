@@ -2,7 +2,7 @@ version: '3.4'
 services:
 
   db:
-    image: postgres:alpine
+    image: postgres:14-alpine
     environment:
       POSTGRES_PASSWORD: testpassword
       POSTGRES_USER: vscode
@@ -57,7 +57,7 @@ services:
       - ..:/workspace:cached
       - /var/run/docker.sock:/var/run/docker.sock
       - target:/workspace/target # Set target as a volume for performance. 
-      - auth_node_modules:/workspace/asset-pipeline/node_modules # Set target as a volume for performance. 
+      - auth_node_modules:/workspace/crates/asset-pipeline/node_modules # Set target as a volume for performance. 
       # Is the bellow g8iving me issues on windows?
       #- auth_parcel_cache:/vscode/.cache # Set target as a volume for performance. 
 

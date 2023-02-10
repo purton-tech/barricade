@@ -13,4 +13,4 @@ RUN echo 'git config core.hooksPath /vscode/.devcontainer/.githooks' >> ~/.bashr
 
 # Setup volumes so they have non root owner
 RUN sudo mkdir -p /workspace/target && sudo chown $USERNAME:$USERNAME /workspace/target
-RUN sudo mkdir -p /workspace/asset-pipeline/node_modules && sudo chown $USERNAME:$USERNAME /workspace/asset-pipeline/node_modules
+RUN sudo mkdir -p /workspace/crates/asset-pipeline/node_modules && sudo chown $USERNAME:$USERNAME /workspace/crates/asset-pipeline/node_modules
