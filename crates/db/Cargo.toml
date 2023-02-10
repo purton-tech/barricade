@@ -7,3 +7,12 @@ edition = "2021"
 
 [dependencies]
 cornucopia_async = "0.4.0"
+deadpool-postgres = "0.10.5"
+futures = "0.3.26"
+postgres-types = "0.2.4"
+rustls = "0.20.8"
+serde = { version = "1.0.152", features = ["derive"] }
+tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread"] }
+tokio-postgres = "0.7.7"
+tokio-postgres-rustls = "0.9.0"
+webpki-roots = "0.22.6"

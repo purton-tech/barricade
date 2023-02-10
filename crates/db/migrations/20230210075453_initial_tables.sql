@@ -23,6 +23,10 @@ CREATE TABLE bcrypt_users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+INSERT INTO bcrypt_users(email, hashed_password) VALUES('test1@test1.com', 'aasdsaddasad');
+INSERT INTO bcrypt_users(email, hashed_password) VALUES('test2@test1.com', 'aasdsaddasad');
+INSERT INTO bcrypt_users(email, hashed_password) VALUES('test3@test1.com', 'aasdsaddasad');
+
 CREATE UNIQUE INDEX ON keypair_users ((lower(email)));
 CREATE UNIQUE INDEX ON bcrypt_users ((lower(email)));
 
