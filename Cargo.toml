@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "crates/actix-server",
+    "crates/axum-server",
     "crates/db",
 ]
