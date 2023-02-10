@@ -15,18 +15,21 @@ services:
     ports:
       - 9096:9096
     environment:
-      # Barricade type i.e. encrypted or not
-      USER_TABLE_NAME: bcrypt_users
-      #USER_TABLE_NAME: keypair_users
-      #AUTH_TYPE: encrypted
-
+      DATABASE_URL: postgresql://vscode:testpassword@db:5432/postgres?sslmode=disable
+      SMTP_HOST: smtp
+      SMTP_PORT: 1025
+      SMTP_USERNAME: thisisnotused
+      SMTP_PASSWORD: thisisnotused
+      SMTP_TLS_OFF: 'true'
+      RESET_DOMAIN: http://localhost:9096
+      RESET_FROM_EMAIL_ADDRESS: support@yourdomain.tech
       PORT: 9096
+      USER_TABLE_NAME: bcrypt_users
       SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
       FORWARD_URL: whoami
       FORWARD_PORT: 80
       REDIRECT_URL: /
       ENABLE_EMAIL_OTP: 'true'
-      DATABASE_URL: postgresql://vscode:testpassword@db:5432
     depends_on:
       db:
         condition: service_healthy

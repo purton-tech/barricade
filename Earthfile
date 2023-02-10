@@ -106,7 +106,8 @@ integration-test:
             dbmate --migrations-dir $DB_FOLDER/migrations up \
             && cargo test --no-run --release --target x86_64-unknown-linux-musl \
             && docker run -d --name video --network=build_default -e DISPLAY_CONTAINER_NAME=build_selenium_1 -e FILE_NAME=chrome-video.mp4 -v /build/tmp:/videos selenium/video:ffmpeg-4.3.1-20220208 \
-            && (cargo test --release --target x86_64-unknown-linux-musl -- --nocapture || echo fail > ./tmp/fail) 
+            && (cargo test --release --target x86_64-unknown-linux-musl -- --nocapture || echo fail > ./tmp/fail) \
+            && docker stop video
     END
     # You need the tmp/* if you use just tmp earthly will overwrite the folder
     SAVE ARTIFACT tmp/* AS LOCAL ./tmp/earthly/
