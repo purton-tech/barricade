@@ -1,13 +1,11 @@
 pub mod common;
 
-use dotenv::dotenv;
 use std::path::Path;
 use thirtyfour::prelude::*;
 
 // let's set up the sequence of steps we want the browser to take
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn registration() -> WebDriverResult<()> {
-    dotenv().ok();
 
     let config = common::Config::new().await;
 
