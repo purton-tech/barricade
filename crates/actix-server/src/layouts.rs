@@ -10,10 +10,10 @@ markup::define! {
             meta [ name="viewport", content="width=device-width, initial-scale=1" ] {}
             title { {title} }
 
-            script [ src = files::index_js.name,
+            script [ src = format!("/static/{}", files::index_js.name),
                 type="text/javascript", async=""] {}
 
-            link [ rel = "stylesheet", type="text/css" , href = files::index_css.name] {}
+            link [ rel = "stylesheet", type="text/css" , href = format!("/static/{}", files::index_css.name)] {}
         }
     }
     Footer {
