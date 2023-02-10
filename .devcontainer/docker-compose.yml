@@ -65,7 +65,7 @@ services:
     command: sleep infinity
 
     environment:
-      DATABASE_URL: postgresql://vscode:testpassword@db:5432?sslmode=disable
+      DATABASE_URL: postgresql://vscode:testpassword@db:5432/postgres?sslmode=disable
       SMTP_HOST: smtp
       SMTP_PORT: 1025
       SMTP_USERNAME: thisisnotused

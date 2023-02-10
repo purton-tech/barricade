@@ -18,7 +18,7 @@ alias cwb='USER_TABLE_NAME=bcrypt_users AUTH_TYPE=normal mold -run cargo watch -
 alias salus='docker run --rm -t -v $HOST_PROJECT_PATH:/home/repo coinbase/salus'
 
 # Database migrations
-alias dbmate='dbmate --migrations-dir /workspace/crates/db/migrations'
+alias dbmate='dbmate --no-dump-schema --migrations-dir /workspace/crates/db/migrations'
 alias db='psql $DATABASE_URL'
 # Start node dev i..e parcel
 alias nrs='npm run start'
