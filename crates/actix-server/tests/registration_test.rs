@@ -1,6 +1,5 @@
 pub mod common;
 
-use std::path::Path;
 use thirtyfour::prelude::*;
 
 // let's set up the sequence of steps we want the browser to take
@@ -64,10 +63,6 @@ async fn registration() -> WebDriverResult<()> {
     let cookie = driver.get_cookie("session").await;
 
     assert!(cookie.is_ok());
-
-    driver
-        .screenshot(Path::new("./target/registered.png"))
-        .await?;
 
     driver.get(format!("{}/auth/sign_in", &config.host)).await?;
 

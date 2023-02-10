@@ -87,6 +87,8 @@ integration-test:
 
     USER root
     WITH DOCKER \
+        # Bring up the containers we have built
+        --load $CONTAINER_NAME=+app-container \
         --compose docker-compose.yml \
         --compose docker-compose.earthly.yml \
         --service db \
@@ -94,16 +96,14 @@ integration-test:
         --service whoami \
         # Record our selenium session
         --service selenium \
-        --pull selenium/video:ffmpeg-4.3.1-20220208 \
-        # Bring up the containers we have built
-        --load $CONTAINER_NAME=+app-container
+        --service app \
+        --pull selenium/video:ffmpeg-4.3.1-20220208
 
         # Force to command to always be succesful so the artifact is saved. 
         # https://github.com/earthly/earthly/issues/988
 
         RUN while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
             dbmate --migrations-dir $DB_FOLDER/migrations up \
-            && docker run -d -p 9096:9096 --rm --network=build_default --name app $CONTAINER_NAME \
             && cargo test --no-run --release --target x86_64-unknown-linux-musl \
             && docker run -d --name video --network=build_default -e DISPLAY_CONTAINER_NAME=build_selenium_1 -e FILE_NAME=chrome-video.mp4 -v /build/tmp:/videos selenium/video:ffmpeg-4.3.1-20220208 \
             && (cargo test --release --target x86_64-unknown-linux-musl -- --nocapture || echo fail > ./tmp/fail) 
