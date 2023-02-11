@@ -17,12 +17,9 @@ use custom_error::CustomError;
 use futures::future::{err, ok, Ready};
 use sha2::{Digest, Sha256};
 
-pub mod statics {
-    include!(concat!(env!("OUT_DIR"), "/statics.rs"));
-}
-
 mod auth;
 mod encrypted_auth;
+mod static_file;
 
 pub static SIGN_UP_URL: &str = "/auth/sign_up";
 pub static SIGN_IN_URL: &str = "/auth/sign_in";
@@ -269,7 +266,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(config.clone()))
             .app_data(Data::new(client))
-            .service(statics::static_file)
+            .service(web::resource("/static/{filename}").to(static_file::static_file))
             .configure(auth_routes)
             // The proxy
             .default_service(web::route().to(authorize))

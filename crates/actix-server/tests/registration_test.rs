@@ -1,13 +1,10 @@
 pub mod common;
 
-use dotenv::dotenv;
-use std::path::Path;
 use thirtyfour::prelude::*;
 
 // let's set up the sequence of steps we want the browser to take
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn registration() -> WebDriverResult<()> {
-    dotenv().ok();
 
     let config = common::Config::new().await;
 
@@ -66,10 +63,6 @@ async fn registration() -> WebDriverResult<()> {
     let cookie = driver.get_cookie("session").await;
 
     assert!(cookie.is_ok());
-
-    driver
-        .screenshot(Path::new("./target/registered.png"))
-        .await?;
 
     driver.get(format!("{}/auth/sign_in", &config.host)).await?;
 

@@ -1,13 +1,11 @@
 pub mod common;
 
-use dotenv::dotenv;
 use thirtyfour::prelude::*;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[ignore] // Doesn't work well in github actions
 async fn account_enumeration_login() -> WebDriverResult<()> {
-    dotenv().ok();
-
+ 
     let config = common::Config::new().await;
 
     let driver = config.get_driver().await?;
@@ -76,8 +74,6 @@ async fn account_enumeration_login() -> WebDriverResult<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[ignore] // Doesn't work well in github actions
 async fn account_enumeration_registration() -> WebDriverResult<()> {
-    dotenv().ok();
-
     let config = common::Config::new().await;
 
     let driver = config.get_driver().await?;
