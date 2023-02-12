@@ -2,4 +2,6 @@
 members = [
     "crates/actix-server",
     "crates/asset-pipeline",
+    "crates/axum-server",
+    "crates/db"
 ]
