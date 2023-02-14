@@ -455,7 +455,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-server"
+name = "barricacde"
 version = "0.1.0"
 
 [[package]]
