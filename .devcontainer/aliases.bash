@@ -16,7 +16,7 @@ alias cwb='USER_TABLE_NAME=bcrypt_users AUTH_TYPE=normal mold -run cargo watch -
 
 
 # Watch
-alias watch-app='mold -run cargo watch --workdir /workspace/ -w crates/ui-components -w crates/axum-server -w crates/db -w crates/asset-pipeline/dist --no-gitignore -x "run --bin barricade"'
+alias watch-app='mold -run cargo watch --workdir /workspace/ -w crates/ui-components -w crates/axum-server -w crates/db -w crates/asset-pipeline/dist --no-gitignore -x "run --bin barricade2"'
 alias wa=watch-app
 alias watch-pipeline='npm run start --prefix /workspace/crates/asset-pipeline'
 alias wp=watch-pipeline

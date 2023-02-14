@@ -4,8 +4,11 @@ pub use deadpool_postgres::{Pool, Transaction, PoolError};
 pub use tokio_postgres::Error as TokioPostgresError;
 pub use cornucopia_async::Params;
 
-//pub use queries::users::User;
+// Let's take the structs that cornucopia generates and republish
+// them to the top of the package. then we can do `use db::User` to import.
+pub use queries::users::User;
 
+// This connection pool function is TLS enabled when required for use in the cloud.
 pub fn create_pool(database_url: &str) -> deadpool_postgres::Pool {
     let config = tokio_postgres::Config::from_str(database_url).unwrap();
 

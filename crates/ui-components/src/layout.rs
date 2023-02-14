@@ -12,7 +12,7 @@ pub struct AppLayoutProps<'a> {
 pub fn Layout<'a>(cx: Scope<'a, AppLayoutProps<'a>>) -> Element {
     cx.render(rsx!(
         {
-            LazyNodes::new(|f| f.raw_text(format_args!("<!DOCTYPE html><html lang='en'>")))
+            LazyNodes::new(|f| f.text(format_args!("<!DOCTYPE html><html lang='en'>")))
         }
         head {
             title {
