@@ -10,3 +10,13 @@ axum = "0.6.6"
 db = { version = "0.1.0", path = "../db" }
 tokio = { version = "1.25.0", default-features = false, features = ["macros", "fs", "rt-multi-thread"] }
 ui-components = { path = "../ui-components" }
+
+# For sending emails
+lettre = { version = "0.10.0-rc.4", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Needed for the proxy
+hyper = { version = "0", features = ["full"] }
+tower = { version = "0", features = ["make"] }
