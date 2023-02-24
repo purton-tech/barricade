@@ -23,6 +23,7 @@ pub fn sign_in(users: Vec<User>) -> String {
                     }
                     input {
                         "type": "email",
+                        name: "email",
                         required: "required",
                         placeholder: "Email Address"
                     }

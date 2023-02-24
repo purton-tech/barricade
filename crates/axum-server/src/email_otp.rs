@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use axum_extra::extract::CookieJar;
 
 pub fn routes() -> Router {
     Router::new()
@@ -13,37 +14,62 @@ pub fn routes() -> Router {
 }
 
 /***
- * Create a session cookie then send the user an email code 
- * and wait for them to enter it.
+ * At this point we have a session cookie but it's not validated
  *
- * If the user doesn't exist yet we still need to send an email and set the cookie
- * to deter account enumeration due to timing attacks.
+ * The user has been sent an email that contains their OTP code.
  *
- * So basically login and registration are the same process just the emails
- * will be different.
+ * We need to securely validate that code whilst being careful of timing
+ * attacks and brute force.
  */
 pub async fn email_otp() -> Result<Html<String>, CustomError> {
-
     Ok(Html(ui_components::email_otp::email_otp()))
 }
 
 /***
  * If the user is able to enter the correct code we know they own that email address
  * 
- * We can create an entry in the user table if one doesn't existsor assign
+ * We can create an entry in the user table if one doesn't exist or assign
  * the entry in the session table to an existing users.
  * 
- * We don't have to worry about account enumeration due to timing attacks as we
- * already have confirmation the user owns the address.
+ * We do have to worry about account enumeration due to timing attacks but not
+ * if we check the otp code first.
  * 
- * We do have to worry about brute forcing, so we have a delay between each check of
+ * We have to worry about brute forcing, so we have a delay between each check of
  * the code which doubles every attempt.
  */
 pub async fn process_email_otp(
     Extension(config): Extension<crate::config::Config>,
     Extension(pool): Extension<db::Pool>,
+    jar: CookieJar
 ) -> Result<impl IntoResponse, CustomError> {
-    let _client = pool.get().await?;
+    let client = pool.get().await?;
+
+    // get the session id and the verifier from the cookie.
+    if let Some((id, verifier)) = get_session(&jar).await {
+        let session_from_db = db::queries::sessions::get_session()
+            .bind(
+                &client,
+                &(id as i32)
+            )
+            .one()
+            .await?;
+
+        dbg!(session_from_db);
+    }
 
     Ok(Redirect::to(&config.redirect_url))
+}
+
+pub async fn get_session(jar: &CookieJar) -> Option<(u64, String)> {
+
+    if let Some(session) = jar.get("session") {
+        let mut split = session.value().split(":");
+        if let (Some(id), Some(verifier)) = (split.next(), split.next()) {
+
+            if let Ok(id) = id.parse::<u64>() {
+                return Some((id, verifier.to_string()));
+            }
+        }
+    }
+    None
 }

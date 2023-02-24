@@ -20,3 +20,19 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Needed for the proxy
 hyper = { version = "0", features = ["full"] }
 tower = { version = "0", features = ["make"] }
+
+# Used for generating OTP codes and sessions.
+rand = "0"
+
+# Sha256 and hex for hashing the session verifier.
+sha2 = "0.10.2"
+hex = "0"
+
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0.9.4"
+
+# For handling forms in axum
+serde = { version = "1.0", features = ["derive"] }
+
+# Cookie parsing
+axum-extra = { version = "0", features = ["cookie"]}

@@ -1,14 +1,20 @@
 --: Session()
 
---! get_sessions : Session
+--! get_session : Session
 SELECT 
-    id
-FROM sessions;
+    id,
+    session_verifier,
+    otp_code_encrypted,
+    email
+FROM 
+    sessions
+WHERE
+    id = :id;
 
 --! create_session
 INSERT INTO sessions (
-    user_id, 
     session_verifier, 
-    otp_code_encrypted
+    otp_code_encrypted,
+    email
 )
-VALUES(:user_id, :session_verifier, :otp_code_encrypted) RETURNING id;
+VALUES(:session_verifier, :otp_code_encrypted, :email) RETURNING id;
