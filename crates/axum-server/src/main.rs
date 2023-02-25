@@ -4,11 +4,17 @@ mod encryption;
 mod errors;
 mod reverse_proxy;
 mod sign_in;
+mod static_files;
+mod encryption_password;
 
-use axum::{extract::Extension, Router, response::{Redirect, IntoResponse}};
+use axum::{
+    extract::Extension,
+    response::{IntoResponse, Redirect},
+    routing::get,
+    Router,
+};
 use axum_extra::extract::CookieJar;
 use config::Config;
-use errors::CustomError;
 use hyper::HeaderMap;
 use std::net::SocketAddr;
 use tower::{make::Shared, ServiceExt};
@@ -33,6 +39,8 @@ async fn main() {
     let app = Router::new()
         .merge(sign_in::routes())
         .merge(email_otp::routes())
+        .merge(encryption_password::routes())
+        .route("/auth/static/*path", get(static_files::static_path))
         .layer(Extension(config.clone()))
         .layer(Extension(pool.clone()));
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -52,7 +60,6 @@ async fn main() {
                     router_svc.oneshot(req).await.map_err(|err| match err {})
                 } else {
                     if is_authenticated(req.headers(), &skip_auth_for, pool_copy).await {
-    
                         // For the request to get forwarded to the actual application
                         // the following need to be true
                         //
@@ -105,7 +112,6 @@ async fn is_authenticated(
                 .await;
 
             if let Ok(session_from_db) = session_from_db {
-
                 dbg!(session_from_db);
 
                 return true;

@@ -66,20 +66,18 @@ services:
 
     environment:
       DATABASE_URL: postgresql://vscode:testpassword@db:5432/postgres?sslmode=disable
+
       SMTP_HOST: smtp
       SMTP_PORT: 1025
       SMTP_USERNAME: thisisnotused
       SMTP_PASSWORD: thisisnotused
       SMTP_TLS_OFF: 'true'
-      RESET_DOMAIN: http://localhost:9095
-      RESET_FROM_EMAIL_ADDRESS: support@yourdomain.tech
+      AUTH_TYPE: 'encrypted'
       PORT: 9095
-      USER_TABLE_NAME: bcrypt_users
       SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe
       FORWARD_URL: whoami
       FORWARD_PORT: 80
       REDIRECT_URL: /
-      ENABLE_EMAIL_OTP: 'true'
       ## Hcaptcha for throttleing - These are test keys
       #HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001'
       #HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000'

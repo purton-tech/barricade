@@ -38,19 +38,15 @@
 | LOGOUT_URL | Optional | The page to redirect to when the user signs out. Default is '/' |
 | SECURE_COOKIE | Optional | If present set the authentication cookie to secure. |
 | PORT | Optional | The port to listen on, defaults to 9090 |
-| USER_TABLE_NAME | Optional | Set this to the table name of your users table. Defaults to `users` |
-| ENABLE_EMAIL_OTP | Optional | If enabled every logon and registration requires email confirmation |
 | SMTP_HOST | Optional | The hostname of your email provider |
 | SMTP_USERNAME | Mandatory when using SMTP | The hostname of your username provider |
 | SMTP_PASSWORD | Mandatory when using SMTP | The hostname of your password provider |
 | SMTP_PORT | Mandatory when using SMTP | The SMTP port of your email provider |
 | SMTP_TLS_OFF | Optional | Switch off SMTP TLS useful for local devlopment |
-| RESET_DOMAIN | Mandatory when using SMTP | For a password reset email set your domain |
-| RESET_FROM_EMAIL_ADDRESS | Mandatory when using SMTP | For a password reset email set your from email address |
 
 ## Proxy Mode
 
-If enabled all traffic that is not `/auth*` will be passed through to the app listinging on `FORWARD_URL:FORWARD_PORT`.
+If enabled all traffic that is not `/auth*` will be passed through to the app listening on `FORWARD_URL:FORWARD_PORT`.
 
 | Name  | Type | Description |
 | ---- | ---- | ---- |

@@ -6,10 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.6.6"
-db = { version = "0.1.0", path = "../db" }
-tokio = { version = "1.25.0", default-features = false, features = ["macros", "fs", "rt-multi-thread"] }
 ui-components = { path = "../ui-components" }
+db = { version = "0.1.0", path = "../db" }
+assets = { version = "0.1.0", path = "../asset-pipeline" }
+
+axum = "0.6.6"
+tokio = { version = "1.25.0", default-features = false, features = ["macros", "fs", "rt-multi-thread"] }
+# Used by the static files handler
+tokio-util = { version = "0", default-features = false, features = ["io"] }
 
 # For sending emails
 lettre = { version = "0.10.0-rc.4", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }

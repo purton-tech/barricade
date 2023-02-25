@@ -1,23 +1,23 @@
 use crate::layout::Layout;
 use dioxus::prelude::*;
 
-pub fn email_otp() -> String {
+pub fn encryption_password() -> String {
     // Inner function to create our rsx! component
     fn app(cx: Scope) -> Element {
         cx.render(rsx! {
             Layout {
-                title: "Email OTP",
+                title: "Encryption Password",
                 form {
                     class: "m_authentication",
                     method: "post",
                     label {
-                        "for": "otp",
-                        "6 Digit Code"
+                        "for": "password",
+                        "Please enter a password"
                     }
                     input {
-                        "type": "number",
-                        required: "required",
-                        placeholder: "6 Digit Code"
+                        "name": "password",
+                        "type": "password",
+                        required: "required"
                     }
                     button {
                         "type": "submit",

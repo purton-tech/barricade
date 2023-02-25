@@ -8,4 +8,5 @@ path = "lib.rs"
 
 [dependencies]
 db = { path = "../db" }
+assets = { path = "../asset-pipeline" }
 dioxus = { version = "0.2", features = ["ssr"] }

@@ -57,7 +57,13 @@ pub async fn process_email_otp(
         dbg!(session_from_db);
     }
 
-    Ok(Redirect::to(&config.redirect_url))
+    // If we are enabling end to end encryption then the next stop is to
+    // get a password from the user
+    if config.auth_type == crate::config::AuthType::Encrypted {
+        Ok(Redirect::to(ui_components::ENCRYPTION_PASSWORD))
+    } else {
+        Ok(Redirect::to(&config.redirect_url))
+    }
 }
 
 pub async fn get_session(jar: &CookieJar) -> Option<(u64, String)> {

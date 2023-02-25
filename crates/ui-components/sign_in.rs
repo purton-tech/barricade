@@ -15,6 +15,7 @@ pub fn sign_in(users: Vec<User>) -> String {
             Layout {
                 title: "Logon",
                 form {
+                    class: "m_authentication",
                     method: "post",
                     action: "{SIGN_IN}",
                     label {

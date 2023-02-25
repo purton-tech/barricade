@@ -149,14 +149,10 @@ pub struct Config {
 
     pub proxy_config: Option<ProxyConfig>,
 
-    pub email_otp_enabled: bool,
-
-    pub use_bcrypt_instead_of_argon: bool,
-
     // Configure SMTP for email.
     pub smtp_config: Option<SmtpConfig>,
 
-    // How many hits oin a fingerprint before we show the captcha
+    // How many hits on a fingerprint before we show the captcha
     pub hit_rate: u32,
 }
 
@@ -169,17 +165,6 @@ impl Config {
         } else {
             9090
         };
-
-        let email_otp_enabled: bool = if env::var("ENABLE_EMAIL_OTP").is_ok() {
-            env::var("ENABLE_EMAIL_OTP")
-                .unwrap()
-                .parse::<bool>()
-                .unwrap()
-        } else {
-            false
-        };
-
-        let use_bcrypt_instead_of_argon: bool = env::var("use_bcrypt_instead_of_argon").is_ok();
 
         let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
             let t = env::var("AUTH_TYPE").unwrap();
@@ -215,8 +200,6 @@ impl Config {
             secret_key: hex_to_bytes(&hex).expect("SECRET_KEY could not parse"),
             hcaptcha_config: HCaptchaConfig::new(),
             proxy_config: ProxyConfig::new(),
-            email_otp_enabled,
-            use_bcrypt_instead_of_argon,
             smtp_config: SmtpConfig::new(),
             hit_rate: 10,
         }

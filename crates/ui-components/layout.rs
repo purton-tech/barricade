@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
+use assets::files::*;
 
 // Remember: owned props must implement PartialEq!
 #[derive(Props)]
@@ -28,6 +29,11 @@ pub fn Layout<'a>(cx: Scope<'a, AppLayoutProps<'a>>) -> Element {
             meta {
                 name: "viewport",
                 content: "width=device-width, initial-scale=1"
+            }
+            link {
+                rel: "stylesheet",
+                href: "/auth{index_css.name}",
+                "type": "text/css"
             }
         }
         body {
