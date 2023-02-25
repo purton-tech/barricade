@@ -1,12 +1,13 @@
 use std::str::FromStr;
 
-pub use deadpool_postgres::{Pool, Transaction, PoolError};
+pub use deadpool_postgres::{Pool, Transaction, PoolError, Client};
 pub use tokio_postgres::Error as TokioPostgresError;
 pub use cornucopia_async::Params;
 
 // Let's take the structs that cornucopia generates and republish
 // them to the top of the package. then we can do `use db::User` to import.
 pub use queries::users::User;
+pub use queries::sessions::Session;
 
 // This connection pool function is TLS enabled when required for use in the cloud.
 pub fn create_pool(database_url: &str) -> deadpool_postgres::Pool {

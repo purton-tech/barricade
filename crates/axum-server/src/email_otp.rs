@@ -44,18 +44,9 @@ pub async fn process_email_otp(
 ) -> Result<impl IntoResponse, CustomError> {
     let client = pool.get().await?;
 
-    // get the session id and the verifier from the cookie.
-    if let Some((id, verifier)) = get_session(&jar).await {
-        let session_from_db = db::queries::sessions::get_session()
-            .bind(
-                &client,
-                &(id as i32)
-            )
-            .one()
-            .await?;
+    let session_from_db = crate::session::get_session(client, &jar, config.secret_key).await;
 
-        dbg!(session_from_db);
-    }
+    dbg!(session_from_db);
 
     // If we are enabling end to end encryption then the next stop is to
     // get a password from the user
@@ -64,18 +55,4 @@ pub async fn process_email_otp(
     } else {
         Ok(Redirect::to(&config.redirect_url))
     }
-}
-
-pub async fn get_session(jar: &CookieJar) -> Option<(u64, String)> {
-
-    if let Some(session) = jar.get("session") {
-        let mut split = session.value().split(":");
-        if let (Some(id), Some(verifier)) = (split.next(), split.next()) {
-
-            if let Ok(id) = id.parse::<u64>() {
-                return Some((id, verifier.to_string()));
-            }
-        }
-    }
-    None
 }

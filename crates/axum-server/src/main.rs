@@ -1,11 +1,13 @@
 mod config;
+mod email;
 mod email_otp;
 mod encryption;
+mod encryption_password;
 mod errors;
 mod reverse_proxy;
+mod session;
 mod sign_in;
 mod static_files;
-mod encryption_password;
 
 use axum::{
     extract::Extension,
@@ -54,12 +56,13 @@ async fn main() {
             let router_svc = app.clone();
             let skip_auth_for = proxy_config.skip_auth_for.clone();
             let pool_copy = pool.clone();
+            let secret_key_copy = config.secret_key.clone();
             async move {
                 // If we are /auth then barricade handles the request
                 if req.uri().to_string().starts_with("/auth") {
                     router_svc.oneshot(req).await.map_err(|err| match err {})
                 } else {
-                    if is_authenticated(req.headers(), &skip_auth_for, pool_copy).await {
+                    if is_authenticated(req.headers(), &skip_auth_for, pool_copy, secret_key_copy).await {
                         // For the request to get forwarded to the actual application
                         // the following need to be true
                         //
@@ -91,7 +94,7 @@ async fn main() {
 
 /***
  * If the user has a valid session or the route they want to get to is in the
- * list of routes that don't require auith then they are good to go.
+ * list of routes that don't require auth then they are good to go.
  *
  * Otherwise false.
  */
@@ -99,23 +102,14 @@ async fn is_authenticated(
     headers: &HeaderMap,
     skip_auth_for: &Vec<String>,
     pool: db::Pool,
+    secret_key: Vec<u8> 
 ) -> bool {
     let jar = CookieJar::from_headers(headers);
+    let client = pool.get().await;
 
-    if let Some((id, verifier)) = crate::email_otp::get_session(&jar).await {
-        let client = pool.get().await;
-
-        if let Ok(client) = client {
-            let session_from_db = db::queries::sessions::get_session()
-                .bind(&client, &(id as i32))
-                .one()
-                .await;
-
-            if let Ok(session_from_db) = session_from_db {
-                dbg!(session_from_db);
-
-                return true;
-            }
+    if let Ok(client) = client {
+        if let Some(session_from_db) = crate::session::get_session(client, &jar, secret_key).await {
+            return session_from_db.verified;
         }
     }
 

@@ -8,8 +8,6 @@ use tokio_util::io::ReaderStream;
 pub async fn static_path(Path(path): Path<String>) -> impl IntoResponse {
     let path = format!("/static/{}", path);
 
-    dbg!(&path);
-
     let data = if path == "/static/index.css.map" {
         Some(&index_css_map)
     } else if path == "/static/index.js.map" {

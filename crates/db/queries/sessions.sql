@@ -5,6 +5,7 @@ SELECT
     id,
     session_verifier,
     otp_code_encrypted,
+    verified,
     email
 FROM 
     sessions
