@@ -108,7 +108,7 @@ async fn is_authenticated(
     let client = pool.get().await;
 
     if let Ok(client) = client {
-        if let Some(session_from_db) = crate::session::get_session(client, &jar, secret_key).await {
+        if let Some(session_from_db) = crate::session::get_session(&client, &jar, secret_key).await {
             return session_from_db.verified;
         }
     }

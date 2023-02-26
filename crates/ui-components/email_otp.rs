@@ -16,6 +16,7 @@ pub fn email_otp() -> String {
                     }
                     input {
                         "type": "number",
+                        name: "otp_code",
                         required: "required",
                         placeholder: "6 Digit Code"
                     }

@@ -72,6 +72,8 @@ services:
       SMTP_USERNAME: thisisnotused
       SMTP_PASSWORD: thisisnotused
       SMTP_TLS_OFF: 'true'
+      SMTP_FROM_EMAIL: 'test@test.com'
+
       AUTH_TYPE: 'encrypted'
       PORT: 9095
       SECRET_KEY: 50fb08b06b381c575e60c56328f66a51822320e922c7e11e264a7bb443ee22fe

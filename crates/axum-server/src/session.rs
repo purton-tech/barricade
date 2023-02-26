@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
  * Make sure the cokie has the correct session verifier.
  */
 
-pub async fn get_session(client: db::Client, jar: &CookieJar, secret_key: Vec<u8> ) -> Option<db::Session> {
+pub async fn get_session(client: &db::Client, jar: &CookieJar, secret_key: Vec<u8> ) -> Option<db::Session> {
     if let Some(session) = jar.get("session") {
         let session = crate::encryption::decrypt(session.value(), "Barricade", &secret_key);
 
@@ -17,7 +17,7 @@ pub async fn get_session(client: db::Client, jar: &CookieJar, secret_key: Vec<u8
             if let (Some(id), Some(verifier)) = (split.next(), split.next()) {
                 if let Ok(id) = id.parse::<u64>() {
                     let session_from_db = db::queries::sessions::get_session()
-                        .bind(&client, &(id as i32))
+                        .bind(client, &(id as i32))
                         .one()
                         .await
                         .ok();
@@ -36,7 +36,7 @@ pub async fn get_session(client: db::Client, jar: &CookieJar, secret_key: Vec<u8
  * Retunr the OTP Code so we can forward it as an email.
  */
 pub async fn create_session(
-    client: db::Client,
+    client: &db::Client,
     email: &str,
     secret_key: Vec<u8>,
 ) -> Result<(String, u32), CustomError> {
@@ -46,7 +46,7 @@ pub async fn create_session(
 
     let session_id = db::queries::sessions::create_session()
         .bind(
-            &client,
+            client,
             &hashed_session_verifier.as_ref(),
             &otp_code_encrypted.as_ref(),
             &email,
@@ -77,7 +77,7 @@ async fn generate_otp(secret: &Vec<u8>) -> Result<(u32, String), CustomError> {
     let mut rng = rand::thread_rng();
     let otp_code: u32 = rng.gen_range(10000..99999);
     let otp_encrypted =
-        crate::encryption::encrypt(&format!("{}", otp_code), &format!("{}", otp_code), &secret)?;
+        crate::encryption::encrypt(&format!("{}", otp_code), "Barricade", &secret)?;
 
     Ok((otp_code, otp_encrypted))
 }

@@ -49,7 +49,7 @@ pub async fn process_sign_in(
 ) -> Result<impl IntoResponse, CustomError> {
     
     let client = pool.get().await?;
-    let (cookie, otp_code) = crate::session::create_session(client, &login_form.email, config.secret_key).await?;
+    let (cookie, otp_code) = crate::session::create_session(&client, &login_form.email, config.secret_key).await?;
 
     if let Some(smtp_config) = &config.smtp_config {
         // Send an email
@@ -61,7 +61,7 @@ pub async fn process_sign_in(
             .body(
                 format!(
                     "
-                Your confirmation code is {}s
+                Your confirmation code is {}
                 ",
                     otp_code
                 )
@@ -70,7 +70,11 @@ pub async fn process_sign_in(
             )
             .unwrap();
 
-        crate::email::send_email(smtp_config, email);
+        let result = crate::email::send_email(smtp_config, email);
+
+        tracing::debug!("Email -> {:?}", result);
+    } else {
+        tracing::error!("SMTP is not configured");
     }
 
     // Redirect to the screen ready to receive the users OTP code.
