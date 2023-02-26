@@ -2,14 +2,10 @@
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY, 
-    email VARCHAR NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    email VARCHAR NOT NULL UNIQUE
 );
 
-INSERT INTO users(email) VALUES('test1@test1.com');
-INSERT INTO users(email) VALUES('test2@test1.com');
-INSERT INTO users(email) VALUES('test3@test1.com');
+CREATE UNIQUE INDEX ON users ((lower(email)));
 
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY, 
@@ -24,7 +20,8 @@ CREATE TABLE sessions (
     otp_code_encrypted VARCHAR NOT NULL,
     otp_code_attempts INTEGER NOT NULL DEFAULT 0,
     otp_code_sent BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
 COMMENT ON TABLE sessions IS 'The users login sessions';
@@ -34,6 +31,28 @@ COMMENT ON COLUMN sessions.otp_code_encrypted IS 'A 6 digit code that is encrypt
 COMMENT ON COLUMN sessions.otp_code_attempts IS 'We count OTP attempts to prevent brute forcing.';
 COMMENT ON COLUMN sessions.otp_code_sent IS 'Have we sent the OTP code?';
 
+CREATE TABLE encryption_keys (
+    id SERIAL PRIMARY KEY, 
+    user_id INT NOT NULL, 
+    master_password_hash VARCHAR NOT NULL, 
+    protected_symmetric_key VARCHAR NOT NULL, 
+    protected_ecdsa_private_key VARCHAR NOT NULL,
+    ecdsa_public_key VARCHAR NOT NULL,
+    protected_ecdh_private_key VARCHAR NOT NULL,
+    ecdh_public_key VARCHAR NOT NULL,
+    UNIQUE(user_id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+COMMENT ON TABLE encryption_keys IS 'The users encryption keys generated during registration or sign in.';
+COMMENT ON COLUMN encryption_keys.master_password_hash IS 'Hash of the users master password for authentication';
+COMMENT ON COLUMN encryption_keys.protected_symmetric_key IS 'Wrapped AES-GCM key for symmetric encryption and decryption';
+COMMENT ON COLUMN encryption_keys.protected_ecdsa_private_key IS 'Wrapped ECDSA key for signing';
+COMMENT ON COLUMN encryption_keys.ecdsa_public_key IS 'Public ECDSA key for signature verification';
+COMMENT ON COLUMN encryption_keys.protected_ecdh_private_key IS 'Wrapped ECDH key for public key encryption and key negotiation';
+COMMENT ON COLUMN encryption_keys.ecdh_public_key IS 'Public ECDH key for public key encryption and key negotiation';
+
 -- migrate:down
-DROP TABLE users;
 DROP TABLE sessions;
+DROP TABLE encryption_keys;
+DROP TABLE users;

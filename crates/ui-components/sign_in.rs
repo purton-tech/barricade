@@ -1,16 +1,11 @@
 use crate::layout::Layout;
-use db::User;
 use dioxus::prelude::*;
 use super::SIGN_IN;
 
-struct Props {
-    _users: Vec<User>
-}
-
-pub fn sign_in(users: Vec<User>) -> String {
+pub fn sign_in() -> String {
 
     // Inner function to create our rsx! component
-    fn app(cx: Scope<Props>) -> Element {
+    fn app(cx: Scope) -> Element {
         cx.render(rsx! {
             Layout {
                 title: "Logon",
@@ -38,11 +33,8 @@ pub fn sign_in(users: Vec<User>) -> String {
     }
 
     // Construct our component and render it to a string.
-    let mut app = VirtualDom::new_with_props(
-        app,
-        Props {
-            _users: users
-        },
+    let mut app = VirtualDom::new(
+        app
     );
     let _ = app.rebuild();
     dioxus::ssr::render_vdom(&app)

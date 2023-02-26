@@ -1,11 +1,5 @@
 --: User()
 
---! get_users : User
-SELECT 
-    id, 
-    email
-FROM users;
-
 --! find_by_email : User
 SELECT 
     id,
