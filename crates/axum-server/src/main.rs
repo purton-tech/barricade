@@ -1,4 +1,5 @@
 mod config;
+mod decrypt;
 mod email;
 mod email_otp;
 mod encryption;
@@ -41,6 +42,7 @@ async fn main() {
     let app = Router::new()
         .merge(sign_in::routes())
         .merge(email_otp::routes())
+        .merge(decrypt::routes())
         .merge(encryption_password::routes())
         .route("/auth/static/*path", get(static_files::static_path))
         .layer(Extension(config.clone()))

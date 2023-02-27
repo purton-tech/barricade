@@ -1,37 +1,59 @@
-use crate::{config, errors::CustomError};
+use crate::errors::CustomError;
 use axum::{
     extract::Extension,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Redirect},
     routing::{get, post},
-    Form, Router,
+    Router,
 };
-use hyper::{header, StatusCode};
-use serde::Deserialize;
-
-use lettre::Message;
+use axum_extra::extract::CookieJar;
 
 pub fn routes() -> Router {
     Router::new()
-        .route(ui_components::SIGN_IN, get(sign_in))
-        .route(ui_components::SIGN_IN, post(process_sign_in))
-}
-
-#[derive(Deserialize, Default, Debug)]
-pub struct LoginForm {
-    pub email: String,
+        .route(ui_components::DECRYPT_KEYS, get(decrypt))
+        .route(ui_components::DECRYPT_KEYS, post(process_decrypt))
 }
 
 /***
- * If the user already has a cookie and that cookie is valid then redirect them to
- * the DESTINATION_URL
- *
- * If not show a email form and start the login process
- *
- * Here we need to worry that an attacker will use our form to annoy our users.
- * To defeat this we'll need a Captcha.
+ * Pull the users keys from the database and pass them to the front end for the decryption
+ * phhase.
  */
-pub async fn sign_in(Extension(pool): Extension<db::Pool>) -> Result<Html<String>, CustomError> {
+pub async fn decrypt(
+    Extension(config): Extension<crate::config::Config>,
+    Extension(pool): Extension<db::Pool>,
+    jar: CookieJar,
+) -> Result<Html<String>, CustomError> {
     let client = pool.get().await?;
 
-    Ok(Html(ui_components::sign_in::sign_in()))
+    let session_from_db =
+        crate::session::get_session(&client, &jar, config.secret_key.clone()).await;
+
+    if let Some(session) = session_from_db {
+        if let Some(user_id) = session.user_id {
+            let key = db::queries::encryption_keys::get_user_keys()
+                .bind(&client, &user_id)
+                .one()
+                .await?;
+
+            return Ok(Html(ui_components::decrypt_keys::decrypt(
+                ui_components::decrypt_keys::Props {
+                    protected_symmetric_key: key.protected_symmetric_key,
+                    public_ecdh_key: key.ecdh_public_key,
+                    protected_ecdh_private_key: key.protected_ecdh_private_key,
+                    public_ecdsa_key: key.ecdsa_public_key,
+                    protected_ecdsa_private_key: key.protected_ecdsa_private_key,
+                    email: session.email,
+                },
+            )));
+        }
+    }
+
+    Err(CustomError::FaultySetup(
+        "Problem setting up key decryption".to_string(),
+    ))
+}
+
+pub async fn process_decrypt(
+    Extension(config): Extension<crate::config::Config>
+) -> Result<impl IntoResponse, CustomError> {
+    Ok(Redirect::to(&config.redirect_url))
 }
