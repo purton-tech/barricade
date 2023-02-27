@@ -1,9 +1,13 @@
 use crate::layout::Layout;
 use dioxus::prelude::*;
 
-pub fn encryption_password() -> String {
+struct Props {
+    email: String
+}
+
+pub fn encryption_password(email: String) -> String {
     // Inner function to create our rsx! component
-    fn app(cx: Scope) -> Element {
+    fn app(cx: Scope<Props>) -> Element {
         cx.render(rsx! {
             Layout {
                 title: "Encryption Password",
@@ -21,6 +25,7 @@ pub fn encryption_password() -> String {
                         input {
                             id: "password",
                             name: "password",
+                            autocomplete: "new-password",
                             "type": "password",
                             required: "required",
                             "data-action": "keyup->password#keyPress",
@@ -51,12 +56,26 @@ pub fn encryption_password() -> String {
                         input {
                             id: "confirm_password",
                             name: "confirm_password",
+                            autocomplete: "new-password",
                             "type": "password",
                             required: "required",
                             "data-target": "registration.confirmPassword"
                         }
+                        // This actually gets used by password managers.
+                        // https://stackoverflow.com/questions/48525114/chrome-warning-dom-password-forms-should-have-optionally-hidden-username-fi
+                        input {
+                            id: "email",
+                            name: "email",
+                            value: "{cx.props.email}",
+                            hidden: "hidden",
+                            autocomplete: "username",
+                            "type": "text",
+                            "data-target": "registration.email"
+                        }
 
                         button {
+                            "data-target":  "registration.button password.button",
+                            "data-action": "registration#register",
                             class: "a_button success",
                             "type": "submit",
                             "Submit"
@@ -105,7 +124,12 @@ pub fn encryption_password() -> String {
     }
 
     // Construct our component and render it to a string.
-    let mut app = VirtualDom::new(app);
+    let mut app = VirtualDom::new_with_props(
+        app,
+        Props {
+            email
+        },
+    );
     let _ = app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }

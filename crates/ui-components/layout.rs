@@ -35,6 +35,10 @@ pub fn Layout<'a>(cx: Scope<'a, AppLayoutProps<'a>>) -> Element {
                 href: "/auth{index_css.name}",
                 "type": "text/css"
             }
+            script {
+                "type": "module",
+                src: "/auth{index_js.name}"
+            }
         }
         body {
             &cx.props.children

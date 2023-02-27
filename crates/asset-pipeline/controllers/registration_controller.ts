@@ -5,7 +5,6 @@ export default class extends Controller {
 
     static targets = ['button',
         'form', 'password', 'confirmPassword', 'email',
-        'emailCopy',
         'protectedECDSAPrivateKey',
         'publicECDSAKey',
         'protectedECDHPrivateKey',
@@ -20,7 +19,6 @@ export default class extends Controller {
     readonly confirmPasswordTarget!: HTMLInputElement
 
     // The hidden form
-    readonly emailCopyTarget!: HTMLInputElement
     readonly masterPasswordHashTarget!: HTMLInputElement
     readonly protectedSymmetricKeyTarget!: HTMLInputElement
     readonly publicECDHKeyTarget!: HTMLInputElement
@@ -59,7 +57,6 @@ export default class extends Controller {
         const authToken = await Vault.unlock(pass1, email)
         const protectedKeys = await Vault.new()
 
-        this.emailCopyTarget.value = email
         this.protectedECDSAPrivateKeyTarget.value = protectedKeys.protectedECDHPrivateKey.string
         this.publicECDSAKeyTarget.value = protectedKeys.publicECDHKey
         this.protectedECDHPrivateKeyTarget.value = protectedKeys.protectedECDSAPrivateKey.string
