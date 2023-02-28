@@ -144,9 +144,16 @@ markup::define! {
         errors: &'a ValidationErrors) {
         form.m_authentication[id="auth-form", method = "post"] {
             h1 { "Register" }
-            @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
-            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
-            @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, help_text: "", errors }
+            @forms::EmailInput{
+                title: "Email", 
+                name: "email",
+                autocomplete: "username",
+                value: &form.email, 
+                help_text: "", 
+                errors 
+            }
+            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, autocomplete: "new-password", help_text: "", errors }
+            @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, autocomplete: "new-password", help_text: "", errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
                 button.a_button.success."h-captcha"[

@@ -182,8 +182,8 @@ markup::define! {
 
             h1 { "Sign In" }
 
-            @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
-            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
+            @forms::EmailInput{ title: "Email", name: "email", value: &form.email, autocomplete: "current-password", help_text: "", errors }
+            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, autocomplete: "current-password", help_text: "", errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
                 button.a_button.success."h-captcha"[
