@@ -135,7 +135,7 @@ markup::define! {
 
             h1 { "Password Reset Request" }
 
-            @forms::EmailInput{ title: "Email", name: "email", value: &form.email, help_text: "", errors }
+            @forms::EmailInput{ title: "Email", name: "email", value: &form.email, autocomplete: "username", help_text: "", errors }
 
             @if let Some(hcaptcha) = hcaptcha_config {
                 div."h-captcha"["data-sitekey"=&hcaptcha.hcaptcha_site_key] {}

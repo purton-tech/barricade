@@ -35,12 +35,12 @@ pub fn escape(src: &str) -> String {
 
 markup::define! {
     PlaceholderInput<'a>(title: &'a str, name: &'a str, value: &'a str, input_type: &'a str,
-        help_text: &'a str, placeholder: &'a str, errors: &'a ValidationErrors) {
+        help_text: &'a str, placeholder: &'a str, autocomplete: &'a str, errors: &'a ValidationErrors) {
         label[for=name] { {title} }
         @if !filter_errors(name, errors).is_empty() {
-            input.error[id=name, name=name, placeholder=placeholder, value=value, type=input_type] {}
+            input.error[id=name, name=name, placeholder=placeholder, autocomplete=autocomplete, value=value, type=input_type] {}
         } else {
-            input[id=name, name=name, placeholder=placeholder, value=value, type=input_type] {}
+            input[id=name, name=name, placeholder=placeholder, autocomplete=autocomplete, value=value, type=input_type] {}
         }
         @for error in &filter_errors(name, errors) {
             span.error {
@@ -49,25 +49,25 @@ markup::define! {
         }
         span.a_help_text { {help_text} }
     }
-    Input<'a>(title: &'a str, name: &'a str, value: &'a str, input_type: &'a str,
+    Input<'a>(title: &'a str, name: &'a str, value: &'a str, input_type: &'a str, autocomplete: &'a str,
         help_text: &'a str, errors: &'a ValidationErrors) {
-        { PlaceholderInput{ title, name, value, input_type, help_text, placeholder: "", errors} }
+        { PlaceholderInput{ title, name, value, input_type, help_text, placeholder: "", autocomplete, errors} }
     }
-    EmailInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
-        { Input{ title, name, value, input_type: "email", help_text, errors } }
+    EmailInput<'a>(title: &'a str, name: &'a str, value: &'a str, autocomplete: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
+        { Input{ title, name, value, input_type: "email", autocomplete, help_text, errors } }
     }
     TextInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
-        { Input{ title, name, value, input_type: "text", help_text, errors } }
+        { Input{ title, name, value, input_type: "text", autocomplete: "", help_text, errors } }
     }
-    PasswordInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
-        { Input{ title, name, value, input_type: "password", help_text, errors } }
+    PasswordInput<'a>(title: &'a str, name: &'a str, value: &'a str, autocomplete: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
+        { Input{ title, name, value, input_type: "password", autocomplete, help_text, errors } }
     }
     DateInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, errors: &'a ValidationErrors) {
-        { Input{ title, name, value, input_type: "date", help_text, errors } }
+        { Input{ title, name, value, input_type: "date", autocomplete: "", help_text, errors } }
     }
     SearchInput<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, placeholder: &'a str) {
         { PlaceholderInput{ title, name, value, input_type: "text",
-            help_text, placeholder, errors: &ValidationErrors::default() } }
+            help_text, placeholder, autocomplete: "", errors: &ValidationErrors::default() } }
     }
 
     TextArea<'a>(title: &'a str, name: &'a str, value: &'a str, help_text: &'a str, placeholder: &'a str, errors: &'a ValidationErrors) {

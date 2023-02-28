@@ -8,7 +8,18 @@ static FAR: Duration = Duration::from_secs(180 * 24 * 60 * 60);
 
 pub async fn static_file(path: Path<String>) -> HttpResponse {
     let name = &path.into_inner();
-    if let Some(data) = assets::files::StaticFile::get(name) {
+
+    dbg!(&name);
+
+    let data = if name == "index.css.map" {
+        Some(&assets::files::index_css_map)
+    } else if name == "index.js.map" {
+        Some(&assets::files::index_js_map)
+    } else {
+        assets::files::StaticFile::get(&name)
+    };
+
+    if let Some(data) = data {
         let far_expires = SystemTime::now() + FAR;
         HttpResponse::Ok()
             .insert_header(Expires(far_expires.into()))

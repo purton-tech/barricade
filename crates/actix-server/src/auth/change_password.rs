@@ -159,8 +159,8 @@ markup::define! {
 
             h1 { "Change Password" }
 
-            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, help_text: "", errors }
-            @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, help_text: "", errors }
+            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, autocomplete: "new-password", help_text: "", errors }
+            @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, autocomplete: "new-password", help_text: "", errors }
 
             input[type="hidden", value=&form.reset_password_selector, name="reset_password_selector"] {}
             input[type="hidden", value=&form.reset_password_validator, name="reset_password_validator"] {}

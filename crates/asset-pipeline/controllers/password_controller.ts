@@ -34,7 +34,7 @@ export default class extends Controller {
     }
 
     async keyPress(event: InputEvent) {
-        const result = zxcvbn(this.passwordTarget.value)
+        const result = await zxcvbn(this.passwordTarget.value)
         if(result.feedback) {
             const feedback: FeedbackType = result.feedback
             if(feedback.warning != '') {

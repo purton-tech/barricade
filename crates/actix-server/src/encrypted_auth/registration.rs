@@ -34,6 +34,7 @@ pub struct Registration {
 pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = RegistrationPage {
         form: &Registration::default(),
+        hcaptcha_enabled: config.hcaptcha_config.is_some()
     };
 
     Ok(layouts::session_layout(
@@ -148,6 +149,7 @@ pub async fn process_registration(
         Err(_) => {
             let body = RegistrationPage {
                 form: &registration,
+                hcaptcha_enabled: config.hcaptcha_config.is_some()
             };
 
             Ok(layouts::session_layout(
@@ -160,26 +162,38 @@ pub async fn process_registration(
 }
 
 markup::define! {
-    RegistrationPage<'a>(form: &'a  Registration) {
+    RegistrationPage<'a>(form: &'a  Registration, hcaptcha_enabled: bool) {
         div["data-controller" = "registration password"] {
             form.m_authentication {
 
                 h1 { "Register" }
 
                 label[for="email"] { "Email" }
-                input[id="email", name = "email", type="email", value = forms::escape(&form.email), "data-target" = "registration.email"] {}
+                input[id="email", 
+                    name = "email", 
+                    type="email", 
+                    autocomplete="username",
+                    value = forms::escape(&form.email), 
+                    "data-target" = "registration.email"] {}
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }
-                input[id="password", name="password", type="password",
-                    "data-action"="keyup->password#keyPress",
+                input[id="password", 
+                    name="password", 
+                    type="password",
+                    autocomplete="new-password",
+                    "data-action"="input->password#keyPress",
                     "data-target" = "registration.password password.password"] {}
                 span.a_help_text["data-target" = "password.help"] { "The master password is the password we use to generate your private keys. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
                 span.a_help_text["data-target" = "password.warning"] {}
                 span.a_help_text["data-target" = "password.suggestions"] {}
 
                 label[for="confirm_password"] { "Re-type Master Password" }
-                input[id="confirm_password", name="confirm_password", type="password", "data-target" = "registration.confirmPassword"] {}
+                input[id="confirm_password", 
+                    name="confirm_password", 
+                    type="password",
+                    autocomplete="new-password", 
+                    "data-target" = "registration.confirmPassword"] {}
 
                 button.a_button.success[type = "submit", "data-target" = "registration.button password.button",
                     "data-action" = "registration#register"] { "Sign Up" }
@@ -208,6 +222,8 @@ markup::define! {
                     type="hidden"] {}
             }
         }
-        script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+        @if *hcaptcha_enabled {
+            script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+        }
     }
 }
