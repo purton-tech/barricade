@@ -6,24 +6,23 @@ use axum::{
     Form, Router,
 };
 use axum_extra::extract::CookieJar;
-use serde::Deserialize;
 use db::Params;
+use serde::Deserialize;
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/auth/encryption_password", get(encryption_password))
+        .route(ui_components::ENCRYPTION_PASSWORD, get(encryption_password))
         .route(
-            "/auth/encryption_password",
-            post(process_encryption_password),
+            ui_components::ENCRYPTION_PASSWORD,
+            post(process_registration),
         )
 }
 
 pub async fn encryption_password(
     Extension(config): Extension<crate::config::Config>,
     Extension(pool): Extension<db::Pool>,
-    jar: CookieJar
+    jar: CookieJar,
 ) -> Result<Html<String>, CustomError> {
-
     let client = pool.get().await?;
 
     let session_from_db =
@@ -31,25 +30,23 @@ pub async fn encryption_password(
 
     if let Some(session) = session_from_db {
         if let Some(user_id) = session.user_id {
-
             let keys = db::queries::encryption_keys::get_user_keys()
                 .bind(&client, &user_id)
                 .all()
                 .await?;
 
             if keys.len() > 0 {
-                return Ok(Html(
-                    ui_components::encryption_login::encryption_password(),
-                ));
-
+                return Ok(Html(ui_components::encryption_login::encryption_password()));
             }
         }
         return Ok(Html(
             ui_components::encryption_registration::encryption_password(session.email),
-        ))
-    }    
+        ));
+    }
 
-    Err(CustomError::FaultySetup("Problem with setting up registration/logon password page".to_string()))
+    Err(CustomError::FaultySetup(
+        "Problem with setting up registration/logon password page".to_string(),
+    ))
 }
 
 #[derive(Deserialize, Default)]
@@ -66,7 +63,7 @@ pub struct KeyGeneration {
     pub ecdh_public_key: String,
 }
 
-pub async fn process_encryption_password(
+pub async fn process_registration(
     Extension(config): Extension<crate::config::Config>,
     Extension(pool): Extension<db::Pool>,
     jar: CookieJar,
@@ -79,7 +76,6 @@ pub async fn process_encryption_password(
 
     if let Some(session) = session_from_db {
         if let Some(user_id) = session.user_id {
-
             let keys = db::queries::encryption_keys::get_user_keys()
                 .bind(&client, &user_id)
                 .all()
@@ -89,23 +85,22 @@ pub async fn process_encryption_password(
             if keys.len() == 0 {
                 // Create the keys
                 db::queries::encryption_keys::create_user_keys()
-                .params(
-                    &client,
-                    &db::queries::encryption_keys::CreateUserKeysParams {
-                        user_id,
-                        master_password_hash: &keygen_form.master_password_hash, 
-                        protected_symmetric_key: &keygen_form.protected_symmetric_key, 
-                        protected_ecdsa_private_key: &keygen_form.protected_ecdsa_private_key,
-                        ecdsa_public_key: &keygen_form.ecdsa_public_key,
-                        protected_ecdh_private_key: &keygen_form.protected_ecdh_private_key,
-                        ecdh_public_key: &keygen_form.ecdh_public_key
-                    }
-                )
-                .await?;
+                    .params(
+                        &client,
+                        &db::queries::encryption_keys::CreateUserKeysParams {
+                            user_id,
+                            master_password_hash: &keygen_form.master_password_hash,
+                            protected_symmetric_key: &keygen_form.protected_symmetric_key,
+                            protected_ecdsa_private_key: &keygen_form.protected_ecdsa_private_key,
+                            ecdsa_public_key: &keygen_form.ecdsa_public_key,
+                            protected_ecdh_private_key: &keygen_form.protected_ecdh_private_key,
+                            ecdh_public_key: &keygen_form.ecdh_public_key,
+                        },
+                    )
+                    .await?;
             }
         }
-    }    
-    
+    }
 
     Ok(Redirect::to(&config.redirect_url))
 }
