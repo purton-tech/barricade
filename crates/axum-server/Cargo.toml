@@ -1,0 +1,42 @@
+[package]
+name = "barricade2"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ui-components = { path = "../ui-components" }
+db = { version = "0.1.0", path = "../db" }
+assets = { version = "0.1.0", path = "../asset-pipeline" }
+
+axum = "0.6.6"
+tokio = { version = "1.25.0", default-features = false, features = ["macros", "fs", "rt-multi-thread"] }
+# Used by the static files handler
+tokio-util = { version = "0", default-features = false, features = ["io"] }
+
+# For sending emails
+lettre = { version = "0.10.0-rc.4", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Needed for the proxy
+hyper = { version = "0", features = ["full"] }
+tower = { version = "0", features = ["make"] }
+
+# Used for generating OTP codes and sessions.
+rand = "0"
+
+# Sha256 and hex for hashing the session verifier.
+sha2 = "0.10.2"
+hex = "0"
+
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0.9.4"
+
+# For handling forms in axum
+serde = { version = "1.0", features = ["derive"] }
+
+# Cookie parsing
+axum-extra = { version = "0", features = ["cookie"]}

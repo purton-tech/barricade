@@ -1,5 +1,5 @@
 import './node_modules/node-snackbar/dist/snackbar.css'
-import './index.scss'
+import './sass/index.scss'
 
 import { Application } from "stimulus"
 

@@ -1,0 +1,12 @@
+[package]
+name = "ui-components"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+db = { path = "../db" }
+assets = { path = "../asset-pipeline" }
+dioxus = { version = "0.2", features = ["ssr"] }
