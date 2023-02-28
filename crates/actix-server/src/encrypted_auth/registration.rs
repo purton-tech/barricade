@@ -34,6 +34,7 @@ pub struct Registration {
 pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = RegistrationPage {
         form: &Registration::default(),
+        hcaptcha_enabled: config.hcaptcha_config.is_some()
     };
 
     Ok(layouts::session_layout(
@@ -148,6 +149,7 @@ pub async fn process_registration(
         Err(_) => {
             let body = RegistrationPage {
                 form: &registration,
+                hcaptcha_enabled: config.hcaptcha_config.is_some()
             };
 
             Ok(layouts::session_layout(
@@ -160,7 +162,7 @@ pub async fn process_registration(
 }
 
 markup::define! {
-    RegistrationPage<'a>(form: &'a  Registration) {
+    RegistrationPage<'a>(form: &'a  Registration, hcaptcha_enabled: bool) {
         div["data-controller" = "registration password"] {
             form.m_authentication {
 
@@ -220,6 +222,8 @@ markup::define! {
                     type="hidden"] {}
             }
         }
-        script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+        @if *hcaptcha_enabled {
+            script[src="https://hcaptcha.com/1/api.js", async="async", defer="defer"] {}
+        }
     }
 }
