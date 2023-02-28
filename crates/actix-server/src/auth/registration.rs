@@ -152,8 +152,18 @@ markup::define! {
                 help_text: "", 
                 errors 
             }
-            @forms::PasswordInput{ title: "Password", name: "password", value: &form.password, autocomplete: "new-password", help_text: "", errors }
-            @forms::PasswordInput{ title: "Confirm Password", name: "confirm_password", value: &form.confirm_password, autocomplete: "new-password", help_text: "", errors }
+            @forms::PasswordInput{ 
+                title: "Password", 
+                name: "password", 
+                value: &form.password, 
+                autocomplete: "new-password", 
+                help_text: "", errors }
+            @forms::PasswordInput{ 
+                title: "Confirm Password", 
+                name: "confirm_password", 
+                value: &form.confirm_password, 
+                autocomplete: "new-password", 
+                help_text: "", errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {
                 button.a_button.success."h-captcha"[

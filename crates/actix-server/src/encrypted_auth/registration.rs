@@ -182,7 +182,7 @@ markup::define! {
                     name="password", 
                     type="password",
                     autocomplete="new-password",
-                    "data-action"="keyup->password#keyPress",
+                    "data-action"="input->password#keyPress",
                     "data-target" = "registration.password password.password"] {}
                 span.a_help_text["data-target" = "password.help"] { "The master password is the password we use to generate your private keys. It is very important that you do not forget your master password. There is no way to recover the password in the event that you forget it." }
                 span.a_help_text["data-target" = "password.warning"] {}
