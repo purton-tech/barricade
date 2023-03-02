@@ -266,7 +266,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(config.clone()))
             .app_data(Data::new(client))
-            .service(web::resource("/static/{filename}").to(static_file::static_file))
+            .service(web::resource("/auth/static/{filename}").to(static_file::static_file))
             .configure(auth_routes)
             // The proxy
             .default_service(web::route().to(authorize))
