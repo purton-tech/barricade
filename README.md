@@ -165,7 +165,7 @@ CREATE TABLE users (
     email VARCHAR NOT NULL UNIQUE, 
     hashed_password VARCHAR NOT NULL, 
     reset_password_selector VARCHAR,
-    reset_password_verifier_hash VARCHAR,
+    reset_password_validator_hash VARCHAR,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
