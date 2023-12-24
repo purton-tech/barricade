@@ -196,7 +196,7 @@ Go to `localhost:9091/auth/sign_up` in your browser and register.
 
 After registration you'll be take to the whoami home page as we set `REDIRECT_URL` to `/`.
 
-You'll then be greated with 
+You'll then be greeted with 
 
 
 <p align="center">
