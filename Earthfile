@@ -1,13 +1,13 @@
-VERSION 0.6
-FROM purtontech/rust-on-nails-devcontainer:1.0.18
+VERSION 0.8
+FROM purtontech/rust-on-nails-devcontainer:1.3.1
 
-ARG EXE_NAME=barricade
-ARG EXE_FOLDER=crates/actix-server
-ARG GRPC_API_FOLDER=crates/grpc-api
-ARG DB_FOLDER=crates/db
-ARG CONTAINER_NAME=purtontech/barricade:build
-ARG SELENIUM=selenium/standalone-chrome:4.1.1-20220121
-ARG PIPELINE_FOLDER=crates/asset-pipeline
+ARG --global EXE_NAME=barricade
+ARG --global EXE_FOLDER=crates/actix-server
+ARG --global GRPC_API_FOLDER=crates/grpc-api
+ARG --global DB_FOLDER=crates/db
+ARG --global CONTAINER_NAME=purtontech/barricade:build
+ARG --global SELENIUM=selenium/standalone-chrome:4.1.1-20220121
+ARG --global PIPELINE_FOLDER=crates/asset-pipeline
 
 WORKDIR /build
 
@@ -105,7 +105,7 @@ integration-test:
         RUN while ! pg_isready --host=localhost --port=5432 --username=postgres; do sleep 1; done ;\
             dbmate --migrations-dir $DB_FOLDER/migrations up \
             && cargo test --no-run --release --target x86_64-unknown-linux-musl \
-            && docker run -d --name video --network=build_default -e DISPLAY_CONTAINER_NAME=build_selenium_1 -e FILE_NAME=chrome-video.mp4 -v /build/tmp:/videos selenium/video:ffmpeg-4.3.1-20220208 \
+            && docker run -d --name video --network=default_default -e DISPLAY_CONTAINER_NAME=build_selenium_1 -e FILE_NAME=chrome-video.mp4 -v /build/tmp:/videos selenium/video:ffmpeg-4.3.1-20220208 \
             && (cargo test --release --target x86_64-unknown-linux-musl -- --nocapture || echo fail > ./tmp/fail) \
             && docker stop video
     END
