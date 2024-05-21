@@ -34,7 +34,7 @@ pub struct Registration {
 pub async fn registration(config: web::Data<config::Config>) -> Result<HttpResponse> {
     let body = RegistrationPage {
         form: &Registration::default(),
-        hcaptcha_enabled: config.hcaptcha_config.is_some()
+        hcaptcha_enabled: config.hcaptcha_config.is_some(),
     };
 
     Ok(layouts::session_layout(
@@ -149,7 +149,7 @@ pub async fn process_registration(
         Err(_) => {
             let body = RegistrationPage {
                 form: &registration,
-                hcaptcha_enabled: config.hcaptcha_config.is_some()
+                hcaptcha_enabled: config.hcaptcha_config.is_some(),
             };
 
             Ok(layouts::session_layout(
@@ -169,17 +169,17 @@ markup::define! {
                 h1 { "Register" }
 
                 label[for="email"] { "Email" }
-                input[id="email", 
-                    name = "email", 
-                    type="email", 
+                input[id="email",
+                    name = "email",
+                    type="email",
                     autocomplete="username",
-                    value = forms::escape(&form.email), 
+                    value = forms::escape(&form.email),
                     "data-target" = "registration.email"] {}
                 span.a_help_text { "You'll use your email address to log in." }
 
                 label[for="password"] { "Master Password" }
-                input[id="password", 
-                    name="password", 
+                input[id="password",
+                    name="password",
                     type="password",
                     autocomplete="new-password",
                     "data-action"="input->password#keyPress",
@@ -189,10 +189,10 @@ markup::define! {
                 span.a_help_text["data-target" = "password.suggestions"] {}
 
                 label[for="confirm_password"] { "Re-type Master Password" }
-                input[id="confirm_password", 
-                    name="confirm_password", 
+                input[id="confirm_password",
+                    name="confirm_password",
                     type="password",
-                    autocomplete="new-password", 
+                    autocomplete="new-password",
                     "data-target" = "registration.confirmPassword"] {}
 
                 button.a_button.success[type = "submit", "data-target" = "registration.button password.button",

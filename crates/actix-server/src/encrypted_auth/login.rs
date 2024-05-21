@@ -119,26 +119,26 @@ markup::define! {
 
                 label[for="email"] { "Email" }
                 @if errors.is_none() {
-                    input[id="email", 
-                    name = "email", 
+                    input[id="email",
+                    name = "email",
                     autocomplete= "username",
-                    value = forms::escape(&form.email), 
+                    value = forms::escape(&form.email),
                     "data-target" = "login.email"] {}
                 } else {
-                    input.error[id="email", 
-                        name = "email", 
-                        type="email", 
+                    input.error[id="email",
+                        name = "email",
+                        type="email",
                         autocomplete= "username",
-                        value = &form.email, 
+                        value = &form.email,
                         "data-target" = "login.email"] {}
                     span.error { "Invalid email or password" }
                 }
 
                 label[for="password"] { "Password" }
-                input[id="password", 
-                    name = "password", 
+                input[id="password",
+                    name = "password",
                     autocomplete= "current-password",
-                    type="password", 
+                    type="password",
                     "data-target" = "login.password"] {}
 
                 button.a_button.success[type = "submit",

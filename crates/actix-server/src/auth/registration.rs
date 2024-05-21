@@ -145,24 +145,24 @@ markup::define! {
         form.m_authentication[id="auth-form", method = "post"] {
             h1 { "Register" }
             @forms::EmailInput{
-                title: "Email", 
+                title: "Email",
                 name: "email",
                 autocomplete: "username",
-                value: &form.email, 
-                help_text: "", 
-                errors 
+                value: &form.email,
+                help_text: "",
+                errors
             }
-            @forms::PasswordInput{ 
-                title: "Password", 
-                name: "password", 
-                value: &form.password, 
-                autocomplete: "new-password", 
+            @forms::PasswordInput{
+                title: "Password",
+                name: "password",
+                value: &form.password,
+                autocomplete: "new-password",
                 help_text: "", errors }
-            @forms::PasswordInput{ 
-                title: "Confirm Password", 
-                name: "confirm_password", 
-                value: &form.confirm_password, 
-                autocomplete: "new-password", 
+            @forms::PasswordInput{
+                title: "Confirm Password",
+                name: "confirm_password",
+                value: &form.confirm_password,
+                autocomplete: "new-password",
                 help_text: "", errors }
 
             @if let Some(hcaptcha_config) = hcaptcha_config {

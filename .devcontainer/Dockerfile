@@ -1,8 +1,8 @@
-FROM purtontech/rust-on-nails-devcontainer:1.0.18 AS development
+FROM purtontech/rust-on-nails-devcontainer:1.3.1 AS development
 
 ARG USERNAME=vscode
 
-COPY *.bash .
+COPY *.bash ./
 
 # Add our aliases and ps1 to bashrc
 RUN cat *.bash >> ~/.bashrc && sudo rm *.bash

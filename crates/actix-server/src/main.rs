@@ -31,11 +31,14 @@ pub static CHANGE_PASSWORD_URL: &str = "/auth/change_password";
 
 pub static COOKIE_NAME: &str = "session";
 pub static USER_HEADER_NAME: &str = "x-user-id";
+const X_FORWARDED_USER: &str = "X-Forwarded-User";
+const X_FORWARDED_EMAIL: &str = "X-Forwarded-Email";
 
 #[derive(sqlx::FromRow, Debug)]
 struct UserSession {
     id: i32,
     user_id: i32,
+    email: String,
     session_verifier: String,
     otp_code_confirmed: bool,
     otp_code_encrypted: String,
@@ -120,7 +123,7 @@ async fn authorize(
     // If we have a session cookie, try and convert it to a user.
     let mut logged_user: Option<UserSession> = None;
     if let Some(session) = session {
-        logged_user = get_user_by_session(&session, pool.get_ref()).await;
+        logged_user = get_user_by_session(&session, pool.get_ref(), &config).await;
     }
 
     // If we have Email Otp make sure the user has entered the code
@@ -153,12 +156,17 @@ async fn envoy_external_auth(logged_user: Option<UserSession>) -> Result<HttpRes
 }
 
 // Get a user session and resist timing attacks.
-async fn get_user_by_session(session: &Session, pool: &PgPool) -> Option<UserSession> {
-    let user = sqlx::query_as::<_, UserSession>(
+async fn get_user_by_session(
+    session: &Session,
+    pool: &PgPool,
+    config: &config::Config,
+) -> Option<UserSession> {
+    let user = sqlx::query_as::<_, UserSession>(&format!(
         "
         SELECT 
             id,
             user_id, 
+            (SELECT email from {} WHERE id = user_id) AS email,
             session_verifier, 
             otp_code_confirmed, 
             otp_code_encrypted, 
@@ -168,7 +176,8 @@ async fn get_user_by_session(session: &Session, pool: &PgPool) -> Option<UserSes
             sessions 
         WHERE id = $1
         ",
-    )
+        config.user_table_name
+    ))
     .bind(session.session_id)
     .fetch_one(pool) // -> Vec<Person>
     .await;
@@ -220,7 +229,10 @@ async fn reverse_proxy(
 
         // Add the user id as a header.
         let fwd_req = if let Some(logged_user) = logged_user {
-            forwarded_req.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)))
+            forwarded_req
+                .append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)))
+                .append_header((X_FORWARDED_USER, format!("{:?}", logged_user.user_id)))
+                .append_header((X_FORWARDED_EMAIL, format!("{:?}", logged_user.email)))
         } else {
             forwarded_req
         };

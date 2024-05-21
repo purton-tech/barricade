@@ -35,7 +35,7 @@ According to wikipedia
 
 We are using the [Diesel database migration tool](https://docs.rs/diesel_migrations/1.4.0/diesel_migrations/) for our migrations which are stored in the `migrations` folder.
 
-Run `diesel migration list` to see a list of the migrations we have created so far.
+Run `dbmate status` to see a list of the migrations we have created so far.
 
 To apply the migrations run `diesel migration run`. You should see all the tables being created as below.
 

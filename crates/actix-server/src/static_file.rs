@@ -1,7 +1,7 @@
 use actix_web::http::header::{ContentType, Expires};
-use actix_web::web::{Path};
-use actix_web::{HttpResponse};
-use std::time::{Duration,SystemTime};
+use actix_web::web::Path;
+use actix_web::HttpResponse;
+use std::time::{Duration, SystemTime};
 
 /// A duration to add to current time for a far expires header.
 static FAR: Duration = Duration::from_secs(180 * 24 * 60 * 60);

@@ -30,7 +30,9 @@ pub async fn email_otp(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
-        if let Some(user_session) = crate::get_user_by_session(&session, pool.get_ref()).await {
+        if let Some(user_session) =
+            crate::get_user_by_session(&session, pool.get_ref(), &config).await
+        {
             if !user_session.otp_code_sent {
                 sqlx::query(
                     "
@@ -110,7 +112,9 @@ pub async fn process_otp(
     form: web::Form<Otp>,
 ) -> Result<HttpResponse, CustomError> {
     if let Some(session) = session {
-        if let Some(user_session) = crate::get_user_by_session(&session, pool.get_ref()).await {
+        if let Some(user_session) =
+            crate::get_user_by_session(&session, pool.get_ref(), &config).await
+        {
             // If we have more than 1 attempt we need to apply the Hcaptcha
             if user_session.otp_code_attempts > 0
                 && !super::verify_hcaptcha(&config.hcaptcha_config, &form.h_captcha_response).await

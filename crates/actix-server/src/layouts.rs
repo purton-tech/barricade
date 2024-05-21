@@ -1,5 +1,5 @@
-use assets::files;
 use actix_web::{http, HttpResponse};
+use assets::files;
 
 markup::define! {
     Header <'a>(title: &'a str) {

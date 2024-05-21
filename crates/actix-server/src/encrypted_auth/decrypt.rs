@@ -21,7 +21,7 @@ pub async fn decrypt(
 ) -> Result<HttpResponse, CustomError> {
     // If we have a session cookie, try and convert it to a user.
     if let Some(session) = session {
-        let logged_user = crate::get_user_by_session(&session, db_pool.get_ref()).await;
+        let logged_user = crate::get_user_by_session(&session, db_pool.get_ref(), &config).await;
 
         if let Some(logged_user) = logged_user {
             // Make sure they did email otp first.
