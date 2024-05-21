@@ -1,7 +1,5 @@
 scanner_configs:
   CargoAudit:
     elevate_warnings: false
-    exceptions:
   NodeAudit:
-    exceptions:
         
