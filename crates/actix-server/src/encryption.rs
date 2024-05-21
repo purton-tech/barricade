@@ -86,7 +86,7 @@ pub async fn kdf_and_wrap(data: &str, password: &str, aead: &str) -> Result<Stri
     OsRng.fill_bytes(&mut bytes);
 
     let salt =
-        SaltString::b64_encode(&bytes).map_err(|e| CustomError::FaultySetup(e.to_string()))?;
+        SaltString::encode_b64(&bytes).map_err(|e| CustomError::FaultySetup(e.to_string()))?;
 
     let stretched_password = stretch_password(password, &salt).await?;
 
@@ -105,7 +105,7 @@ async fn stretch_password(password: &str, salt: &SaltString) -> Result<Vec<u8>, 
     let vec_bytes = password.as_bytes();
 
     let argoned: PasswordHash = argon2
-        .hash_password(vec_bytes, &salt)
+        .hash_password(vec_bytes, salt)
         .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
 
     if let Some(hash) = argoned.hash {
@@ -130,7 +130,7 @@ pub async fn kdf_and_unwrap(
         let decode_bytes =
             hex::decode(split[0]).map_err(|e| CustomError::FaultySetup(e.to_string()))?;
 
-        let salt = SaltString::b64_encode(&decode_bytes)
+        let salt = SaltString::encode_b64(&decode_bytes)
             .map_err(|e| CustomError::FaultySetup(e.to_string()))?;
 
         let stretched_password = stretch_password(password, &salt).await?;
