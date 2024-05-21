@@ -1,5 +1,9 @@
 scanner_configs:
   CargoAudit:
     elevate_warnings: false
+    exceptions:
+      - advisory_id: RUSTSEC-2023-0071
+        changed_by: ianpurton
+        notes: SQLx mysql, we don't use mysql
   NodeAudit:
         
