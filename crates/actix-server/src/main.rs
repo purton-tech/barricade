@@ -232,7 +232,7 @@ async fn reverse_proxy(
             forwarded_req
                 .append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)))
                 .append_header((X_FORWARDED_USER, format!("{:?}", logged_user.user_id)))
-                .append_header((X_FORWARDED_EMAIL, format!("{:?}", logged_user.email)))
+                .append_header((X_FORWARDED_EMAIL, format!("{}", logged_user.email)))
         } else {
             forwarded_req
         };
