@@ -149,6 +149,8 @@ async fn envoy_external_auth(logged_user: Option<UserSession>) -> Result<HttpRes
     if let Some(logged_user) = logged_user {
         let mut resp = HttpResponse::Ok();
         resp.append_header((USER_HEADER_NAME, format!("{:?}", logged_user.user_id)));
+        resp.append_header((X_FORWARDED_USER, format!("{:?}", logged_user.user_id)));
+        resp.append_header((X_FORWARDED_EMAIL, format!("{:?}", logged_user.email)));
         Ok(resp.finish())
     } else {
         Ok(HttpResponse::Forbidden().finish())
