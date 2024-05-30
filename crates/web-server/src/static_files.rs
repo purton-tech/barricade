@@ -6,17 +6,16 @@ use axum_extra::routing::TypedPath;
 use serde::Deserialize;
 
 #[derive(TypedPath, Deserialize)]
-#[typed_path("/static/*path")]
+#[typed_path("/auth/static/*path")]
 pub struct StaticFilePath {
     pub path: String,
 }
 
 pub async fn static_path(StaticFilePath { path }: StaticFilePath) -> impl IntoResponse {
-    let path = format!("/static/{}", path);
 
-    let data = if path == "/static/index.css.map" {
+    let data = if path == "index.css.map" {
         Some(&index_css_map)
-    } else if path == "/static/index.js.map" {
+    } else if path == "index.js.map" {
         Some(&index_js_map)
     } else {
         StaticFile::get(&path)
