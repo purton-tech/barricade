@@ -3731,12 +3731,15 @@ dependencies = [
  "base64 0.13.1",
  "db",
  "lettre",
+ "markup",
  "serde",
  "sha2",
+ "sqlx",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "url",
+ "validator",
 ]
 
 [[package]]

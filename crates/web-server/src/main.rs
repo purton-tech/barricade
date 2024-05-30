@@ -1,5 +1,7 @@
 mod auth;
 mod config;
+mod layouts;
+mod components;
 mod errors;
 mod routes;
 mod static_files;
