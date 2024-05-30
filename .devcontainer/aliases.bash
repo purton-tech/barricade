@@ -14,6 +14,10 @@ alias gcr='f() { git checkout -b $1 origin/$1; }; f'
 alias cwe='USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted mold -run cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x run'
 alias cwb='USER_TABLE_NAME=bcrypt_users AUTH_TYPE=normal mold -run cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x run'
 
+# Cargo watch
+alias wa='USER_TABLE_NAME=keypair_users AUTH_TYPE=encrypted mold -run cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x "run --bin web-server"'
+alias wae='USER_TABLE_NAME=bcrypt_users AUTH_TYPE=normal mold -run cargo watch --no-gitignore -i *.scss -i *.ts -i "package*" -x "run --bin web-server"'
+
 # SAST
 alias salus='docker run --rm -t -v $HOST_PROJECT_PATH:/home/repo coinbase/salus'
 

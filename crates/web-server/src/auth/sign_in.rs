@@ -1,10 +1,10 @@
 use super::super::errors::CustomError;
-use crate::routes::routes::auth;
+use crate::routes::auth;
 use axum::extract::Extension;
 use axum::response::Html;
 use db::Pool;
 
-pub async fn index(
+pub async fn sign_in(
     auth::Index {}: auth::Index,
     Extension(_pool): Extension<Pool>,
 ) -> Result<Html<String>, CustomError> {
