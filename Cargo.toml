@@ -1,8 +1,6 @@
 [workspace]
-
 resolver = "2"
 
 members = [
-    "crates/actix-server",
-    "crates/asset-pipeline",
+    "crates/*"
 ]

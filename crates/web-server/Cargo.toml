@@ -1,0 +1,42 @@
+[package]
+name = "web-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+assets = { path = "../asset-pipeline" }
+db = { path = "../db" }
+
+# Axum
+axum = { version = "0.7", features = ["multipart"] }
+axum-extra = { version = "0", features = ["typed-routing", "form"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+#tokio-util = { version = "0" }
+
+# HTML and Validation
+markup = "0"
+validator = { version = "0.12", features = ["derive"] }
+
+# Use this for access to hcaptcha
+reqwest = { version = "0", default-features = false, features = ["json", "rustls-tls"] }
+
+# Used by the proxy
+url = "2.0"
+
+# Observability
+tracing = { version = "0.1" }
+tracing-subscriber = { version="0", features = ["env-filter"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+#serde_json = "1.0"
+
+# SQLX
+sqlx = { version = "0.7", default-features = false,  features = [ "runtime-tokio-rustls", "postgres", "macros", "uuid" ] }
+
+# Generate secure invitations
+sha2 = { version = "0" }
+base64 = { version = "0.13.1" }
+lettre = { version = "0", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"]  }
