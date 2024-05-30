@@ -1,8 +1,8 @@
 mod auth;
-mod config;
-mod layouts;
 mod components;
+mod config;
 mod errors;
+mod layouts;
 mod routes;
 mod static_files;
 use axum::{Extension, Router};

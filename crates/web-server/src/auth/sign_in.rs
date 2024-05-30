@@ -1,8 +1,8 @@
 use super::super::errors::CustomError;
 use crate::config::Config;
 use crate::layouts;
+use crate::routes::auth::{self, ResetRequest, SignUp};
 use crate::{components::forms, config};
-use crate::routes::auth;
 use axum::extract::Extension;
 use axum::response::IntoResponse;
 use db::Pool;
@@ -25,6 +25,8 @@ pub async fn sign_in(
     let body = LoginPage {
         form: &Login::default(),
         hcaptcha_config: &config.hcaptcha_config,
+        sign_up: SignUp {}.to_string(),
+        reset_password: ResetRequest {}.to_string(),
         errors: &ValidationErrors::default(),
     };
 
@@ -38,6 +40,7 @@ pub async fn sign_in(
 markup::define! {
     LoginPage<'a>(form: &'a  Login,
     hcaptcha_config: &'a Option<config::HCaptchaConfig>,
+    sign_up: String, reset_password: String,
     errors: &'a ValidationErrors) {
         form.m_authentication[id="auth-form", method = "post"] {
 
@@ -55,9 +58,9 @@ markup::define! {
             }
 
             div {
-                a[href="{auth::SignUp{}}"] { "Sign Up" }
+                a[href=sign_up] { "Sign Up" }
                 { " | " }
-                a[href="{auth::ResetPassword{}}"] { "Reset Password" }
+                a[href=reset_password] { "Reset Password" }
             }
         }
 

@@ -12,7 +12,6 @@ pub struct StaticFilePath {
 }
 
 pub async fn static_path(StaticFilePath { path }: StaticFilePath) -> impl IntoResponse {
-
     let data = if path == "index.css.map" {
         Some(&index_css_map)
     } else if path == "index.js.map" {
